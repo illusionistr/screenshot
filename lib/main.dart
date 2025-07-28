@@ -966,8 +966,25 @@ class _TestPageState extends State<TestPage> {
   Uint8List? selectedImageBytes;
   String? selectedDevice = 'iPhone 15 Pro';
   String selectedBackground = 'gradient';
-  String mainText = 'Your App Name';
-  String subText = 'Amazing features await';
+
+  // Text controller for proper state management
+  late TextEditingController mainTextController;
+
+  // Draggable positions
+  Offset phonePosition = const Offset(0, 0);
+  Offset textPosition = const Offset(20, 50);
+
+  @override
+  void initState() {
+    super.initState();
+    mainTextController = TextEditingController(text: 'Your App Name');
+  }
+
+  @override
+  void dispose() {
+    mainTextController.dispose();
+    super.dispose();
+  }
 
   // Map device names to their asset paths
   String getDeviceFramePath(String deviceName) {
@@ -1402,22 +1419,12 @@ class _TestPageState extends State<TestPage> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          TextField(
+                          TextFormField(
+                            controller: mainTextController,
                             decoration: const InputDecoration(
                               labelText: 'Main Title',
                               border: OutlineInputBorder(),
                             ),
-                            onChanged: (value) =>
-                                setState(() => mainText = value),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            decoration: const InputDecoration(
-                              labelText: 'Subtitle',
-                              border: OutlineInputBorder(),
-                            ),
-                            onChanged: (value) =>
-                                setState(() => subText = value),
                           ),
                         ],
                       ),
@@ -1475,96 +1482,122 @@ class _TestPageState extends State<TestPage> {
                             ),
                             child: Stack(
                               children: [
-                                // Device Frame with Screenshot
-                                Center(
-                                  child: Container(
-                                    width: 300,
-                                    height: 450,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        // Device Frame
-                                        Image.asset(
-                                          getDeviceFramePath(selectedDevice!),
-                                          fit: BoxFit.contain,
-                                          width: 300,
-                                          height: 450,
-                                        ),
-                                        // Screenshot positioned inside frame
-                                        if (selectedImageBytes != null)
-                                          Container(
-                                            width: _getScreenWidth(
-                                                selectedDevice!),
-                                            height: _getScreenHeight(
-                                                selectedDevice!),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      _getScreenBorderRadius(
-                                                          selectedDevice!)),
-                                              child: Image.memory(
-                                                selectedImageBytes!,
-                                                fit: BoxFit.cover,
-                                                width: double.infinity,
-                                                height: double.infinity,
+                                // Draggable Device Frame with Screenshot
+                                Positioned(
+                                  left: phonePosition.dx,
+                                  top: phonePosition.dy,
+                                  child: GestureDetector(
+                                    onPanUpdate: (details) {
+                                      setState(() {
+                                        phonePosition += details.delta;
+                                      });
+                                    },
+                                    child: Container(
+                                      width: 300,
+                                      height: 450,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.1),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          // Device Frame
+                                          Image.asset(
+                                            getDeviceFramePath(selectedDevice!),
+                                            fit: BoxFit.contain,
+                                            width: 300,
+                                            height: 450,
+                                          ),
+                                          // Screenshot positioned inside frame
+                                          if (selectedImageBytes != null)
+                                            Container(
+                                              width: _getScreenWidth(
+                                                  selectedDevice!),
+                                              height: _getScreenHeight(
+                                                  selectedDevice!),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        _getScreenBorderRadius(
+                                                            selectedDevice!)),
+                                                child: Image.memory(
+                                                  selectedImageBytes!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
                                               ),
-                                            ),
-                                          )
-                                        else
-                                          Container(
-                                            width: _getScreenWidth(
-                                                selectedDevice!),
-                                            height: _getScreenHeight(
-                                                selectedDevice!),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(
-                                                      _getScreenBorderRadius(
-                                                          selectedDevice!)),
-                                            ),
-                                            child: const Center(
-                                              child: Text(
-                                                'Your Screenshot\nWill Appear Here',
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 12,
+                                            )
+                                          else
+                                            Container(
+                                              width: _getScreenWidth(
+                                                  selectedDevice!),
+                                              height: _getScreenHeight(
+                                                  selectedDevice!),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        _getScreenBorderRadius(
+                                                            selectedDevice!)),
+                                              ),
+                                              child: const Center(
+                                                child: Text(
+                                                  'Your Screenshot\nWill Appear Here',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
 
-                                // Text Overlay
+                                // Draggable Text Overlay
                                 Positioned(
-                                  top: 50,
-                                  left: 20,
-                                  right: 20,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        mainText,
+                                  left: textPosition.dx,
+                                  top: textPosition.dy,
+                                  child: GestureDetector(
+                                    onPanUpdate: (details) {
+                                      setState(() {
+                                        textPosition += details.delta;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(4),
+                                        color: Colors.black.withOpacity(0.1),
+                                      ),
+                                      child: Text(
+                                        mainTextController.text,
                                         style: const TextStyle(
                                           fontSize: 32,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
+                                          shadows: [
+                                            Shadow(
+                                              offset: Offset(1, 1),
+                                              blurRadius: 3,
+                                              color: Colors.black54,
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        subText,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ],
