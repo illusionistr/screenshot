@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'dart:html' as html;
-import 'dart:ui' as ui;
-import 'dart:ui_web' as ui_web;
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Conditional imports for web-specific functionality
+import 'web_video_player.dart'
+    if (dart.library.io) 'dummy_web_video_player.dart';
 
 void main() {
   runApp(const MyApp());
@@ -604,6 +607,11 @@ class TutorialPage extends StatefulWidget {
 class _TutorialPageState extends State<TutorialPage> {
   String? _playingVideoId;
 
+  // Web-specific method for registering iframe
+  void _registerWebIframe(String iframeId, String youtubeVideoId) {
+    WebVideoPlayer.registerIframe(iframeId, youtubeVideoId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -759,19 +767,10 @@ class _TutorialPageState extends State<TutorialPage> {
     final bool isPlaying = _playingVideoId == youtubeVideoId;
     final String iframeId = 'youtube-$youtubeVideoId';
 
-    if (isPlaying) {
-      // Register the iframe for this video if not already registered
-      final String videoUrl =
-          'https://www.youtube.com/embed/$youtubeVideoId?autoplay=1&rel=0';
-      ui_web.platformViewRegistry.registerViewFactory(
-        iframeId,
-        (int viewId) => html.IFrameElement()
-          ..src = videoUrl
-          ..style.border = 'none'
-          ..style.width = '100%'
-          ..style.height = '100%'
-          ..allowFullscreen = true,
-      );
+    // Only register iframe for web platform
+    if (isPlaying && kIsWeb) {
+      // Web-specific code - only compile for web
+      _registerWebIframe(iframeId, youtubeVideoId);
     }
     return Container(
       width: double.infinity,
@@ -806,7 +805,7 @@ class _TutorialPageState extends State<TutorialPage> {
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
-              child: isPlaying
+              child: isPlaying && kIsWeb
                   ? HtmlElementView(
                       viewType: iframeId,
                     )
