@@ -35,6 +35,15 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   file_picker: ^8.0.0
+  # Added for Firebase + state management + routing + DI
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_storage: ^11.5.6
+  provider: ^6.1.1
+  go_router: ^12.1.3
+  uuid: ^4.2.1
+  get_it: ^7.6.4
 
 dev_dependencies:
   flutter_test:
