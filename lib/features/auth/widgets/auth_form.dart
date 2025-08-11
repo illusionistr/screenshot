@@ -46,6 +46,8 @@ class _AuthFormState extends State<AuthForm> {
 
   @override
   Widget build(BuildContext context) {
+    _emailCtrl.text = 'donvovo2@gmail.com';
+    _passwordCtrl.text = 'qwerty';
     return Form(
       key: _formKey,
       child: Column(
