@@ -4,6 +4,7 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/auth_wrapper.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
+import '../features/editor/screens/editor_screen.dart';
 import '../features/projects/screens/create_project_screen.dart';
 import '../features/projects/screens/dashboard_screen.dart';
 
@@ -32,10 +33,18 @@ GoRouter createAppRouter(AuthProvider authProvider) {
         path: '/projects/create',
         builder: (context, state) => const CreateProjectScreen(),
       ),
+      GoRoute(
+        path: '/projects/:projectId/editor',
+        builder: (context, state) {
+          final projectId = state.pathParameters['projectId']!;
+          return EditorScreen(projectId: projectId);
+        },
+      ),
     ],
     redirect: (context, state) {
       final isLoggedIn = authProvider.isAuthenticated;
-      final loggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+      final loggingIn = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup';
 
       if (!isLoggedIn && state.matchedLocation.startsWith('/dashboard')) {
         return '/login';
@@ -50,5 +59,3 @@ GoRouter createAppRouter(AuthProvider authProvider) {
     },
   );
 }
-
-

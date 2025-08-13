@@ -31,6 +31,23 @@ class AppConstants {
     ],
   };
 
+  // Language options
+  static const List<Map<String, String>> supportedLanguages = [
+    {"code": "en_US", "name": "English (U.S.)"},
+    {"code": "es_ES", "name": "Spanish (Spain)"},
+    {"code": "fr_FR", "name": "French (France)"},
+    {"code": "de_DE", "name": "German (Germany)"},
+  ];
+
+  // Default screen settings
+  static const Map<String, dynamic> defaultScreenSettings = {
+    "background": {"type": "gradient", "gradientStart": "#FF9966", "gradientEnd": "#FF5E62"},
+    "layout": {"mode": "text_above", "orientation": "portrait", "frameStyle": "flat_black"},
+    "text": {"alignment": "center", "containerHeight": 15.0},
+    "device": {"margins": {"top": 2.0, "bottom": 2.0, "left": 10.0, "right": 10.0}, "angle": 0.0},
+    "font": {"family": "Raleway", "size": 40.0, "weight": "Regular", "color": "#FFFFFF"}
+  };
+
   // Colors
   static const Color primaryColor = Color(0xFF4ECDC4); // Teal/Blue
   static const Color backgroundLight = Color(0xFFF6F7F9);

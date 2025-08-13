@@ -5,6 +5,7 @@ import '../core/services/firebase_service.dart';
 import '../core/services/storage_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/projects/services/project_service.dart';
+import '../features/editor/services/screen_service.dart';
 
 final GetIt serviceLocator = GetIt.instance;
 
@@ -30,6 +31,9 @@ void setupDependencyInjection() {
   );
   serviceLocator.registerLazySingleton<ProjectService>(
     () => ProjectService(firebaseService: serviceLocator<FirebaseService>()),
+  );
+  serviceLocator.registerLazySingleton<ScreenService>(
+    () => ScreenService(firebaseService: serviceLocator<FirebaseService>()),
   );
 }
 

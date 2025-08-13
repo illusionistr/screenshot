@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/firebase_service.dart';
 import '../models/project_model.dart';
@@ -8,8 +6,6 @@ class ProjectService {
   ProjectService({required this.firebaseService});
 
   final FirebaseService firebaseService;
-
-  FirebaseFirestore get _db => firebaseService.firestore;
 
   Future<String> createProject(ProjectModel project) async {
     return firebaseService.createDocument(
@@ -23,12 +19,41 @@ class ProjectService {
     return firebaseService
         .streamCollection(
           collectionPath: ApiConstants.projectsCollection,
-          queryBuilder: (q) => q.where('userId', isEqualTo: userId).orderBy('createdAt', descending: true),
+          queryBuilder: (q) => q
+              .where('userId', isEqualTo: userId)
+              .orderBy('createdAt', descending: true),
         )
-        .map((snapshot) => snapshot.docs.map(ProjectModel.fromFirestore).toList());
+        .map((snapshot) =>
+            snapshot.docs.map(ProjectModel.fromFirestore).toList());
   }
 
-  Future<void> updateProject(ProjectModel project) async {
+  Future<ProjectModel?> getProject(String projectId) async {
+    final data = await firebaseService.getDocument(
+      collectionPath: ApiConstants.projectsCollection,
+      documentId: projectId,
+    );
+    
+    if (data == null) return null;
+    
+    // Create a mock DocumentSnapshot since we only have the data
+    final doc = firebaseService.firestore
+        .collection(ApiConstants.projectsCollection)
+        .doc(projectId);
+    
+    // We need to create a snapshot-like object
+    final snapshot = await doc.get();
+    return ProjectModel.fromFirestore(snapshot);
+  }
+
+  Future<void> updateProject(String projectId, Map<String, dynamic> updates) async {
+    await firebaseService.updateDocument(
+      collectionPath: ApiConstants.projectsCollection,
+      documentId: projectId,
+      data: updates,
+    );
+  }
+
+  Future<void> updateProjectModel(ProjectModel project) async {
     await firebaseService.updateDocument(
       collectionPath: ApiConstants.projectsCollection,
       documentId: project.id,
@@ -43,5 +68,3 @@ class ProjectService {
     );
   }
 }
-
-

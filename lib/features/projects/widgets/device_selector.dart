@@ -5,69 +5,67 @@ import '../../../core/constants/app_constants.dart';
 class DeviceSelector extends StatefulWidget {
   const DeviceSelector({
     super.key,
-    required this.selectedPlatforms,
+    required this.selectedPlatform,
     required this.onChanged,
-    this.initialSelection = const <String, List<String>>{},
+    this.initialDevices = const <String>[],
   });
 
-  final List<String> selectedPlatforms;
-  final void Function(Map<String, List<String>> selections) onChanged;
-  final Map<String, List<String>> initialSelection;
+  final String? selectedPlatform;
+  final ValueChanged<List<String>> onChanged;
+  final List<String> initialDevices;
 
   @override
   State<DeviceSelector> createState() => _DeviceSelectorState();
 }
 
 class _DeviceSelectorState extends State<DeviceSelector> {
-  late Map<String, List<String>> _selection;
+  late List<String> _devices;
 
   @override
   void initState() {
     super.initState();
-    _selection = {
-      for (final platform in AppConstants.supportedPlatforms)
-        platform: List<String>.from(widget.initialSelection[platform] ?? const <String>[]),
-    };
+    _devices = [...widget.initialDevices];
   }
 
-  void _toggle(String platform, String device) {
+  @override
+  void didUpdateWidget(covariant DeviceSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedPlatform != widget.selectedPlatform ||
+        oldWidget.initialDevices != widget.initialDevices) {
+      // Sync internal state from new props; no callbacks during build
+      _devices = [...widget.initialDevices];
+    }
+  }
+
+  void _toggle(String device) {
     setState(() {
-      final list = _selection[platform] ?? <String>[];
-      if (list.contains(device)) {
-        list.remove(device);
+      if (_devices.contains(device)) {
+        _devices.remove(device);
       } else {
-        list.add(device);
+        _devices.add(device);
       }
-      _selection[platform] = list;
     });
-    widget.onChanged(_selection);
+    widget.onChanged(_devices);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    if (widget.selectedPlatform == null) {
+      return const Text('Select a platform to choose devices');
+    }
+    final devices = AppConstants.devicesByPlatform[widget.selectedPlatform] ??
+        const <String>[];
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
       children: [
-        for (final platform in widget.selectedPlatforms) ...[
-          const SizedBox(height: 8),
-          Text(platform.toUpperCase(), style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              for (final device in AppConstants.devicesByPlatform[platform] ?? const <String>[])
-                FilterChip(
-                  label: Text(device),
-                  selected: _selection[platform]?.contains(device) ?? false,
-                  onSelected: (_) => _toggle(platform, device),
-                ),
-            ],
+        for (final device in devices)
+          FilterChip(
+            label: Text(device),
+            selected: _devices.contains(device),
+            onSelected: (_) => _toggle(device),
           ),
-        ],
       ],
     );
   }
 }
-
-

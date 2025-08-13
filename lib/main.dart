@@ -7,6 +7,8 @@ import 'config/dependency_injection.dart';
 import 'core/services/firebase_service.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/projects/providers/project_provider.dart';
+import 'features/editor/providers/editor_provider.dart';
+import 'features/editor/providers/screen_provider.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -31,6 +33,14 @@ class Bootstrap extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, ProjectProvider>(
           create: (context) => ProjectProvider(authProvider: context.read<AuthProvider>()),
           update: (context, auth, previous) => previous ?? ProjectProvider(authProvider: auth),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, EditorProvider>(
+          create: (context) => EditorProvider(authProvider: context.read<AuthProvider>()),
+          update: (context, auth, previous) => previous ?? EditorProvider(authProvider: auth),
+        ),
+        ChangeNotifierProxyProvider2<AuthProvider, EditorProvider, ScreenProvider>(
+          create: (context) => ScreenProvider(authProvider: context.read<AuthProvider>()),
+          update: (context, auth, editor, previous) => previous ?? ScreenProvider(authProvider: auth),
         ),
       ],
       child: const AppRoot(),

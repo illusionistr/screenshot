@@ -82,7 +82,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     final project = projects[index];
                     return ProjectCard(
                       project: project,
-                      onDelete: () => context.read<ProjectProvider>().deleteProject(project.id),
+                      onQuickEdit: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            final nameCtrl =
+                                TextEditingController(text: project.appName);
+                            return AlertDialog(
+                              title: const Text('Edit project info'),
+                              content: TextField(
+                                controller: nameCtrl,
+                                decoration: const InputDecoration(
+                                    labelText: 'App name'),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    final newName = nameCtrl.text.trim();
+                                    if (newName.isNotEmpty) {
+                                      final updated =
+                                          project.copyWith(appName: newName);
+                                      await context
+                                          .read<ProjectProvider>()
+                                          .updateProject(updated);
+                                    }
+                                    if (context.mounted) {
+                                      Navigator.of(context).pop();
+                                    }
+                                  },
+                                  child: const Text('Save'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      onEdit: () =>
+                          context.go('/projects/${project.id}/editor'),
+                      onDelete: () => context
+                          .read<ProjectProvider>()
+                          .deleteProject(project.id),
                     );
                   },
                 ),
@@ -93,5 +136,3 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-
-

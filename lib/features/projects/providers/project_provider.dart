@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -36,8 +37,8 @@ class ProjectProvider extends ChangeNotifier {
 
   Future<void> createProject({
     required String appName,
-    required List<String> platforms,
-    required Map<String, List<String>> devices,
+    required String platform,
+    required List<String> devices,
   }) async {
     final userId = authProvider.currentUser?.id;
     if (userId == null) return;
@@ -50,7 +51,7 @@ class ProjectProvider extends ChangeNotifier {
         id: id,
         userId: userId,
         appName: appName,
-        platforms: platforms,
+        platform: platform,
         devices: devices,
         createdAt: now,
         updatedAt: now,
@@ -74,6 +75,18 @@ class ProjectProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateProject(ProjectModel project) async {
+    _setLoading(true);
+    try {
+      final updated = project.copyWith(updatedAt: DateTime.now());
+      await _projectService.updateProjectModel(updated);
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -90,5 +103,3 @@ class ProjectProvider extends ChangeNotifier {
     super.dispose();
   }
 }
-
-

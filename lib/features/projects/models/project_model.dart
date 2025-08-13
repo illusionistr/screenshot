@@ -4,8 +4,8 @@ class ProjectModel {
   final String id;
   final String userId;
   final String appName;
-  final List<String> platforms;
-  final Map<String, List<String>> devices; // { platform: [deviceNames] }
+  final String platform; // 'android' or 'ios'
+  final List<String> devices; // device names for the selected platform
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,7 +13,7 @@ class ProjectModel {
     required this.id,
     required this.userId,
     required this.appName,
-    required this.platforms,
+    required this.platform,
     required this.devices,
     required this.createdAt,
     required this.updatedAt,
@@ -21,30 +21,30 @@ class ProjectModel {
 
   ProjectModel copyWith({
     String? appName,
-    List<String>? platforms,
-    Map<String, List<String>>? devices,
+    String? platform,
+    List<String>? devices,
     DateTime? updatedAt,
   }) {
     return ProjectModel(
       id: id,
       userId: userId,
       appName: appName ?? this.appName,
-      platforms: platforms ?? this.platforms,
+      platform: platform ?? this.platform,
       devices: devices ?? this.devices,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  factory ProjectModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory ProjectModel.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
-    final rawDevices = Map<String, dynamic>.from(data['devices'] as Map);
     return ProjectModel(
       id: doc.id,
       userId: data['userId'] as String,
       appName: data['appName'] as String,
-      platforms: List<String>.from(data['platforms'] as List),
-      devices: rawDevices.map((key, value) => MapEntry(key, List<String>.from(value as List))),
+      platform: data['platform'] as String,
+      devices: List<String>.from(data['devices'] as List),
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
@@ -54,12 +54,10 @@ class ProjectModel {
     return {
       'userId': userId,
       'appName': appName,
-      'platforms': platforms,
+      'platform': platform,
       'devices': devices,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
   }
 }
-
-
