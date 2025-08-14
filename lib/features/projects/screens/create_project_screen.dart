@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/custom_button.dart';
@@ -9,14 +9,14 @@ import '../providers/project_provider.dart';
 import '../widgets/device_selector.dart';
 import '../widgets/platform_selector.dart';
 
-class CreateProjectScreen extends StatefulWidget {
+class CreateProjectScreen extends ConsumerStatefulWidget {
   const CreateProjectScreen({super.key});
 
   @override
-  State<CreateProjectScreen> createState() => _CreateProjectScreenState();
+  ConsumerState<CreateProjectScreen> createState() => _CreateProjectScreenState();
 }
 
-class _CreateProjectScreenState extends State<CreateProjectScreen> {
+class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final _formKey = GlobalKey<FormState>();
   final _appNameCtrl = TextEditingController();
   List<String> _platforms = [];
@@ -29,22 +29,37 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
     if (_platforms.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Select at least one platform')));
       return;
     }
-    await context.read<ProjectProvider>().createProject(
-          appName: _appNameCtrl.text.trim(),
-          platforms: _platforms,
-          devices: _devices,
+    
+    try {
+      await ref.read(projectsNotifierProvider.notifier).createProject(
+        appName: _appNameCtrl.text.trim(),
+        platforms: _platforms,
+        devices: _devices,
+      );
+      
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating project: $error')),
         );
-    if (mounted) context.go('/dashboard');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<ProjectProvider>().isLoading;
+    
     return Scaffold(
       appBar: AppBar(title: const Text('Create Project')),
       body: ResponsiveLayout(
@@ -74,8 +89,10 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               const SizedBox(height: 24),
               CustomButton(
                 label: 'Save project',
-                isLoading: isLoading,
-                onPressed: isLoading ? null : _submit,
+                isLoading: false,
+                onPressed: () async {
+                  await _submit();
+                },
               ),
             ],
           ),

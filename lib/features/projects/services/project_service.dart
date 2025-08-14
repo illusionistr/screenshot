@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/firebase_service.dart';
 import '../models/project_model.dart';
@@ -8,8 +6,6 @@ class ProjectService {
   ProjectService({required this.firebaseService});
 
   final FirebaseService firebaseService;
-
-  FirebaseFirestore get _db => firebaseService.firestore;
 
   Future<String> createProject(ProjectModel project) async {
     return firebaseService.createDocument(

@@ -45,7 +45,7 @@ class _PlatformSelectorState extends State<PlatformSelector> {
           child: InkWell(
             onTap: () => _toggle(p),
             child: Card(
-              color: isActive ? AppConstants.primaryColor.withOpacity(0.1) : Colors.white,
+              color: isActive ? AppConstants.primaryColor.withValues(alpha: 0.1) : Colors.white,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 child: Row(

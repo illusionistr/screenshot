@@ -1,43 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
+import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/project_provider.dart';
 import '../widgets/project_card.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Listen to projects when we enter the screen
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<ProjectProvider>().listenToProjects();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final projectProvider = context.watch<ProjectProvider>();
-    final projects = projectProvider.projects;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+    final projectsState = ref.watch(projectsStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dashboard - ${auth.currentUser?.email ?? ''}'),
+        title: Text('Dashboard - ${currentUser?.email ?? ''}'),
         actions: [
           IconButton(
-            onPressed: () {
-              context.read<AuthProvider>().signOut();
-              context.go('/login');
+            onPressed: () async {
+              await ref.read(authNotifierProvider.notifier).signOut();
+              if (context.mounted) {
+                context.go('/login');
+              }
             },
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
@@ -59,34 +46,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            if (projects.isEmpty)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'No projects yet. Create your first project!',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              )
-            else
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.6,
-                  ),
-                  itemCount: projects.length,
-                  itemBuilder: (context, index) {
-                    final project = projects[index];
-                    return ProjectCard(
-                      project: project,
-                      onDelete: () => context.read<ProjectProvider>().deleteProject(project.id),
+            Expanded(
+              child: projectsState.when(
+                data: (projects) {
+                  if (projects.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No projects yet. Create your first project!',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     );
-                  },
+                  }
+                  return GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.6,
+                    ),
+                    itemCount: projects.length,
+                    itemBuilder: (context, index) {
+                      final project = projects[index];
+                      return ProjectCard(
+                        project: project,
+                        onDelete: () async {
+                          try {
+                            await ref.read(projectsNotifierProvider.notifier).deleteProject(project.id);
+                          } catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error deleting project: $error')),
+                              );
+                            }
+                          }
+                        },
+                      );
+                    },
+                  );
+                },
+                loading: () => const LoadingWidget(),
+                error: (error, stack) => Center(
+                  child: Text('Error: $error'),
                 ),
               ),
+            ),
           ],
         ),
       ),

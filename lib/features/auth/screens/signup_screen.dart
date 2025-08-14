@@ -1,18 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../features/shared/widgets/responsive_layout.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_form.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends ConsumerWidget {
   const SignupScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Listen for successful authentication to navigate
+    ref.listen(authStateStreamProvider, (previous, next) {
+      next.when(
+        data: (user) {
+          if (user != null && context.mounted) {
+            context.go('/dashboard');
+          }
+        },
+        loading: () {},
+        error: (_, __) {},
+      );
+    });
+
     return Scaffold(
       body: ResponsiveLayout(
         child: Column(
@@ -29,21 +41,26 @@ class SignupScreen extends StatelessWidget {
                   children: [
                     Text('Create your account', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
-                    if (auth.error != null)
-                      Text(auth.error!, style: const TextStyle(color: Colors.red)),
                     const SizedBox(height: 8),
-                    AuthForm(
-                      showName: true,
-                      onSubmit: ({required String email, required String password, String? name}) async {
-                        final authProvider = context.read<AuthProvider>();
-                        await authProvider.signUp(email, password, displayName: name);
-                        if (!context.mounted) return;
-                        if (authProvider.isAuthenticated) {
-                          context.go('/dashboard');
-                        }
+                    Consumer(
+                      builder: (context, ref, child) {
+                        return AuthForm(
+                          showName: true,
+                          onSubmit: ({required String email, required String password, String? name}) async {
+                            try {
+                              await ref.read(authNotifierProvider.notifier).signUp(email, password, displayName: name);
+                            } catch (error) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error.toString())),
+                                );
+                              }
+                            }
+                          },
+                          submitLabel: 'Create account',
+                          isLoading: false,
+                        );
                       },
-                      submitLabel: 'Create account',
-                      isLoading: auth.isLoading,
                     ),
                     const SizedBox(height: 12),
                     TextButton(
