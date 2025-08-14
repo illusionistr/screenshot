@@ -6,11 +6,13 @@ import '../../../config/dependency_injection.dart';
 import '../models/screen_model.dart';
 import '../models/screen_settings.dart';
 import '../services/screen_service.dart';
+import '../services/screenshot_manager.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class ScreenProvider with ChangeNotifier {
   final AuthProvider _authProvider;
   final ScreenService _screenService = serviceLocator<ScreenService>();
+  final ScreenshotManager _screenshotManager = serviceLocator<ScreenshotManager>();
 
   List<ScreenModel> _screens = [];
   bool _isLoading = false;
@@ -247,6 +249,109 @@ class ScreenProvider with ChangeNotifier {
       );
     } catch (e) {
       _setError('Failed to update settings: $e');
+    }
+  }
+
+  // Upload screenshot for a specific screen and device
+  Future<void> uploadScreenshot({
+    required String screenId,
+    required String device,
+    required Uint8List fileBytes,
+    required String fileName,
+    required List<String> projectDevices,
+    String? mimeType,
+    bool autoApplyToAllDevices = true,
+  }) async {
+    try {
+      _setError(null);
+
+      final screen = getScreenById(screenId);
+      if (screen == null) {
+        _setError('Screen not found');
+        return;
+      }
+
+      // Upload screenshot with dual storage strategy
+      final result = await _screenshotManager.uploadScreenshot(
+        projectId: screen.projectId,
+        screenId: screenId,
+        device: device,
+        fileBytes: fileBytes,
+        fileName: fileName,
+        mimeType: mimeType,
+      );
+
+      if (autoApplyToAllDevices) {
+        // Auto-apply to all devices in the project
+        await _screenshotManager.autoApplyScreenshot(
+          screenId: screenId,
+          devices: projectDevices,
+          uploadedDevice: device,
+          uploadResult: result,
+        );
+      } else {
+        // Apply only to the specific device
+        await _screenshotManager.updateScreenshotForDevice(
+          screenId: screenId,
+          device: device,
+          screenshotUrl: result.thumbnailUrl,
+        );
+      }
+
+      // The stream will automatically update the UI
+    } catch (e) {
+      _setError('Failed to upload screenshot: $e');
+    }
+  }
+
+  // Get screenshot URL with hierarchical fallback
+  String? getScreenshotUrl({
+    required String screenId,
+    required String device,
+    String? languageCode,
+    bool useThumbnail = true,
+  }) {
+    final screen = getScreenById(screenId);
+    if (screen == null) return null;
+
+    return _screenshotManager.getScreenshotUrl(
+      screen: screen,
+      device: device,
+      languageCode: languageCode,
+      useThumbnail: useThumbnail,
+    );
+  }
+
+  // Validate file before upload
+  ScreenshotValidationResult validateScreenshotFile({
+    required Uint8List fileBytes,
+    required String fileName,
+    String? mimeType,
+  }) {
+    return _screenshotManager.validateFile(
+      fileBytes: fileBytes,
+      fileName: fileName,
+      mimeType: mimeType,
+    );
+  }
+
+  // Update screenshot for specific device and language
+  Future<void> updateDeviceScreenshot({
+    required String screenId,
+    required String device,
+    required String screenshotUrl,
+    String? languageCode,
+  }) async {
+    try {
+      _setError(null);
+      await _screenshotManager.updateScreenshotForDevice(
+        screenId: screenId,
+        device: device,
+        screenshotUrl: screenshotUrl,
+        languageCode: languageCode,
+      );
+    } catch (e) {
+      _setError('Failed to update screenshot: $e');
     }
   }
 

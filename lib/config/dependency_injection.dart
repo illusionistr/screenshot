@@ -6,6 +6,7 @@ import '../core/services/storage_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/projects/services/project_service.dart';
 import '../features/editor/services/screen_service.dart';
+import '../features/editor/services/screenshot_manager.dart';
 
 final GetIt serviceLocator = GetIt.instance;
 
@@ -34,6 +35,12 @@ void setupDependencyInjection() {
   );
   serviceLocator.registerLazySingleton<ScreenService>(
     () => ScreenService(firebaseService: serviceLocator<FirebaseService>()),
+  );
+  serviceLocator.registerLazySingleton<ScreenshotManager>(
+    () => ScreenshotManager(
+      storageService: serviceLocator<StorageService>(),
+      firebaseService: serviceLocator<FirebaseService>(),
+    ),
   );
 }
 
