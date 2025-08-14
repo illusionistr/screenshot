@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 
 class FirebaseService {
 
@@ -15,6 +15,44 @@ class FirebaseService {
   Future<void> initialize() async {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
+    }
+    
+    // Test Firebase Storage connectivity on initialization
+    if (kDebugMode) {
+      await _testStorageConnection();
+    }
+  }
+
+  /// Test Firebase Storage connection and log results
+  Future<void> _testStorageConnection() async {
+    try {
+      if (kDebugMode) {
+        print('🔍 Firebase Service: Testing Storage connection...');
+        print('📁 Storage bucket: ${storage.bucket}');
+      }
+      
+      // Try to list the root directory
+      final ref = storage.ref();
+      await ref.listAll();
+      
+      if (kDebugMode) {
+        print('✅ Firebase Storage is properly configured and accessible');
+      }
+    } on FirebaseException catch (e) {
+      if (kDebugMode) {
+        print('❌ Firebase Storage connection failed: ${e.code}');
+        print('   Message: ${e.message}');
+        
+        if (e.code == 'storage/unknown' || e.message?.contains('not been set up') == true) {
+          print('🚨 CRITICAL: Firebase Storage is not enabled on this project!');
+          print('💡 SOLUTION: Go to Firebase Console → Storage → Get Started');
+          print('   URL: https://console.firebase.google.com/project/${Firebase.app().options.projectId}/storage');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Storage connection error: $e');
+      }
     }
   }
 

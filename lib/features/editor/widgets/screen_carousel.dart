@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../providers/editor_provider.dart';
 import '../providers/screen_provider.dart';
+import '../models/screen_model.dart';
 import 'screen_thumbnail.dart';
+import 'manage_screenshots_dialog.dart';
 
 class ScreenCarousel extends StatelessWidget {
   const ScreenCarousel({super.key});
@@ -184,9 +186,11 @@ class ScreenCarousel extends StatelessWidget {
                   
                   // Replace screenshots button
                   TextButton.icon(
-                    onPressed: () {
-                      // TODO: Implement screenshot replacement
-                    },
+                    onPressed: () => _openScreenshotManager(
+                      context,
+                      screens[selectedIndex],
+                      editorProvider,
+                    ),
                     icon: const Icon(Icons.photo_library),
                     label: const Text('Replace and manage screenshots'),
                     style: TextButton.styleFrom(
@@ -199,6 +203,22 @@ class ScreenCarousel extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  void _openScreenshotManager(
+    BuildContext context,
+    ScreenModel screen,
+    EditorProvider editorProvider,
+  ) {
+    final availableDevices = editorProvider.availableDevices;
+    
+    showDialog(
+      context: context,
+      builder: (context) => ManageScreenshotsDialog(
+        screen: screen,
+        availableDevices: availableDevices,
+      ),
     );
   }
 
