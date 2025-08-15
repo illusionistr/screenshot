@@ -92,7 +92,7 @@ class _DeviceSelectorState extends State<DeviceSelector> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              childAspectRatio: 2.2,
+              childAspectRatio: 3,
               crossAxisSpacing: 4,
               mainAxisSpacing: 4,
             ),

@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/custom_button.dart';
-import '../../../features/shared/widgets/responsive_layout.dart';
 import '../../../features/shared/widgets/language_selector.dart';
+import '../../../features/shared/widgets/responsive_layout.dart';
 import '../providers/project_provider.dart';
 import '../widgets/device_selector.dart';
 import '../widgets/platform_selector.dart';
@@ -105,7 +105,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 Container(
-                  height: 250,
+                  height: 500,
                   decoration: BoxDecoration(
                     border: Border.all(
                         color: Theme.of(context)
