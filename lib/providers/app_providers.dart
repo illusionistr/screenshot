@@ -6,6 +6,7 @@ import '../core/services/firebase_service.dart';
 import '../core/services/storage_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/projects/services/project_service.dart';
+import '../features/projects/services/upload_service.dart';
 
 part 'app_providers.g.dart';
 
@@ -27,3 +28,8 @@ StorageService storageService(Ref ref) => StorageService();
 
 @riverpod
 AnalyticsService analyticsService(Ref ref) => AnalyticsService();
+
+@riverpod
+UploadService uploadService(Ref ref) => UploadService(
+  ref.read(firebaseServiceProvider).storage,
+);

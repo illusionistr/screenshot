@@ -49,17 +49,24 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     }
 
     try {
-      await ref.read(projectsNotifierProvider.notifier).createProject(
+      print('Creating project with data: ${_appNameCtrl.text.trim()}, $_platforms, $_deviceIds, $_supportedLanguages');
+      
+      final projectId = await ref.read(projectsNotifierProvider.notifier).createProject(
             appName: _appNameCtrl.text.trim(),
             platforms: _platforms,
             deviceIds: _deviceIds,
             supportedLanguages: _supportedLanguages,
           );
 
+      print('Project created with ID: $projectId');
+      
       if (mounted) {
-        context.go('/dashboard');
+        print('Navigating to: /projects/$projectId/upload');
+        // Use pushReplacement to avoid any redirect issues
+        context.pushReplacement('/projects/$projectId/upload');
       }
     } catch (error) {
+      print('Error creating project: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error creating project: $error')),
@@ -126,7 +133,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                 ),
                 const SizedBox(height: 24),
                 CustomButton(
-                  label: 'Save project',
+                  label: 'Next',
                   isLoading: false,
                   onPressed: () async {
                     await _submit();

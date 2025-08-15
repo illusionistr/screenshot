@@ -30,7 +30,7 @@ class ProjectsNotifier extends _$ProjectsNotifier {
     return 'ready'; // Simple state tracker
   }
 
-  Future<void> createProject({
+  Future<String> createProject({
     required String appName,
     required List<String> platforms,
     required List<String> deviceIds,
@@ -41,7 +41,7 @@ class ProjectsNotifier extends _$ProjectsNotifier {
     final firebaseUser = authService.currentUser;
     
     if (firebaseUser == null) {
-      return;
+      throw Exception('User not authenticated');
     }
     
     // Create AppUser from Firebase user
@@ -65,6 +65,7 @@ class ProjectsNotifier extends _$ProjectsNotifier {
         platforms: platforms,
         deviceIds: deviceIds,
         supportedLanguages: supportedLanguages,
+        screenshots: {}, // Initialize with empty screenshots
         createdAt: now,
         updatedAt: now,
       );
@@ -73,6 +74,8 @@ class ProjectsNotifier extends _$ProjectsNotifier {
       
       // Invalidate the projects stream to refresh the list
       ref.invalidate(projectsStreamProvider);
+      
+      return id; // Return the project ID for navigation
     } catch (error) {
       rethrow;
     }

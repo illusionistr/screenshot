@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../shared/models/device_model.dart';
+import '../../shared/models/screenshot_model.dart';
 import '../../shared/data/devices_data.dart';
 
 class ProjectModel {
@@ -9,6 +10,7 @@ class ProjectModel {
   final List<String> platforms;
   final List<String> deviceIds; // List of device IDs using new device model
   final List<String> supportedLanguages; // List of language codes
+  final Map<String, Map<String, List<ScreenshotModel>>> screenshots; // Language → Device → Screenshots
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,6 +24,7 @@ class ProjectModel {
     required this.platforms,
     required this.deviceIds,
     required this.supportedLanguages,
+    required this.screenshots,
     required this.createdAt,
     required this.updatedAt,
     this.legacyDevices,
@@ -32,6 +35,7 @@ class ProjectModel {
     List<String>? platforms,
     List<String>? deviceIds,
     List<String>? supportedLanguages,
+    Map<String, Map<String, List<ScreenshotModel>>>? screenshots,
     DateTime? updatedAt,
     Map<String, List<String>>? legacyDevices,
   }) {
@@ -42,6 +46,7 @@ class ProjectModel {
       platforms: platforms ?? this.platforms,
       deviceIds: deviceIds ?? this.deviceIds,
       supportedLanguages: supportedLanguages ?? this.supportedLanguages,
+      screenshots: screenshots ?? this.screenshots,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       legacyDevices: legacyDevices ?? this.legacyDevices,
@@ -67,6 +72,25 @@ class ProjectModel {
       deviceIds = _migrateLegacyDevicesToIds(legacyDevices);
     }
     
+    // Parse screenshots data
+    Map<String, Map<String, List<ScreenshotModel>>> screenshots = {};
+    if (data.containsKey('screenshots')) {
+      final rawScreenshots = Map<String, dynamic>.from(data['screenshots'] as Map? ?? {});
+      for (final languageEntry in rawScreenshots.entries) {
+        final languageCode = languageEntry.key;
+        final devicesMap = Map<String, dynamic>.from(languageEntry.value as Map? ?? {});
+        screenshots[languageCode] = {};
+        
+        for (final deviceEntry in devicesMap.entries) {
+          final deviceId = deviceEntry.key;
+          final screenshotsList = List<dynamic>.from(deviceEntry.value as List? ?? []);
+          screenshots[languageCode]![deviceId] = screenshotsList
+              .map((s) => ScreenshotModel.fromMap(Map<String, dynamic>.from(s as Map)))
+              .toList();
+        }
+      }
+    }
+
     return ProjectModel(
       id: doc.id,
       userId: data['userId'] as String,
@@ -74,6 +98,7 @@ class ProjectModel {
       platforms: List<String>.from(data['platforms'] as List),
       deviceIds: deviceIds,
       supportedLanguages: List<String>.from(data['supportedLanguages'] as List? ?? ['en']),
+      screenshots: screenshots,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       legacyDevices: legacyDevices,
@@ -114,12 +139,26 @@ class ProjectModel {
   }
 
   Map<String, dynamic> toFirestore() {
+    // Convert screenshots to Firestore format
+    Map<String, dynamic> screenshotsData = {};
+    for (final languageEntry in screenshots.entries) {
+      final languageCode = languageEntry.key;
+      screenshotsData[languageCode] = {};
+      
+      for (final deviceEntry in languageEntry.value.entries) {
+        final deviceId = deviceEntry.key;
+        screenshotsData[languageCode][deviceId] = 
+            deviceEntry.value.map((screenshot) => screenshot.toMap()).toList();
+      }
+    }
+
     return {
       'userId': userId,
       'appName': appName,
       'platforms': platforms,
       'deviceIds': deviceIds,
       'supportedLanguages': supportedLanguages,
+      'screenshots': screenshotsData,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       // Don't save legacy devices to Firestore for new projects
@@ -142,6 +181,47 @@ class ProjectModel {
   bool get hasLegacyDevices => legacyDevices != null && legacyDevices!.isNotEmpty;
   
   bool get isFullyMigrated => !hasLegacyDevices;
+
+  // Screenshot helper methods
+  List<ScreenshotModel> getScreenshotsForDevice(String deviceId, String languageCode) {
+    return screenshots[languageCode]?[deviceId] ?? [];
+  }
+
+  List<ScreenshotModel> getAllScreenshotsForLanguage(String languageCode) {
+    final languageScreenshots = screenshots[languageCode] ?? {};
+    return languageScreenshots.values.expand((screenshots) => screenshots).toList();
+  }
+
+  List<ScreenshotModel> getAllScreenshots() {
+    return screenshots.values
+        .expand((deviceMap) => deviceMap.values)
+        .expand((screenshots) => screenshots)
+        .toList();
+  }
+
+  int getTotalScreenshotCount() {
+    return getAllScreenshots().length;
+  }
+
+  int getScreenshotCountForLanguage(String languageCode) {
+    return getAllScreenshotsForLanguage(languageCode).length;
+  }
+
+  int getScreenshotCountForDevice(String deviceId, String languageCode) {
+    return getScreenshotsForDevice(deviceId, languageCode).length;
+  }
+
+  bool hasScreenshots() {
+    return getTotalScreenshotCount() > 0;
+  }
+
+  bool hasScreenshotsForLanguage(String languageCode) {
+    return getScreenshotCountForLanguage(languageCode) > 0;
+  }
+
+  bool hasScreenshotsForDevice(String deviceId, String languageCode) {
+    return getScreenshotCountForDevice(deviceId, languageCode) > 0;
+  }
 }
 
 
