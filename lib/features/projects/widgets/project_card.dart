@@ -34,7 +34,7 @@ class ProjectCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Platforms: ${project.platforms.join(', ')}'),
             const SizedBox(height: 4),
-            Text('Devices: ${project.devices.entries.map((e) => '${e.key}: ${e.value.length}').join(' | ')}'),
+            Text('Devices: ${project.deviceIds.length} selected'),
           ],
         ),
       ),

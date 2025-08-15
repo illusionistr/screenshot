@@ -33,7 +33,8 @@ class ProjectsNotifier extends _$ProjectsNotifier {
   Future<void> createProject({
     required String appName,
     required List<String> platforms,
-    required Map<String, List<String>> devices,
+    required List<String> deviceIds,
+    required List<String> supportedLanguages,
   }) async {
     // Get current user directly from Firebase Auth service instead of stream
     final authService = ref.read(authServiceProvider);
@@ -62,7 +63,8 @@ class ProjectsNotifier extends _$ProjectsNotifier {
         userId: currentUser.id,
         appName: appName,
         platforms: platforms,
-        devices: devices,
+        deviceIds: deviceIds,
+        supportedLanguages: supportedLanguages,
         createdAt: now,
         updatedAt: now,
       );

@@ -20,7 +20,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final _formKey = GlobalKey<FormState>();
   final _appNameCtrl = TextEditingController();
   List<String> _platforms = [];
-  Map<String, List<String>> _devices = {};
+  List<String> _deviceIds = [];
+  final List<String> _supportedLanguages = ['en']; // Default to English
 
   @override
   void dispose() {
@@ -42,7 +43,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
       await ref.read(projectsNotifierProvider.notifier).createProject(
         appName: _appNameCtrl.text.trim(),
         platforms: _platforms,
-        devices: _devices,
+        deviceIds: _deviceIds,
+        supportedLanguages: _supportedLanguages,
       );
       
       if (mounted) {
@@ -63,11 +65,13 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Create Project')),
       body: ResponsiveLayout(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               TextFormField(
                 controller: _appNameCtrl,
                 decoration: const InputDecoration(labelText: 'App name'),
@@ -84,7 +88,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
               const SizedBox(height: 8),
               DeviceSelector(
                 selectedPlatforms: _platforms,
-                onChanged: (value) => setState(() => _devices = value),
+                onChanged: (value) => setState(() => _deviceIds = value),
               ),
               const SizedBox(height: 24),
               CustomButton(
@@ -94,7 +98,8 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                   await _submit();
                 },
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

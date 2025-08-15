@@ -6,9 +6,11 @@
       "Bash(dart run:*)",
       "Bash(flutter analyze:*)",
       "Bash(flutter build:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }

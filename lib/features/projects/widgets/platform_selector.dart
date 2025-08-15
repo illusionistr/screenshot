@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../shared/models/device_model.dart';
 
 class PlatformSelector extends StatefulWidget {
   const PlatformSelector({
@@ -39,11 +40,11 @@ class _PlatformSelectorState extends State<PlatformSelector> {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: AppConstants.supportedPlatforms.map((p) {
-        final isActive = _selected.contains(p);
+      children: Platform.values.map((platform) {
+        final isActive = _selected.contains(platform.id);
         return Expanded(
           child: InkWell(
-            onTap: () => _toggle(p),
+            onTap: () => _toggle(platform.id),
             child: Card(
               color: isActive ? AppConstants.primaryColor.withValues(alpha: 0.1) : Colors.white,
               child: Padding(
@@ -51,10 +52,12 @@ class _PlatformSelectorState extends State<PlatformSelector> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(p == 'android' ? Icons.android : Icons.apple,
-                        color: isActive ? AppConstants.primaryColor : Colors.grey[700]),
+                    Icon(
+                      platform == Platform.android ? Icons.android : Icons.apple,
+                      color: isActive ? AppConstants.primaryColor : Colors.grey[700],
+                    ),
                     const SizedBox(width: 8),
-                    Text(p.toUpperCase()),
+                    Text(platform.displayName.toUpperCase()),
                   ],
                 ),
               ),

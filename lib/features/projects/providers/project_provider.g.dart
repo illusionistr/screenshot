@@ -24,7 +24,7 @@ final projectsStreamProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ProjectsStreamRef = AutoDisposeStreamProviderRef<List<ProjectModel>>;
-String _$projectsNotifierHash() => r'5b476c4a17bd285e9e798f891d9de297f9663c3d';
+String _$projectsNotifierHash() => r'b7e6c1e2e3fb6180491e79a0f13594c85b248593';
 
 /// See also [ProjectsNotifier].
 @ProviderFor(ProjectsNotifier)
