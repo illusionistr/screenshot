@@ -25,7 +25,8 @@ class DeviceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final frameVariants = DeviceService.getFrameVariants(device.id);
-    final currentFrame = selectedFrame ?? DeviceService.getDefaultFrameVariant(device.id);
+    final currentFrame =
+        selectedFrame ?? DeviceService.getDefaultFrameVariant(device.id);
 
     return Card(
       elevation: isSelected ? 8 : 2,
@@ -34,7 +35,7 @@ class DeviceCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(compact ? 8.0 : 16.0),
+          padding: EdgeInsets.all(compact ? 6.0 : 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -42,34 +43,39 @@ class DeviceCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: compact ? 24 : 32,
-                    height: compact ? 24 : 32,
+                    width: compact ? 20 : 32,
+                    height: compact ? 20 : 32,
                     decoration: BoxDecoration(
-                      color: device.platform == Platform.ios 
-                          ? Colors.grey.shade200 
+                      color: device.platform == Platform.ios
+                          ? Colors.grey.shade200
                           : Colors.green.shade100,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
-                      device.platform == Platform.ios 
-                          ? Icons.phone_iphone 
+                      device.platform == Platform.ios
+                          ? Icons.phone_iphone
                           : Icons.android,
-                      color: device.platform == Platform.ios 
-                          ? Colors.grey.shade600 
+                      color: device.platform == Platform.ios
+                          ? Colors.grey.shade600
                           : Colors.green.shade700,
-                      size: compact ? 14 : 18,
+                      size: compact ? 12 : 18,
                     ),
                   ),
-                  SizedBox(width: compact ? 8 : 12),
+                  SizedBox(width: compact ? 6 : 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           device.name,
-                          style: (compact ? theme.textTheme.bodyMedium : theme.textTheme.titleMedium)?.copyWith(
+                          style: (compact
+                                  ? theme.textTheme.bodyMedium
+                                  : theme.textTheme.titleMedium)
+                              ?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isSelected ? theme.colorScheme.onPrimaryContainer : null,
+                            color: isSelected
+                                ? theme.colorScheme.onPrimaryContainer
+                                : null,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -77,10 +83,12 @@ class DeviceCard extends StatelessWidget {
                         Text(
                           '${device.platform.displayName} • ${device.appStoreDisplaySize}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: isSelected 
-                                ? theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7)
-                                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            fontSize: compact ? 11 : null,
+                            color: isSelected
+                                ? theme.colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.7)
+                                : theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
+                            fontSize: compact ? 10 : null,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -90,9 +98,11 @@ class DeviceCard extends StatelessWidget {
                           Text(
                             '${device.screenWidth}×${device.screenHeight}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: isSelected 
-                                  ? theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.6)
-                                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: isSelected
+                                  ? theme.colorScheme.onPrimaryContainer
+                                      .withValues(alpha: 0.6)
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -105,11 +115,10 @@ class DeviceCard extends StatelessWidget {
                     Icon(
                       Icons.check_circle,
                       color: theme.colorScheme.primary,
-                      size: compact ? 16 : 20,
+                      size: compact ? 14 : 20,
                     ),
                 ],
               ),
-              
               if (showSpecs && !compact) ...[
                 const SizedBox(height: 16),
                 Container(
@@ -136,7 +145,8 @@ class DeviceCard extends StatelessWidget {
                           Expanded(
                             child: _SpecItem(
                               label: 'Resolution',
-                              value: '${device.screenWidth}×${device.screenHeight}',
+                              value:
+                                  '${device.screenWidth}×${device.screenHeight}',
                             ),
                           ),
                           Expanded(
@@ -168,8 +178,9 @@ class DeviceCard extends StatelessWidget {
                   ),
                 ),
               ],
-              
-              if (frameVariants.isNotEmpty && currentFrame != null && !compact) ...[
+              if (frameVariants.isNotEmpty &&
+                  currentFrame != null &&
+                  !compact) ...[
                 const SizedBox(height: 12),
                 Text(
                   'Frame: ${currentFrame.name}',
@@ -198,7 +209,7 @@ class _SpecItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -243,17 +254,15 @@ class DeviceListTile extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: device.platform == Platform.ios 
-              ? Colors.grey.shade200 
+          color: device.platform == Platform.ios
+              ? Colors.grey.shade200
               : Colors.green.shade100,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
-          device.platform == Platform.ios 
-              ? Icons.phone_iphone 
-              : Icons.android,
-          color: device.platform == Platform.ios 
-              ? Colors.grey.shade600 
+          device.platform == Platform.ios ? Icons.phone_iphone : Icons.android,
+          color: device.platform == Platform.ios
+              ? Colors.grey.shade600
               : Colors.green.shade700,
           size: 20,
         ),
@@ -262,7 +271,7 @@ class DeviceListTile extends StatelessWidget {
       subtitle: Text(
         '${device.platform.displayName} • ${device.appStoreDisplaySize} • ${device.screenWidth}×${device.screenHeight}',
       ),
-      trailing: isSelected 
+      trailing: isSelected
           ? Icon(
               Icons.check_circle,
               color: theme.colorScheme.primary,

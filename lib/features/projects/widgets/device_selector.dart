@@ -16,7 +16,8 @@ class DeviceSelector extends StatefulWidget {
 
   final List<String> selectedPlatforms;
   final void Function(List<String> selectedDeviceIds) onChanged;
-  final List<String> initialSelection; // Now uses device IDs instead of platform -> device names
+  final List<String>
+      initialSelection; // Now uses device IDs instead of platform -> device names
   final bool useNewModel; // For backward compatibility
 
   @override
@@ -69,7 +70,7 @@ class _DeviceSelectorState extends State<DeviceSelector> {
   Widget _buildNewDeviceSelector() {
     final availableDevices = _getDevicesForPlatforms();
     final groupedDevices = <Platform, List<DeviceModel>>{};
-    
+
     for (final device in availableDevices) {
       groupedDevices.putIfAbsent(device.platform, () => []).add(device);
     }
@@ -82,18 +83,18 @@ class _DeviceSelectorState extends State<DeviceSelector> {
           Text(
             entry.key.displayName,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 3.2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisCount: 4,
+              childAspectRatio: 2.2,
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
             ),
             itemCount: entry.value.length,
             itemBuilder: (context, index) {
@@ -117,13 +118,15 @@ class _DeviceSelectorState extends State<DeviceSelector> {
       children: [
         for (final platform in widget.selectedPlatforms) ...[
           const SizedBox(height: 8),
-          Text(platform.toUpperCase(), style: Theme.of(context).textTheme.titleMedium),
+          Text(platform.toUpperCase(),
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Wrap(
             spacing: 12,
             runSpacing: 8,
             children: [
-              for (final device in AppConstants.devicesByPlatform[platform] ?? const <String>[])
+              for (final device in AppConstants.devicesByPlatform[platform] ??
+                  const <String>[])
                 FilterChip(
                   label: Text(device),
                   selected: _selectedDeviceIds.contains(device),
@@ -136,5 +139,3 @@ class _DeviceSelectorState extends State<DeviceSelector> {
     );
   }
 }
-
-
