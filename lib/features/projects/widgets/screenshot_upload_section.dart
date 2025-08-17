@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/app_providers.dart';
 import '../../shared/models/device_model.dart';
 import '../../shared/models/screenshot_model.dart';
-import '../providers/upload_provider.dart';
-import 'screenshot_thumbnail.dart';
+import '../../shared/providers/upload_provider.dart';
+import '../../shared/widgets/drag_drop_upload_zone.dart';
+import '../../shared/widgets/upload_progress_indicator.dart';
+import '../../shared/widgets/upload_grid_view.dart';
+import '../providers/upload_provider.dart' as project_providers;
 
 class ScreenshotUploadSection extends ConsumerStatefulWidget {
   final String projectId;
@@ -30,8 +33,7 @@ class ScreenshotUploadSection extends ConsumerStatefulWidget {
 
 class _ScreenshotUploadSectionState
     extends ConsumerState<ScreenshotUploadSection> {
-  bool _isDragOver = false;
-
+  
   @override
   Widget build(BuildContext context) {
     final uploadProgress = ref.watch(uploadProgressNotifierProvider);
@@ -74,124 +76,22 @@ class _ScreenshotUploadSectionState
             const SizedBox(height: 16),
 
             // Upload Area
-            GestureDetector(
-              onTap: isUploading ? null : _pickFiles,
-              child: DragTarget<List<html.File>>(
-                onWillAccept: (_) => !isUploading,
-                onAccept: (files) => _handleFiles(files),
-                onMove: (_) => setState(() => _isDragOver = true),
-                onLeave: (_) => setState(() => _isDragOver = false),
-                builder: (context, candidateData, rejectedData) {
-                  return Container(
-                    width: double.infinity,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: _isDragOver
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey[300]!,
-                        width: _isDragOver ? 2 : 1,
-                        style: BorderStyle.solid,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      color: _isDragOver
-                          ? Theme.of(context).primaryColor.withOpacity(0.05)
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          isUploading
-                              ? Icons.upload_file
-                              : Icons.cloud_upload_outlined,
-                          size: 48,
-                          color: isUploading
-                              ? Theme.of(context).primaryColor
-                              : Colors.grey,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          isUploading
-                              ? 'Uploading...'
-                              : 'Drag & drop screenshots here',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isUploading
-                                ? Theme.of(context).primaryColor
-                                : Colors.grey,
-                          ),
-                        ),
-                        if (!isUploading) ...[
-                          const SizedBox(height: 4),
-                          const Text(
-                            'or click to browse files',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'PNG, JPG, JPEG • Max 10MB',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                },
-              ),
+            DragDropUploadZone(
+              onFilesDropped: _handleFiles,
+              enabled: !isUploading,
+              height: 200,
+              title: isUploading ? 'Uploading...' : null,
             ),
 
             // Upload Progress
             if (uploadProgress.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Column(
-                children: uploadProgress.entries.map((entry) {
-                  final progress = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                progress.filename,
-                                style: const TextStyle(fontSize: 12),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              '${(progress.progress * 100).toInt()}%',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        LinearProgressIndicator(
-                          value: progress.progress,
-                          backgroundColor: Colors.grey[200],
-                        ),
-                        if (progress.errorMessage != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            progress.errorMessage!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                }).toList(),
+              UploadProgressList(
+                progressList: uploadProgress.values.toList(),
+                onCancel: (fileId) => ref.read(uploadProgressNotifierProvider.notifier).removeProgress(fileId),
+                showOverallProgress: false,
+                maxHeight: 200,
+                padding: EdgeInsets.zero,
               ),
             ],
 
@@ -203,23 +103,17 @@ class _ScreenshotUploadSectionState
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 8),
-              GridView.builder(
+              UploadGridView(
+                screenshots: widget.screenshots,
+                onScreenshotDelete: _deleteScreenshot,
+                crossAxisCount: 4,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 0.6,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.6,
-                ),
-                itemCount: widget.screenshots.length,
-                itemBuilder: (context, index) {
-                  final screenshot = widget.screenshots[index];
-                  return ScreenshotThumbnail(
-                    screenshot: screenshot,
-                    onDelete: () => _deleteScreenshot(screenshot),
-                  );
-                },
+                padding: EdgeInsets.zero,
+                showEmptyState: false,
               ),
             ],
           ],
@@ -228,94 +122,61 @@ class _ScreenshotUploadSectionState
     );
   }
 
-  void _pickFiles() async {
-    final input = html.FileUploadInputElement()..accept = 'image/*'..multiple = true;
-    input.click();
-
-    input.onChange.listen((e) {
-      final files = input.files;
-      if (files != null && files.isNotEmpty) {
-        _handleFiles(files);
-      }
-    });
-  }
 
   void _handleFiles(List<html.File> files) async {
-    final uploadService = ref.read(uploadServiceProvider);
-    final progressNotifier = ref.read(uploadProgressNotifierProvider.notifier);
-    final screenshotsNotifier = ref.read(projectScreenshotsProvider(widget.projectId).notifier);
-
-    for (final file in files) {
-      final fileId = '${widget.device.id}_${file.name}_${DateTime.now().millisecondsSinceEpoch}';
-      
-      try {
-        // Initialize progress
-        progressNotifier.updateProgress(
-          fileId,
-          UploadProgress(filename: file.name, progress: 0.0),
-        );
-
-        // Upload file
-        final screenshot = await uploadService.uploadFile(
-          projectId: widget.projectId,
-          file: file,
-          deviceId: widget.device.id,
-          languageCode: widget.selectedLanguage,
-          onProgress: (progress) {
-            progressNotifier.updateProgress(
-              fileId,
-              UploadProgress(filename: file.name, progress: progress),
+    final coordinator = ref.read(uploadCoordinatorProvider.notifier);
+    final queueNotifier = ref.read(uploadQueueNotifierProvider.notifier);
+    
+    // Add files to queue
+    queueNotifier.addFiles(files, widget.device.id, widget.selectedLanguage);
+    
+    // Get upload files from queue
+    final queue = ref.read(uploadQueueNotifierProvider);
+    final uploadFiles = queue
+        .where((file) => files.any((f) => f.name == file.file.name))
+        .toList();
+    
+    // Start upload
+    await coordinator.uploadFiles(
+      projectId: widget.projectId,
+      files: uploadFiles,
+      onComplete: (result) async {
+        if (result.isSuccess && result.screenshot != null) {
+          // Add to project screenshots
+          final screenshotsNotifier = ref.read(project_providers.projectScreenshotsProvider(widget.projectId).notifier);
+          await screenshotsNotifier.addScreenshot(result.screenshot!);
+          
+          // Remove from queue
+          queueNotifier.removeFile(result.fileId);
+          
+          // Remove from progress after a short delay
+          Future.delayed(const Duration(seconds: 1), () {
+            ref.read(uploadProgressNotifierProvider.notifier).removeProgress(result.fileId);
+          });
+        } else if (result.hasError) {
+          // Show error snackbar
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Upload failed: ${result.errorMessage}'),
+                backgroundColor: Colors.red,
+              ),
             );
-          },
-        );
-
-        // Mark as completed
-        progressNotifier.updateProgress(
-          fileId,
-          UploadProgress(filename: file.name, progress: 1.0, isCompleted: true),
-        );
-
-        // Add to screenshots
-        await screenshotsNotifier.addScreenshot(screenshot);
-
-        // Remove from progress after a short delay
-        Future.delayed(const Duration(seconds: 1), () {
-          progressNotifier.removeProgress(fileId);
-        });
-
-      } catch (error) {
-        // Mark as error
-        progressNotifier.updateProgress(
-          fileId,
-          UploadProgress(
-            filename: file.name,
-            progress: 0.0,
-            errorMessage: error.toString(),
-          ),
-        );
-
-        // Show error snackbar
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upload ${file.name}: $error'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          }
+          
+          // Remove from progress after delay
+          Future.delayed(const Duration(seconds: 3), () {
+            ref.read(uploadProgressNotifierProvider.notifier).removeProgress(result.fileId);
+          });
         }
-
-        // Remove from progress after delay
-        Future.delayed(const Duration(seconds: 3), () {
-          progressNotifier.removeProgress(fileId);
-        });
-      }
-    }
+      },
+    );
   }
 
   void _deleteScreenshot(ScreenshotModel screenshot) async {
     try {
       final uploadService = ref.read(uploadServiceProvider);
-      final screenshotsNotifier = ref.read(projectScreenshotsProvider(widget.projectId).notifier);
+      final screenshotsNotifier = ref.read(project_providers.projectScreenshotsProvider(widget.projectId).notifier);
 
       // Delete from Firebase Storage
       final storagePath = uploadService.getStoragePathFromUrl(screenshot.storageUrl);

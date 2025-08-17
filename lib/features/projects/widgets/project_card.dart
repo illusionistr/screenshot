@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/project_model.dart';
 
@@ -35,6 +36,38 @@ class ProjectCard extends StatelessWidget {
             Text('Platforms: ${project.platforms.join(', ')}'),
             const SizedBox(height: 4),
             Text('Devices: ${project.deviceIds.length} selected'),
+            const SizedBox(height: 16),
+            
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      context.go('/projects/${project.id}/upload');
+                    },
+                    icon: const Icon(Icons.cloud_upload, size: 16),
+                    label: const Text('Upload'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      context.go('/projects/${project.id}/editor');
+                    },
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('Open Editor'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

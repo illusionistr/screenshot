@@ -8,7 +8,9 @@
       "Bash(flutter build:*)",
       "Bash(flutter test:*)",
       "Bash(mkdir:*)",
-      "Bash(flutter run:*)"
+      "Bash(flutter run:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": [],

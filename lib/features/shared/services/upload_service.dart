@@ -1,10 +1,10 @@
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../shared/models/screenshot_model.dart';
+import '../models/screenshot_model.dart';
+import 'file_validation_service.dart';
 
 class UploadService {
   final FirebaseStorage _storage;
@@ -20,19 +20,14 @@ class UploadService {
     required String languageCode,
     Function(double)? onProgress,
   }) async {
-    // Validate file type
-    if (!_isValidFileType(file.type)) {
-      throw Exception('Invalid file type. Only PNG, JPG, and JPEG files are allowed.');
-    }
-
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-    if (file.size > maxSize) {
-      throw Exception('File size too large. Maximum size is 10MB.');
+    // Validate file
+    final validation = FileValidationService.validateFile(file);
+    if (!validation.isValid) {
+      throw Exception(validation.errorMessage);
     }
 
     final screenshotId = const Uuid().v4();
-    final fileExtension = _getFileExtension(file.name);
+    final fileExtension = FileValidationService.getFileExtension(file.name);
     final filename = '$screenshotId.$fileExtension';
     
     // Create Firebase Storage reference
@@ -42,10 +37,10 @@ class UploadService {
 
     try {
       // Convert file to bytes
-      final bytes = await _fileToBytes(file);
+      final bytes = await FileValidationService.fileToBytes(file);
       
       // Get image dimensions
-      final dimensions = await _getImageDimensions(bytes);
+      final dimensions = await FileValidationService.getImageDimensions(bytes);
 
       // Create upload task
       final uploadTask = storageRef.putData(
@@ -120,57 +115,4 @@ class UploadService {
     throw Exception('Invalid Firebase Storage URL');
   }
 
-  /// Validate file type
-  bool _isValidFileType(String? mimeType) {
-    if (mimeType == null) return false;
-    
-    const allowedTypes = [
-      'image/png',
-      'image/jpeg',
-      'image/jpg',
-    ];
-    
-    return allowedTypes.contains(mimeType.toLowerCase());
-  }
-
-  /// Get file extension from filename
-  String _getFileExtension(String filename) {
-    final parts = filename.split('.');
-    if (parts.length > 1) {
-      return parts.last.toLowerCase();
-    }
-    return 'png'; // Default extension
-  }
-
-  /// Convert HTML File to Uint8List
-  Future<Uint8List> _fileToBytes(html.File file) async {
-    final reader = html.FileReader();
-    reader.readAsArrayBuffer(file);
-    
-    await reader.onLoad.first;
-    
-    return Uint8List.fromList(reader.result as List<int>);
-  }
-
-  /// Get image dimensions from bytes
-  Future<Dimensions> _getImageDimensions(Uint8List bytes) async {
-    // Create a temporary image element to get dimensions
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrl(blob);
-    
-    try {
-      final image = html.ImageElement();
-      image.src = url;
-      
-      // Wait for image to load
-      await image.onLoad.first;
-      
-      return Dimensions(
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-      );
-    } finally {
-      html.Url.revokeObjectUrl(url);
-    }
-  }
 }

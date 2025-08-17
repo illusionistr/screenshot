@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../projects/models/project_model.dart';
+import '../../projects/providers/project_provider.dart';
 import '../providers/editor_provider.dart';
 
 class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
-  const EditorTopBar({super.key});
+  const EditorTopBar({super.key, required this.project});
+  
+  final ProjectModel project;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorState = ref.watch(editorProvider);
-    final editorNotifier = ref.read(editorProvider.notifier);
+    final editorState = ref.watch(editorProviderFamily(project));
+    final editorNotifier = ref.read(editorProviderFamily(project).notifier);
+    final projectsState = ref.watch(projectsStreamProvider);
 
     return AppBar(
       backgroundColor: Colors.white,
@@ -23,7 +29,7 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
         children: [
           // Logo/Brand
           const Text(
-            'LaunchMatic',
+            'Screenshot Hub',
             style: TextStyle(
               color: Color(0xFF333333),
               fontSize: 18,
@@ -32,13 +38,63 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: 32),
 
-          // Test dropdown
-          _DropdownButton(
-            value: 'Test',
-            items: const ['Test', 'Production'],
-            onChanged: (value) {
-              // Handle test mode change
+          // Project Selector
+          projectsState.when(
+            data: (projects) {
+              // Ensure current project is in the list (in case of data sync issues)
+              final availableProjects = projects.any((p) => p.id == project.id) 
+                  ? projects 
+                  : [...projects, project];
+              
+              return _DropdownButton(
+                value: project.id,
+                items: availableProjects.map((p) => p.id).toList(),
+                onChanged: (projectId) {
+                  // Only navigate if selecting a different project
+                  if (projectId != project.id) {
+                    context.go('/projects/$projectId/editor');
+                  }
+                },
+                formatter: (projectId) {
+                  try {
+                    final selectedProject = availableProjects.firstWhere((p) => p.id == projectId);
+                    return selectedProject.appName;
+                  } catch (e) {
+                    return projectId;
+                  }
+                },
+              );
             },
+            loading: () => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE1E5E9)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    project.appName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF495057),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            error: (_, __) => _DropdownButton(
+              value: project.appName,
+              items: [project.appName],
+              onChanged: null,
+            ),
           ),
 
           const Spacer(),
@@ -57,13 +113,11 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
           // Language selector
           _DropdownButton(
             value: editorState.selectedLanguage,
-            items: const [
-              'English (en)',
-              'Spanish (es)',
-              'French (fr)',
-              'German (de)'
-            ],
+            items: editorState.availableLanguages.isNotEmpty
+                ? editorState.availableLanguages
+                : ['en'],
             onChanged: editorNotifier.updateSelectedLanguage,
+            formatter: (languageCode) => formatLanguageDisplay(languageCode),
           ),
 
           const SizedBox(width: 16),
@@ -71,8 +125,11 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
           // Device selector
           _DropdownButton(
             value: editorState.selectedDevice,
-            items: const ['Android Pixel 4', 'iPhone 14 Pro', 'iPad Pro'],
+            items: editorState.availableDevices.isNotEmpty
+                ? editorState.availableDevices.map((d) => d.id).toList()
+                : [''],
             onChanged: editorNotifier.updateSelectedDevice,
+            formatter: (deviceId) => formatDeviceDisplay(deviceId, editorState.availableDevices),
           ),
 
           const SizedBox(width: 24),
@@ -124,15 +181,46 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 }
 
+String formatLanguageDisplay(String languageCode) {
+  // Map language codes to display names
+  const languageNames = {
+    'en': 'English (en)',
+    'es': 'Spanish (es)',
+    'fr': 'French (fr)',
+    'de': 'German (de)',
+    'it': 'Italian (it)',
+    'pt': 'Portuguese (pt)',
+    'ru': 'Russian (ru)',
+    'zh': 'Chinese (zh)',
+    'ja': 'Japanese (ja)',
+    'ko': 'Korean (ko)',
+  };
+  
+  return languageNames[languageCode] ?? '${languageCode.toUpperCase()} ($languageCode)';
+}
+
+String formatDeviceDisplay(String deviceId, List<dynamic> availableDevices) {
+  if (deviceId.isEmpty) return 'No devices';
+  
+  try {
+    final device = availableDevices.firstWhere((d) => d.id == deviceId);
+    return device.name;
+  } catch (e) {
+    return deviceId;
+  }
+}
+
 class _DropdownButton extends StatelessWidget {
   final String value;
   final List<String> items;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onChanged;
+  final String Function(String)? formatter;
 
   const _DropdownButton({
     required this.value,
     required this.items,
-    required this.onChanged,
+    this.onChanged,
+    this.formatter,
   });
 
   @override
@@ -150,7 +238,7 @@ class _DropdownButton extends StatelessWidget {
               .map((item) => DropdownMenuItem(
                     value: item,
                     child: Text(
-                      item,
+                      formatter != null ? formatter!(item) : item,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF495057),
@@ -158,11 +246,13 @@ class _DropdownButton extends StatelessWidget {
                     ),
                   ))
               .toList(),
-          onChanged: (newValue) {
-            if (newValue != null) {
-              onChanged(newValue);
-            }
-          },
+          onChanged: onChanged != null 
+              ? (newValue) {
+                  if (newValue != null) {
+                    onChanged!(newValue);
+                  }
+                }
+              : null,
           icon: const Icon(
             Icons.keyboard_arrow_down,
             size: 16,
@@ -172,6 +262,7 @@ class _DropdownButton extends StatelessWidget {
       ),
     );
   }
+  
 }
 
 class _TopBarButton extends StatelessWidget {
@@ -215,3 +306,4 @@ class _TopBarButton extends StatelessWidget {
     );
   }
 }
+

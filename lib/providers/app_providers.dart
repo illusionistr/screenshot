@@ -6,7 +6,7 @@ import '../core/services/firebase_service.dart';
 import '../core/services/storage_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/projects/services/project_service.dart';
-import '../features/projects/services/upload_service.dart';
+import '../features/shared/services/upload_service.dart';
 
 part 'app_providers.g.dart';
 

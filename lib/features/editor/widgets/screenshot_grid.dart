@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../projects/models/project_model.dart';
 import '../models/editor_state.dart';
 import '../providers/editor_provider.dart';
 
 class ScreenshotGrid extends ConsumerWidget {
-  const ScreenshotGrid({super.key});
+  const ScreenshotGrid({super.key, required this.project});
+  
+  final ProjectModel project;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorState = ref.watch(editorProvider);
-    final editorNotifier = ref.read(editorProvider.notifier);
+    final editorState = ref.watch(editorProviderFamily(project));
+    final editorNotifier = ref.read(editorProviderFamily(project).notifier);
 
     return Expanded(
       child: Padding(

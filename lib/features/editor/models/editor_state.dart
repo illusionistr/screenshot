@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../projects/models/project_model.dart';
+import '../../shared/models/device_model.dart';
+
 // Editor tab enum
 enum EditorTab {
   text,
@@ -31,6 +34,11 @@ class EditorState {
   final Color gradientStartColor;
   final Color gradientEndColor;
   final String gradientDirection;
+  
+  // Project-related data
+  final ProjectModel? project;
+  final List<String> availableLanguages;
+  final List<DeviceModel> availableDevices;
 
   const EditorState({
     this.caption = '',
@@ -39,14 +47,17 @@ class EditorState {
     this.fontWeight = FontWeight.normal,
     this.textAlign = TextAlign.left,
     this.textColor = Colors.black,
-    this.selectedLanguage = 'English (en)',
-    this.selectedDevice = 'Android Pixel 4',
+    this.selectedLanguage = 'en',
+    this.selectedDevice = '',
     this.screenshots = const [],
     this.selectedTab = EditorTab.text,
     this.selectedBackgroundTab = BackgroundTab.gradient,
     this.gradientStartColor = Colors.white,
     this.gradientEndColor = Colors.white,
     this.gradientDirection = 'vertical',
+    this.project,
+    this.availableLanguages = const [],
+    this.availableDevices = const [],
   });
 
   EditorState copyWith({
@@ -64,6 +75,9 @@ class EditorState {
     Color? gradientStartColor,
     Color? gradientEndColor,
     String? gradientDirection,
+    ProjectModel? project,
+    List<String>? availableLanguages,
+    List<DeviceModel>? availableDevices,
   }) {
     return EditorState(
       caption: caption ?? this.caption,
@@ -81,6 +95,9 @@ class EditorState {
       gradientStartColor: gradientStartColor ?? this.gradientStartColor,
       gradientEndColor: gradientEndColor ?? this.gradientEndColor,
       gradientDirection: gradientDirection ?? this.gradientDirection,
+      project: project ?? this.project,
+      availableLanguages: availableLanguages ?? this.availableLanguages,
+      availableDevices: availableDevices ?? this.availableDevices,
     );
   }
 }

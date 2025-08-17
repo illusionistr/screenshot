@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../../shared/models/screenshot_model.dart';
+import '../models/screenshot_model.dart';
+import '../services/file_validation_service.dart';
 
 class ScreenshotThumbnail extends StatefulWidget {
   final ScreenshotModel screenshot;
   final VoidCallback? onDelete;
   final VoidCallback? onTap;
+  final bool showInfo;
+  final EdgeInsets? padding;
+  final BorderRadius? borderRadius;
 
   const ScreenshotThumbnail({
     super.key,
     required this.screenshot,
     this.onDelete,
     this.onTap,
+    this.showInfo = true,
+    this.padding,
+    this.borderRadius,
   });
 
   @override
@@ -23,6 +30,8 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
   bool _isLoading = true;
   bool _hasError = false;
 
+  BorderRadius get _borderRadius => widget.borderRadius ?? BorderRadius.circular(8);
+
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
@@ -31,8 +40,9 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Container(
+          padding: widget.padding,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: _borderRadius,
             border: Border.all(
               color: Colors.grey[300]!,
               width: 1,
@@ -48,7 +58,7 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
                 : null,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: _borderRadius,
             child: Stack(
               children: [
                 // Image
@@ -164,50 +174,52 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
                         ],
 
                         // File info
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.7),
+                        if (widget.showInfo) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.7),
+                                ],
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.screenshot.originalFilename,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${widget.screenshot.dimensions.width} × ${widget.screenshot.dimensions.height}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 9,
+                                  ),
+                                ),
+                                Text(
+                                  FileValidationService.formatFileSize(widget.screenshot.fileSize),
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 9,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.screenshot.originalFilename,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${widget.screenshot.dimensions.width} × ${widget.screenshot.dimensions.height}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 9,
-                                ),
-                              ),
-                              Text(
-                                _formatFileSize(widget.screenshot.fileSize),
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 9,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -218,15 +230,5 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
         ),
       ),
     );
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) {
-      return '${bytes}B';
-    } else if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)}KB';
-    } else {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
-    }
   }
 }

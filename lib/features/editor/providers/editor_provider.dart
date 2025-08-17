@@ -1,47 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../projects/models/project_model.dart';
 import '../models/editor_state.dart';
 
 class EditorNotifier extends StateNotifier<EditorState> {
-  EditorNotifier() : super(_createInitialState());
+  EditorNotifier([ProjectModel? project]) : super(_createInitialState(project));
 
-  static EditorState _createInitialState() {
+  static EditorState _createInitialState(ProjectModel? project) {
+    // Mock screenshots for now - will be replaced with real screenshots later
+    final mockScreenshots = [
+      ScreenshotItem(
+        id: '1',
+        title: 'CREATE VIBES FROM\nYOUR PHONE fam',
+        subtitle: 'MUSIC • REMIXES • VIBES',
+        imagePath: 'assets/placeholder_screenshot.png',
+        backgroundColor: const Color(0xFFE91E63), // Pink
+        gradientColor: const Color(0xFF2196F3), // Blue
+      ),
+      ScreenshotItem(
+        id: '2',
+        title: 'CREATE AND FIND\nAWESOME TUNES',
+        subtitle: '',
+        imagePath: 'assets/placeholder_screenshot.png',
+        backgroundColor: const Color(0xFFE91E63), // Pink
+        gradientColor: const Color(0xFFFFC107), // Yellow
+      ),
+      ScreenshotItem(
+        id: '3',
+        title: 'TALK TO THE MUSIC\nPROS',
+        subtitle: '',
+        imagePath: 'assets/placeholder_screenshot.png',
+        backgroundColor: const Color(0xFFE91E63), // Pink
+        gradientColor: const Color(0xFFFF9800), // Orange
+      ),
+      ScreenshotItem(
+        id: '4',
+        title: 'STORE SONGS FOR LATER\nVIBIN\'',
+        subtitle: '',
+        imagePath: 'assets/placeholder_screenshot.png',
+        backgroundColor: const Color(0xFF2196F3), // Blue
+        gradientColor: const Color(0xFFFF9800), // Orange
+      ),
+    ];
+    
+    if (project == null) {
+      return EditorState(
+        screenshots: mockScreenshots,
+      );
+    }
+    
+    // Create initial state with project data
+    final availableDevices = project.devices;
+    final availableLanguages = project.supportedLanguages;
+    
     return EditorState(
-      screenshots: [
-        ScreenshotItem(
-          id: '1',
-          title: 'CREATE VIBES FROM\nYOUR PHONE fam',
-          subtitle: 'MUSIC • REMIXES • VIBES',
-          imagePath: 'assets/placeholder_screenshot.png',
-          backgroundColor: const Color(0xFFE91E63), // Pink
-          gradientColor: const Color(0xFF2196F3), // Blue
-        ),
-        ScreenshotItem(
-          id: '2',
-          title: 'CREATE AND FIND\nAWESOME TUNES',
-          subtitle: '',
-          imagePath: 'assets/placeholder_screenshot.png',
-          backgroundColor: const Color(0xFFE91E63), // Pink
-          gradientColor: const Color(0xFFFFC107), // Yellow
-        ),
-        ScreenshotItem(
-          id: '3',
-          title: 'TALK TO THE MUSIC\nPROS',
-          subtitle: '',
-          imagePath: 'assets/placeholder_screenshot.png',
-          backgroundColor: const Color(0xFFE91E63), // Pink
-          gradientColor: const Color(0xFFFF9800), // Orange
-        ),
-        ScreenshotItem(
-          id: '4',
-          title: 'STORE SONGS FOR LATER\nVIBIN\'',
-          subtitle: '',
-          imagePath: 'assets/placeholder_screenshot.png',
-          backgroundColor: const Color(0xFF2196F3), // Blue
-          gradientColor: const Color(0xFFFF9800), // Orange
-        ),
-      ],
+      project: project,
+      availableLanguages: availableLanguages,
+      availableDevices: availableDevices,
+      selectedLanguage: availableLanguages.isNotEmpty ? availableLanguages.first : 'en',
+      selectedDevice: availableDevices.isNotEmpty ? availableDevices.first.id : '',
+      screenshots: mockScreenshots,
     );
   }
 
@@ -112,9 +131,35 @@ class EditorNotifier extends StateNotifier<EditorState> {
   void updateGradientDirection(String direction) {
     state = state.copyWith(gradientDirection: direction);
   }
+  
+  void updateProject(ProjectModel project) {
+    final availableDevices = project.devices;
+    final availableLanguages = project.supportedLanguages;
+    
+    state = state.copyWith(
+      project: project,
+      availableLanguages: availableLanguages,
+      availableDevices: availableDevices,
+      selectedLanguage: availableLanguages.isNotEmpty 
+          ? (availableLanguages.contains(state.selectedLanguage) 
+              ? state.selectedLanguage 
+              : availableLanguages.first)
+          : 'en',
+      selectedDevice: availableDevices.isNotEmpty 
+          ? (availableDevices.any((d) => d.id == state.selectedDevice) 
+              ? state.selectedDevice 
+              : availableDevices.first.id)
+          : '',
+    );
+  }
 }
 
 final editorProvider =
     StateNotifierProvider<EditorNotifier, EditorState>((ref) {
   return EditorNotifier();
+});
+
+// Project-specific editor provider
+final editorProviderFamily = StateNotifierProvider.family<EditorNotifier, EditorState, ProjectModel?>((ref, project) {
+  return EditorNotifier(project);
 });
