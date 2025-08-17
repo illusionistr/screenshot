@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+// TODO: Remove the temporary "Test Editor" button once the editor is fully integrated
+
 import '../../../core/widgets/loading_widget.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/project_provider.dart';
@@ -43,6 +45,20 @@ class DashboardScreen extends ConsumerWidget {
                   icon: const Icon(Icons.add),
                   label: const Text('Create New Project'),
                 ),
+                const SizedBox(width: 12),
+                // Temporary button to test the editor screen
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigate directly to the editor screen
+                    context.go('/projects/test/editor');
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Test Editor'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -58,7 +74,8 @@ class DashboardScreen extends ConsumerWidget {
                     );
                   }
                   return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
@@ -71,11 +88,15 @@ class DashboardScreen extends ConsumerWidget {
                         project: project,
                         onDelete: () async {
                           try {
-                            await ref.read(projectsNotifierProvider.notifier).deleteProject(project.id);
+                            await ref
+                                .read(projectsNotifierProvider.notifier)
+                                .deleteProject(project.id);
                           } catch (error) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error deleting project: $error')),
+                                SnackBar(
+                                    content:
+                                        Text('Error deleting project: $error')),
                               );
                             }
                           }
@@ -96,5 +117,3 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 }
-
-

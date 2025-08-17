@@ -48,37 +48,40 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/projects/:projectId/editor',
         builder: (context, state) {
-          final projectId = state.pathParameters['projectId']!;
-          return EditorScreen(projectId: projectId);
+          return const EditorScreen();
         },
       ),
     ],
     redirect: (context, state) {
       final authState = ref.read(authStateStreamProvider);
-      
+
       print('Router redirect - location: ${state.matchedLocation}');
-      
+
       // Handle different auth states
       return authState.when(
         data: (user) {
           final isLoggedIn = user != null;
-          final loggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
-          
-          print('Router redirect - data: isLoggedIn=$isLoggedIn, loggingIn=$loggingIn');
-          
+          final loggingIn = state.matchedLocation == '/login' ||
+              state.matchedLocation == '/signup';
+
+          print(
+              'Router redirect - data: isLoggedIn=$isLoggedIn, loggingIn=$loggingIn');
+
           // If not logged in and trying to access protected routes
-          if (!isLoggedIn && (state.matchedLocation.startsWith('/dashboard') || 
-                            state.matchedLocation.startsWith('/projects'))) {
+          if (!isLoggedIn &&
+              (state.matchedLocation.startsWith('/dashboard') ||
+                  state.matchedLocation.startsWith('/projects'))) {
             print('Router redirect - redirecting to login (not logged in)');
             return '/login';
           }
-          
+
           // If logged in and on login/signup pages, go to dashboard
           if (isLoggedIn && loggingIn) {
-            print('Router redirect - redirecting to dashboard (logged in but on login page)');
+            print(
+                'Router redirect - redirecting to dashboard (logged in but on login page)');
             return '/dashboard';
           }
-          
+
           print('Router redirect - no redirect needed');
           return null;
         },
@@ -90,7 +93,8 @@ GoRouter appRouter(Ref ref) {
         error: (_, __) {
           print('Router redirect - auth error, redirecting to login');
           // On auth error, redirect to login
-          final loggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+          final loggingIn = state.matchedLocation == '/login' ||
+              state.matchedLocation == '/signup';
           if (!loggingIn) {
             return '/login';
           }
@@ -100,5 +104,3 @@ GoRouter appRouter(Ref ref) {
     },
   );
 }
-
-
