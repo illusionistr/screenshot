@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../providers/app_providers.dart';
+import '../../projects/providers/project_provider.dart';
 import '../models/screenshot_model.dart';
 import '../models/upload_state_model.dart';
 import '../services/upload_service.dart';
@@ -157,6 +158,9 @@ class UploadCoordinator extends _$UploadCoordinator {
             },
           );
 
+          // Real-time synchronization: Update project with new screenshot
+          await _addScreenshotToProject(projectId, screenshot);
+
           // Mark as completed
           final successProgress = UploadProgress(
             fileId: uploadFile.id,
@@ -233,5 +237,68 @@ class UploadCoordinator extends _$UploadCoordinator {
 
   void clearResults() {
     state = const AsyncValue.data([]);
+  }
+
+  /// Real-time synchronization: Add screenshot to project data
+  Future<void> _addScreenshotToProject(String projectId, ScreenshotModel screenshot) async {
+    try {
+      // Get current projects stream to find the specific project
+      final projectsStream = ref.read(projectsStreamProvider);
+      
+      await projectsStream.when(
+        data: (projects) async {
+          // Find the project to update
+          final project = projects.firstWhere(
+            (p) => p.id == projectId,
+            orElse: () => throw Exception('Project not found'),
+          );
+
+          // Create a copy of the current screenshots map
+          final updatedScreenshots = Map<String, Map<String, List<ScreenshotModel>>>.from(
+            project.screenshots.map((key, value) => MapEntry(
+              key,
+              Map<String, List<ScreenshotModel>>.from(
+                value.map((k, v) => MapEntry(k, List<ScreenshotModel>.from(v))),
+              ),
+            )),
+          );
+
+          // Add the new screenshot to the appropriate language/device combination
+          if (!updatedScreenshots.containsKey(screenshot.languageCode)) {
+            updatedScreenshots[screenshot.languageCode] = {};
+          }
+          if (!updatedScreenshots[screenshot.languageCode]!.containsKey(screenshot.deviceId)) {
+            updatedScreenshots[screenshot.languageCode]![screenshot.deviceId] = [];
+          }
+
+          // Add the screenshot to the list
+          updatedScreenshots[screenshot.languageCode]![screenshot.deviceId]!.add(screenshot);
+
+          // Create updated project
+          final updatedProject = project.copyWith(
+            screenshots: updatedScreenshots,
+            updatedAt: DateTime.now(),
+          );
+
+          // Update in Firestore
+          final projectService = ref.read(projectServiceProvider);
+          await projectService.updateProject(updatedProject);
+          
+          // Invalidate the projects stream to trigger a refresh
+          ref.invalidate(projectsStreamProvider);
+        },
+        loading: () async {
+          // If projects are still loading, wait a bit and retry
+          await Future.delayed(const Duration(milliseconds: 500));
+          return _addScreenshotToProject(projectId, screenshot);
+        },
+        error: (error, stackTrace) async {
+          throw Exception('Failed to sync screenshot with project: $error');
+        },
+      );
+    } catch (e) {
+      // Log error but don't fail the upload
+      print('Warning: Failed to sync screenshot with project: $e');
+    }
   }
 }

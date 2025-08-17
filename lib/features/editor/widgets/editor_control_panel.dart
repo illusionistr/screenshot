@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../projects/models/project_model.dart';
 import '../models/editor_state.dart';
 import '../providers/editor_provider.dart';
+import 'editor_screenshot_list.dart';
+import 'screenshot_manager_modal.dart';
 
 class EditorControlPanel extends ConsumerWidget {
   const EditorControlPanel({super.key, required this.project});
-  
+
   final ProjectModel project;
 
   @override
@@ -15,8 +17,118 @@ class EditorControlPanel extends ConsumerWidget {
     final editorState = ref.watch(editorProviderFamily(project));
     final editorNotifier = ref.read(editorProviderFamily(project).notifier);
 
+    // Helper methods defined within build context
+    String buildFilterText(EditorState editorState) {
+      final parts = <String>[];
+
+      if (editorState.selectedDevice.isNotEmpty) {
+        try {
+          final device = editorState.availableDevices
+              .firstWhere((d) => d.id == editorState.selectedDevice);
+          parts.add(device.name);
+        } catch (e) {
+          parts.add(editorState.selectedDevice);
+        }
+      }
+
+      if (editorState.selectedLanguage.isNotEmpty) {
+        parts.add(editorState.selectedLanguage.toUpperCase());
+      }
+
+      return parts.join(' • ');
+    }
+
+    void handleScreenshotSelection(
+        dynamic screenshot, EditorNotifier editorNotifier) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Screenshot selected for layout'),
+          backgroundColor: const Color(0xFFE91E63),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+
+    void showScreenshotOptions(dynamic screenshot) {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit Screenshot'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Open screenshot editor
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: const Text('Duplicate'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Duplicate screenshot
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.download),
+                title: const Text('Download'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Download screenshot
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title:
+                    const Text('Delete', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Delete screenshot with confirmation
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    void handleScreenshotReorder(
+        int oldIndex, int newIndex, EditorNotifier editorNotifier) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Screenshot moved from position ${oldIndex + 1} to ${newIndex + 1}'),
+          backgroundColor: const Color(0xFFE91E63),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+
+    void showScreenshotManagerModal() {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ScreenshotManagerModal(
+          project: project,
+          onClose: () => Navigator.of(context).pop(),
+        ),
+      );
+    }
+
     return Container(
-      width: 320,
+      width: 420,
       height: double.infinity,
       color: const Color(0xFFF8F9FA),
       child: Column(
@@ -69,7 +181,16 @@ class EditorControlPanel extends ConsumerWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: _buildTabContent(editorState, editorNotifier),
+              child: _buildTabContent(
+                  editorState,
+                  editorNotifier,
+                  context,
+                  ref,
+                  buildFilterText,
+                  handleScreenshotSelection,
+                  showScreenshotOptions,
+                  handleScreenshotReorder,
+                  showScreenshotManagerModal),
             ),
           ),
         ],
@@ -78,12 +199,29 @@ class EditorControlPanel extends ConsumerWidget {
   }
 
   Widget _buildTabContent(
-      EditorState editorState, EditorNotifier editorNotifier) {
+      EditorState editorState,
+      EditorNotifier editorNotifier,
+      BuildContext context,
+      WidgetRef ref,
+      String Function(EditorState) buildFilterText,
+      void Function(dynamic, EditorNotifier) handleScreenshotSelection,
+      void Function(dynamic) showScreenshotOptions,
+      void Function(int, int, EditorNotifier) handleScreenshotReorder,
+      void Function() showScreenshotManagerModal) {
     switch (editorState.selectedTab) {
       case EditorTab.text:
         return _buildTextTab(editorState, editorNotifier);
       case EditorTab.uploads:
-        return _buildUploadsTab(editorState, editorNotifier);
+        return _buildUploadsTab(
+            editorState,
+            editorNotifier,
+            context,
+            ref,
+            buildFilterText,
+            handleScreenshotSelection,
+            showScreenshotOptions,
+            handleScreenshotReorder,
+            showScreenshotManagerModal);
       case EditorTab.layouts:
         return _buildLayoutsTab(editorState, editorNotifier);
       case EditorTab.background:
@@ -231,7 +369,15 @@ class EditorControlPanel extends ConsumerWidget {
   }
 
   Widget _buildUploadsTab(
-      EditorState editorState, EditorNotifier editorNotifier) {
+      EditorState editorState,
+      EditorNotifier editorNotifier,
+      BuildContext context,
+      WidgetRef ref,
+      String Function(EditorState) buildFilterText,
+      void Function(dynamic, EditorNotifier) handleScreenshotSelection,
+      void Function(dynamic) showScreenshotOptions,
+      void Function(int, int, EditorNotifier) handleScreenshotReorder,
+      void Function() showScreenshotManagerModal) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -239,7 +385,7 @@ class EditorControlPanel extends ConsumerWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () => showScreenshotManagerModal(),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE91E63),
               foregroundColor: Colors.white,
@@ -262,47 +408,71 @@ class EditorControlPanel extends ConsumerWidget {
         const SizedBox(height: 16),
 
         const Text(
-          'Click a screen to add it to a selected device layout',
+          'Upload, organize, and manage your app screenshots',
           style: TextStyle(
             color: Color(0xFF6C757D),
             fontSize: 14,
           ),
         ),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
-        // Manage Image Uploads Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE91E63),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Manage Image uploads',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
+      
+
+        // Horizontal Screenshot List
+        EditorScreenshotList(
+          project: project,
+          height: 350,
+          onScreenshotTap: (screenshot) {
+            // Handle screenshot selection for layout
+            handleScreenshotSelection(screenshot, editorNotifier);
+          },
+          onScreenshotLongPress: (screenshot) {
+            // Show screenshot options menu
+            showScreenshotOptions(screenshot);
+          },
+          onScreenshotReorder: (oldIndex, newIndex) {
+            // Handle screenshot reordering
+            handleScreenshotReorder(oldIndex, newIndex, editorNotifier);
+          },
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
 
-        const Text(
-          'Click an image upload to add it to the selected layout',
-          style: TextStyle(
-            color: Color(0xFF6C757D),
-            fontSize: 14,
-          ),
+        // Spacer to push quick actions to bottom
+        const Spacer(),
+
+        // Quick Actions
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => showScreenshotManagerModal(),
+                icon: const Icon(Icons.add_photo_alternate, size: 16),
+                label: const Text('Upload'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFE91E63),
+                  side: const BorderSide(color: Color(0xFFE91E63)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  // TODO: Implement batch operations
+                },
+                icon: const Icon(Icons.select_all, size: 16),
+                label: const Text('Select All'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF6C757D),
+                  side: const BorderSide(color: Color(0xFFE1E5E9)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
+import '../../projects/providers/project_provider.dart';
 import '../models/editor_state.dart';
 
 class EditorNotifier extends StateNotifier<EditorState> {
@@ -152,6 +153,14 @@ class EditorNotifier extends StateNotifier<EditorState> {
           : '',
     );
   }
+
+  /// Real-time synchronization: Update state when project screenshots change
+  void syncWithLatestProject(ProjectModel latestProject) {
+    if (state.project?.id == latestProject.id) {
+      // Only update if this is the same project
+      updateProject(latestProject);
+    }
+  }
 }
 
 final editorProvider =
@@ -159,7 +168,25 @@ final editorProvider =
   return EditorNotifier();
 });
 
-// Project-specific editor provider
+// Project-specific editor provider with real-time synchronization
 final editorProviderFamily = StateNotifierProvider.family<EditorNotifier, EditorState, ProjectModel?>((ref, project) {
-  return EditorNotifier(project);
+  final notifier = EditorNotifier(project);
+  
+  // Set up real-time synchronization if project is provided
+  if (project != null) {
+    // Listen to projects stream for updates
+    final projectsStream = ref.watch(projectsStreamProvider);
+    projectsStream.whenData((projects) {
+      // Find the updated project
+      try {
+        final updatedProject = projects.firstWhere((p) => p.id == project.id);
+        // Sync editor state with latest project data
+        notifier.syncWithLatestProject(updatedProject);
+      } catch (e) {
+        // Project not found in stream - could be deleted
+      }
+    });
+  }
+  
+  return notifier;
 });
