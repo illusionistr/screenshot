@@ -56,7 +56,7 @@ class FrameVariantsData {
       deviceId: 'iphone-15-pro-max',
     ),
 
-    // iPhone 14 variants
+    // iPhone 14 variants. There is only one color for those phones
     FrameVariantModel(
       id: 'blue',
       name: 'Blue',
@@ -116,23 +116,27 @@ class FrameVariantsData {
 
     // iPhone 14 Pro Max variants (same colors, different device)
     FrameVariantModel(
+      //real
       id: 'deep-purple',
       name: 'Deep Purple',
-      assetPath: 'assets/frames/iphone-14-pro-max/deep-purple.png',
+      assetPath: 'assets/frames/iPhone14-ProMax.png',
       deviceId: 'iphone-14-pro-max',
     ),
+    //real
     FrameVariantModel(
       id: 'gold',
       name: 'Gold',
-      assetPath: 'assets/frames/iphone-14-pro-max/gold.png',
-      deviceId: 'iphone-14-pro-max',
+      assetPath: 'assets/frames/iPhone13-ProMax.png',
+      deviceId: 'iphone-13-pro-max',
     ),
+    //real
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iphone-14-pro-max/silver.png',
-      deviceId: 'iphone-14-pro-max',
+      assetPath: 'assets/frames/iPhone12-ProMax.png',
+      deviceId: 'iphone-12-pro-max',
     ),
+    //real
     FrameVariantModel(
       id: 'space-black',
       name: 'Space Black',
@@ -142,9 +146,10 @@ class FrameVariantsData {
 
     // iPad Pro 12.9" variants
     FrameVariantModel(
+      //real
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/ipad-pro-12-9/silver.png',
+      assetPath: 'assets/frames/iPad-Pro-(12.9-inch).png',
       deviceId: 'ipad-pro-12-9',
     ),
     FrameVariantModel(
@@ -155,10 +160,11 @@ class FrameVariantsData {
     ),
 
     // iPad Pro 11" variants
+    //real
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/ipad-pro-11/silver.png',
+      assetPath: 'assets/frames/iPad-Pro-(11-inch).png',
       deviceId: 'ipad-pro-11',
     ),
     FrameVariantModel(
@@ -169,17 +175,19 @@ class FrameVariantsData {
     ),
 
     // Pixel 8 Pro variants
+    //real
     FrameVariantModel(
       id: 'obsidian',
       name: 'Obsidian',
-      assetPath: 'assets/frames/pixel-8-pro/obsidian.png',
-      deviceId: 'pixel-8-pro',
+      assetPath: 'assets/frames/pixel5.png',
+      deviceId: 'pixel-4',
     ),
+    //real
     FrameVariantModel(
       id: 'porcelain',
       name: 'Porcelain',
-      assetPath: 'assets/frames/pixel-8-pro/porcelain.png',
-      deviceId: 'pixel-8-pro',
+      assetPath: 'assets/frames/pixel4.png',
+      deviceId: 'pixel-5',
     ),
     FrameVariantModel(
       id: 'bay',
@@ -209,29 +217,33 @@ class FrameVariantsData {
     ),
 
     // Galaxy S24 Ultra variants
+    //real
     FrameVariantModel(
       id: 'titanium-black',
       name: 'Titanium Black',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-black.png',
-      deviceId: 'galaxy-s24-ultra',
+      assetPath: 'assets/frames/GalaxyS8.png',
+      deviceId: 'galaxy-s8',
     ),
+    //real
     FrameVariantModel(
       id: 'titanium-gray',
       name: 'Titanium Gray',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-gray.png',
-      deviceId: 'galaxy-s24-ultra',
+      assetPath: 'assets/frames/GalaxyS9.png',
+      deviceId: 'galaxy-s9',
     ),
+    //real
     FrameVariantModel(
       id: 'titanium-violet',
       name: 'Titanium Violet',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-violet.png',
-      deviceId: 'galaxy-s24-ultra',
+      assetPath: 'assets/frames/GalaxyS20+.png',
+      deviceId: 'galaxy-s20+',
     ),
+    //real
     FrameVariantModel(
       id: 'titanium-yellow',
       name: 'Titanium Yellow',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-yellow.png',
-      deviceId: 'galaxy-s24-ultra',
+      assetPath: 'assets/frames/GalaxyS21+.png',
+      deviceId: 'galaxy-s21+',
     ),
 
     // Galaxy S24 variants
