@@ -179,15 +179,15 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'obsidian',
       name: 'Obsidian',
-      assetPath: 'assets/frames/pixel5.png',
-      deviceId: 'pixel-4',
+      assetPath: 'assets/frames/pixel-8-pro/obsidian.png',
+      deviceId: 'pixel-8-pro',
     ),
     //real
     FrameVariantModel(
       id: 'porcelain',
       name: 'Porcelain',
-      assetPath: 'assets/frames/pixel4.png',
-      deviceId: 'pixel-5',
+      assetPath: 'assets/frames/pixel-8-pro/porcelain.png',
+      deviceId: 'pixel-8-pro',
     ),
     FrameVariantModel(
       id: 'bay',
@@ -195,7 +195,12 @@ class FrameVariantsData {
       assetPath: 'assets/frames/pixel-8-pro/bay.png',
       deviceId: 'pixel-8-pro',
     ),
-
+    FrameVariantModel(
+      id: 'mint',
+      name: 'Mint',
+      assetPath: 'assets/frames/pixel-8-pro/mint.png',
+      deviceId: 'pixel-8-pro',
+    ),
     // Pixel 8 variants
     FrameVariantModel(
       id: 'obsidian',

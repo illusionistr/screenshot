@@ -173,7 +173,7 @@ class DevicesData {
       screenWidth: 1344,
       screenHeight: 2992,
       screenPosition: Offset(0, 0),
-      availableFrames: ['obsidian', 'porcelain', 'bay'],
+      availableFrames: ['obsidian', 'porcelain', 'bay', 'mint'],
       appStoreDisplaySize: '6.7-inch',
     ),
     DeviceModel(
