@@ -12,6 +12,9 @@ class EditorControlPanel extends ConsumerWidget {
 
   final ProjectModel project;
 
+  // Fixed height for screenshot thumbnails - adjust this value for testing
+  static const double kScreenshotListHeight = 200.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final editorState = ref.watch(editorProviderFamily(project));
@@ -417,12 +420,11 @@ class EditorControlPanel extends ConsumerWidget {
 
         const SizedBox(height: 24),
 
-      
-
         // Horizontal Screenshot List
         EditorScreenshotList(
           project: project,
-          height: 350,
+          height: kScreenshotListHeight +
+              75, // Fixed height + space for header/padding
           onScreenshotTap: (screenshot) {
             // Handle screenshot selection for layout
             handleScreenshotSelection(screenshot, editorNotifier);
