@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../constants/platform_dimensions.dart';
 import '../services/platform_detection_service.dart';
 
 class PlatformDimensionCalculator {

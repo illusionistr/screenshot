@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dynamic_screens_canvas.dart';
+import '../../../projects/models/project_model.dart';
 
 class DualScrollEditor extends StatefulWidget {
-  const DualScrollEditor({super.key});
+  final ProjectModel? project;
+  
+  const DualScrollEditor({super.key, this.project});
 
   @override
   State<DualScrollEditor> createState() => _DualScrollEditorState();
@@ -40,7 +43,7 @@ class _DualScrollEditorState extends State<DualScrollEditor> {
           child: SingleChildScrollView(
             controller: _horizontalController,
             scrollDirection: Axis.horizontal,
-            child: const DynamicScreensCanvas(),
+            child: DynamicScreensCanvas(project: widget.project),
           ),
         ),
       ),

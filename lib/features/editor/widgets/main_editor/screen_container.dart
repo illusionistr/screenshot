@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../models/background_models.dart';
+import '../../utils/background_renderer.dart';
 import '../../utils/platform_dimension_calculator.dart';
 import 'screen_management_buttons.dart';
 
@@ -7,6 +9,7 @@ class ScreenContainer extends StatelessWidget {
   final String deviceId;
   final bool isSelected;
   final bool isLandscape;
+  final ScreenBackground? background;
   final VoidCallback? onTap;
   final VoidCallback? onReorder;
   final VoidCallback? onExpand;
@@ -21,6 +24,7 @@ class ScreenContainer extends StatelessWidget {
     required this.deviceId,
     this.isSelected = false,
     this.isLandscape = false,
+    this.background,
     this.onTap,
     this.onReorder,
     this.onExpand,
@@ -60,11 +64,7 @@ class ScreenContainer extends StatelessWidget {
                 Positioned.fill(
                   child: Container(
                     margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
+                    decoration: _getBackgroundDecoration(),
                     child: child ?? _buildPlaceholderContent(),
                   ),
                 ),
@@ -100,6 +100,27 @@ class ScreenContainer extends StatelessWidget {
           showDeleteButton: showDeleteButton,
         ),
       ],
+    );
+  }
+
+  BoxDecoration _getBackgroundDecoration() {
+    final baseDecoration = BoxDecoration(
+      borderRadius: BorderRadius.circular(4),
+      border: Border.all(color: Colors.grey.shade200),
+    );
+
+    if (background == null) {
+      return baseDecoration.copyWith(color: Colors.white);
+    }
+
+    // Use BackgroundRenderer to get the proper decoration
+    final backgroundDecoration = BackgroundRenderer.renderBackground(background!);
+    
+    // Merge with base decoration to preserve border and border radius
+    return baseDecoration.copyWith(
+      color: backgroundDecoration.color,
+      gradient: backgroundDecoration.gradient,
+      image: backgroundDecoration.image,
     );
   }
 

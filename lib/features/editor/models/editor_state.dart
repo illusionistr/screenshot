@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../projects/models/project_model.dart';
 import '../../shared/models/device_model.dart';
 import '../constants/platform_dimensions.dart';
+import 'background_models.dart';
 
 // Editor tab enum
 enum EditorTab {
@@ -32,6 +33,7 @@ class EditorState {
   final List<ScreenshotItem> screenshots;
   final EditorTab selectedTab;
   final BackgroundTab selectedBackgroundTab;
+  final Color solidBackgroundColor;
   final Color gradientStartColor;
   final Color gradientEndColor;
   final String gradientDirection;
@@ -58,6 +60,7 @@ class EditorState {
     this.screenshots = const [],
     this.selectedTab = EditorTab.text,
     this.selectedBackgroundTab = BackgroundTab.gradient,
+    this.solidBackgroundColor = Colors.white,
     this.gradientStartColor = Colors.white,
     this.gradientEndColor = Colors.white,
     this.gradientDirection = 'vertical',
@@ -85,6 +88,7 @@ class EditorState {
     List<ScreenshotItem>? screenshots,
     EditorTab? selectedTab,
     BackgroundTab? selectedBackgroundTab,
+    Color? solidBackgroundColor,
     Color? gradientStartColor,
     Color? gradientEndColor,
     String? gradientDirection,
@@ -108,6 +112,7 @@ class EditorState {
       selectedTab: selectedTab ?? this.selectedTab,
       selectedBackgroundTab:
           selectedBackgroundTab ?? this.selectedBackgroundTab,
+      solidBackgroundColor: solidBackgroundColor ?? this.solidBackgroundColor,
       gradientStartColor: gradientStartColor ?? this.gradientStartColor,
       gradientEndColor: gradientEndColor ?? this.gradientEndColor,
       gradientDirection: gradientDirection ?? this.gradientDirection,
@@ -141,10 +146,11 @@ class ScreenshotItem {
 
 class ScreenConfig {
   final String id;
-  final Color backgroundColor;
+  final Color backgroundColor; // Legacy field, kept for compatibility
   final bool isLandscape;
-  final String? backgroundImagePath;
+  final String? backgroundImagePath; // Legacy field, kept for compatibility
   final Map<String, dynamic> customSettings;
+  final ScreenBackground background;
 
   const ScreenConfig({
     required this.id,
@@ -152,6 +158,7 @@ class ScreenConfig {
     this.isLandscape = false,
     this.backgroundImagePath,
     this.customSettings = const {},
+    this.background = ScreenBackground.defaultBackground,
   });
 
   ScreenConfig copyWith({
@@ -160,6 +167,7 @@ class ScreenConfig {
     bool? isLandscape,
     String? backgroundImagePath,
     Map<String, dynamic>? customSettings,
+    ScreenBackground? background,
   }) {
     return ScreenConfig(
       id: id ?? this.id,
@@ -167,6 +175,7 @@ class ScreenConfig {
       isLandscape: isLandscape ?? this.isLandscape,
       backgroundImagePath: backgroundImagePath ?? this.backgroundImagePath,
       customSettings: customSettings ?? this.customSettings,
+      background: background ?? this.background,
     );
   }
 }

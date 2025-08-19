@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
 import '../models/editor_state.dart';
+import '../models/background_models.dart';
 import '../providers/editor_provider.dart';
+import 'background/solid_color_tab.dart';
+import 'background/gradient_tab.dart';
+import 'background/image_background_tab.dart';
 import 'editor_screenshot_list.dart';
 import 'screenshot_manager_modal.dart';
 
@@ -505,74 +509,48 @@ class EditorControlPanel extends ConsumerWidget {
               label: 'Color',
               isSelected:
                   editorState.selectedBackgroundTab == BackgroundTab.color,
-              onTap: () => editorNotifier
-                  .updateSelectedBackgroundTab(BackgroundTab.color),
+              onTap: () {
+                editorNotifier.updateSelectedBackgroundTab(BackgroundTab.color);
+                editorNotifier.updateBackgroundType(BackgroundType.solid);
+              },
             ),
             const SizedBox(width: 8),
             _BackgroundTabButton(
               label: 'Gradient',
               isSelected:
                   editorState.selectedBackgroundTab == BackgroundTab.gradient,
-              onTap: () => editorNotifier
-                  .updateSelectedBackgroundTab(BackgroundTab.gradient),
+              onTap: () {
+                editorNotifier.updateSelectedBackgroundTab(BackgroundTab.gradient);
+                editorNotifier.updateBackgroundType(BackgroundType.gradient);
+              },
             ),
             const SizedBox(width: 8),
             _BackgroundTabButton(
               label: 'Image',
               isSelected:
                   editorState.selectedBackgroundTab == BackgroundTab.image,
-              onTap: () => editorNotifier
-                  .updateSelectedBackgroundTab(BackgroundTab.image),
+              onTap: () {
+                editorNotifier.updateSelectedBackgroundTab(BackgroundTab.image);
+                editorNotifier.updateBackgroundType(BackgroundType.image);
+              },
             ),
           ],
         ),
 
         const SizedBox(height: 24),
 
-        if (editorState.selectedBackgroundTab == BackgroundTab.gradient) ...[
-          // Gradient Controls
-          _SectionTitle(
-            title: 'Gradient Colors',
-            child: Row(
-              children: [
-                Expanded(
-                  child: _ColorInput(
-                    label: 'Start Color',
-                    color: editorState.gradientStartColor,
-                    onColorChanged: editorNotifier.updateGradientStartColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ColorInput(
-                    label: 'End Color',
-                    color: editorState.gradientEndColor,
-                    onColorChanged: editorNotifier.updateGradientEndColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        // Tab Content
+        Expanded(
+          child: _buildBackgroundTabContent(editorState, editorNotifier),
+        ),
 
-          const SizedBox(height: 20),
-
-          _SectionTitle(
-            title: 'Direction',
-            child: _CustomDropdown(
-              value: editorState.gradientDirection,
-              items: const ['vertical', 'horizontal', 'diagonal'],
-              onChanged: editorNotifier.updateGradientDirection,
-            ),
-          ),
-        ],
-
-        const Spacer(),
+        const SizedBox(height: 16),
 
         // Apply to All Button
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: editorNotifier.applyToAll,
+            onPressed: editorNotifier.applyBackgroundToAllScreens,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFFE91E63),
@@ -584,13 +562,38 @@ class EditorControlPanel extends ConsumerWidget {
               ),
             ),
             child: const Text(
-              'Apply to all',
+              'Apply to all screens',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildBackgroundTabContent(
+      EditorState editorState, EditorNotifier editorNotifier) {
+    switch (editorState.selectedBackgroundTab) {
+      case BackgroundTab.color:
+        return SolidColorTab(
+          currentColor: editorNotifier.getCurrentScreenSolidColor(),
+          onColorChanged: editorNotifier.updateSolidBackgroundColor,
+        );
+      case BackgroundTab.gradient:
+        return GradientTab(
+          startColor: editorState.gradientStartColor,
+          endColor: editorState.gradientEndColor,
+          direction: editorState.gradientDirection,
+          onStartColorChanged: editorNotifier.updateGradientStartColorWithPreview,
+          onEndColorChanged: editorNotifier.updateGradientEndColorWithPreview,
+          onDirectionChanged: editorNotifier.updateGradientDirectionWithPreview,
+        );
+      case BackgroundTab.image:
+        return ImageBackgroundTab(
+          selectedImageId: editorNotifier.getCurrentScreenImageId(),
+          onImageSelected: editorNotifier.selectBackgroundImage,
+        );
+    }
   }
 
   Widget _buildTemplateTab(
@@ -802,59 +805,3 @@ class _BackgroundTabButton extends StatelessWidget {
   }
 }
 
-class _ColorInput extends StatelessWidget {
-  final String label;
-  final Color color;
-  final ValueChanged<Color> onColorChanged;
-
-  const _ColorInput({
-    required this.label,
-    required this.color,
-    required this.onColorChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF6C757D),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: const Color(0xFFE1E5E9)),
-                ),
-                child: Text(
-                  '#${color.value.toRadixString(16).substring(2).toUpperCase()}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: const Color(0xFFE1E5E9)),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}

@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../models/editor_state.dart';
+import '../models/background_models.dart';
 import '../constants/platform_dimensions.dart';
 import '../services/platform_detection_service.dart';
+import '../utils/background_renderer.dart';
 
 class EditorNotifier extends StateNotifier<EditorState> {
   EditorNotifier([ProjectModel? project]) : super(_createInitialState(project));
@@ -156,14 +158,188 @@ class EditorNotifier extends StateNotifier<EditorState> {
     state = state.copyWith(gradientDirection: direction);
   }
 
+  // Background Management Methods
+  void updateSolidBackgroundColor(Color color) {
+    state = state.copyWith(solidBackgroundColor: color);
+    
+    // Apply to currently selected screen if any
+    if (state.selectedScreenIndex != null && state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      final updatedScreen = currentScreen.copyWith(
+        background: BackgroundRenderer.createSolidBackground(color),
+      );
+      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+    }
+  }
+
+  void updateBackgroundType(BackgroundType type) {
+    // Get the currently selected screen
+    if (state.selectedScreenIndex == null || state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    ScreenBackground newBackground;
+
+    switch (type) {
+      case BackgroundType.solid:
+        newBackground = BackgroundRenderer.createSolidBackground(
+          state.solidBackgroundColor,
+        );
+        break;
+      case BackgroundType.gradient:
+        newBackground = BackgroundRenderer.createGradientBackground(
+          startColor: state.gradientStartColor,
+          endColor: state.gradientEndColor,
+          direction: state.gradientDirection,
+        );
+        break;
+      case BackgroundType.image:
+        // Keep existing image background or create empty one
+        if (currentScreen.background.type == BackgroundType.image) {
+          newBackground = currentScreen.background;
+        } else {
+          newBackground = const ScreenBackground(type: BackgroundType.image);
+        }
+        break;
+    }
+
+    final updatedScreen = currentScreen.copyWith(background: newBackground);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+  }
+
+  void selectBackgroundImage(String imageId, String imageUrl) {
+    // Apply to currently selected screen
+    if (state.selectedScreenIndex != null && state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      final updatedScreen = currentScreen.copyWith(
+        background: BackgroundRenderer.createImageBackground(
+          imageUrl: imageUrl,
+          imageId: imageId,
+        ),
+      );
+      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+    }
+  }
+
+  void applyBackgroundToAllScreens() {
+    // Get the currently selected screen's background
+    if (state.selectedScreenIndex == null || state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final selectedScreen = state.screens[state.selectedScreenIndex!];
+    final backgroundToCopy = selectedScreen.background;
+
+    // Apply to all screens
+    final updatedScreens = state.screens.map((screen) {
+      return screen.copyWith(background: backgroundToCopy);
+    }).toList();
+
+    state = state.copyWith(screens: updatedScreens);
+  }
+
+  // Enhanced gradient methods with real-time preview
+  void updateGradientStartColorWithPreview(Color color) {
+    state = state.copyWith(gradientStartColor: color);
+    
+    // Apply to currently selected screen if it has gradient background
+    if (state.selectedScreenIndex != null && 
+        state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      if (currentScreen.background.type == BackgroundType.gradient) {
+        final updatedScreen = currentScreen.copyWith(
+          background: BackgroundRenderer.createGradientBackground(
+            startColor: color,
+            endColor: state.gradientEndColor,
+            direction: state.gradientDirection,
+          ),
+        );
+        updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      }
+    }
+  }
+
+  void updateGradientEndColorWithPreview(Color color) {
+    state = state.copyWith(gradientEndColor: color);
+    
+    // Apply to currently selected screen if it has gradient background
+    if (state.selectedScreenIndex != null && 
+        state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      if (currentScreen.background.type == BackgroundType.gradient) {
+        final updatedScreen = currentScreen.copyWith(
+          background: BackgroundRenderer.createGradientBackground(
+            startColor: state.gradientStartColor,
+            endColor: color,
+            direction: state.gradientDirection,
+          ),
+        );
+        updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      }
+    }
+  }
+
+  void updateGradientDirectionWithPreview(String direction) {
+    state = state.copyWith(gradientDirection: direction);
+    
+    // Apply to currently selected screen if it has gradient background
+    if (state.selectedScreenIndex != null && 
+        state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      if (currentScreen.background.type == BackgroundType.gradient) {
+        final updatedScreen = currentScreen.copyWith(
+          background: BackgroundRenderer.createGradientBackground(
+            startColor: state.gradientStartColor,
+            endColor: state.gradientEndColor,
+            direction: direction,
+          ),
+        );
+        updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      }
+    }
+  }
+
+  // Helper methods for getting current screen background info
+  ScreenBackground? getCurrentScreenBackground() {
+    if (state.selectedScreenIndex == null || state.selectedScreenIndex! >= state.screens.length) {
+      return null;
+    }
+    return state.screens[state.selectedScreenIndex!].background;
+  }
+
+  Color getCurrentScreenSolidColor() {
+    final background = getCurrentScreenBackground();
+    if (background?.type == BackgroundType.solid && background?.solidColor != null) {
+      return background!.solidColor!;
+    }
+    return state.solidBackgroundColor;
+  }
+
+  String? getCurrentScreenImageId() {
+    final background = getCurrentScreenBackground();
+    if (background?.type == BackgroundType.image) {
+      return background?.imageId;
+    }
+    return null;
+  }
+
   // Screen Management Methods
   void addScreen() {
     if (state.screens.length >= 10) return;
+    
+    // Copy background from currently selected screen or use default
+    ScreenBackground backgroundToUse = ScreenBackground.defaultBackground;
+    if (state.selectedScreenIndex != null && 
+        state.selectedScreenIndex! < state.screens.length) {
+      backgroundToUse = state.screens[state.selectedScreenIndex!].background;
+    }
     
     final newScreen = ScreenConfig(
       id: 'screen_${DateTime.now().millisecondsSinceEpoch}',
       backgroundColor: Colors.white,
       isLandscape: false,
+      background: backgroundToUse,
     );
     
     final newScreens = [...state.screens, newScreen];
@@ -180,6 +356,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
       isLandscape: screenToDuplicate.isLandscape,
       backgroundImagePath: screenToDuplicate.backgroundImagePath,
       customSettings: Map.from(screenToDuplicate.customSettings),
+      background: screenToDuplicate.background, // Copy background
     );
     
     final newScreens = [...state.screens];

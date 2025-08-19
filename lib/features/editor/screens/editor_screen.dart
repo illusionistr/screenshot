@@ -89,8 +89,8 @@ class EditorScreen extends ConsumerWidget {
           EditorControlPanel(project: project),
 
           // Main content area
-          const Expanded(
-            child: DualScrollEditor(),
+          Expanded(
+            child: DualScrollEditor(project: project),
           ),
         ],
       ),

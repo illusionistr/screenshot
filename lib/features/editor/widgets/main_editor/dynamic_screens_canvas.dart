@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
+import '../../../projects/models/project_model.dart';
 import 'screen_container.dart';
 import 'add_screen_button.dart';
 import 'screen_expand_modal.dart';
 import 'horizontal_reorderable_row.dart';
 
 class DynamicScreensCanvas extends ConsumerWidget {
-  const DynamicScreensCanvas({super.key});
+  final ProjectModel? project;
+  
+  const DynamicScreensCanvas({super.key, this.project});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorState = ref.watch(editorProvider);
-    final editorNotifier = ref.read(editorProvider.notifier);
+    final editorState = ref.watch(project != null ? editorProviderFamily(project) : editorProvider);
+    final editorNotifier = ref.read(project != null ? editorProviderFamily(project).notifier : editorProvider.notifier);
 
     return SizedBox(
       height: 880,
@@ -36,6 +39,7 @@ class DynamicScreensCanvas extends ConsumerWidget {
                     deviceId: editorState.selectedDevice,
                     isSelected: editorState.selectedScreenIndex == i,
                     isLandscape: editorState.screens[i].isLandscape,
+                    background: editorState.screens[i].background,
                     onTap: () => editorNotifier.selectScreen(i),
                     onReorder: null, // Remove individual reorder callback
                     onExpand: () => _expandScreen(context, editorState.screens[i], editorState.selectedDevice),
