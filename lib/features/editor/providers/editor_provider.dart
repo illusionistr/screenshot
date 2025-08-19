@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../models/editor_state.dart';
+import '../constants/platform_dimensions.dart';
+import '../services/platform_detection_service.dart';
 
 class EditorNotifier extends StateNotifier<EditorState> {
   EditorNotifier([ProjectModel? project]) : super(_createInitialState(project));
@@ -44,24 +46,41 @@ class EditorNotifier extends StateNotifier<EditorState> {
         gradientColor: const Color(0xFFFF9800), // Orange
       ),
     ];
+
+    // Create initial screens
+    final initialScreens = List.generate(5, (index) => ScreenConfig(
+      id: 'screen_${index + 1}',
+      backgroundColor: Colors.white,
+      isLandscape: false,
+    ));
     
     if (project == null) {
       return EditorState(
         screenshots: mockScreenshots,
+        screens: initialScreens,
+        selectedScreenIndex: 0,
+        currentDimensions: PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!,
       );
     }
     
     // Create initial state with project data
     final availableDevices = project.devices;
     final availableLanguages = project.supportedLanguages;
+    final selectedDevice = availableDevices.isNotEmpty ? availableDevices.first.id : '';
+    final currentDimensions = selectedDevice.isNotEmpty 
+      ? PlatformDetectionService.getDimensionsForDevice(selectedDevice)
+      : PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!;
     
     return EditorState(
       project: project,
       availableLanguages: availableLanguages,
       availableDevices: availableDevices,
       selectedLanguage: availableLanguages.isNotEmpty ? availableLanguages.first : 'en',
-      selectedDevice: availableDevices.isNotEmpty ? availableDevices.first.id : '',
+      selectedDevice: selectedDevice,
       screenshots: mockScreenshots,
+      screens: initialScreens,
+      selectedScreenIndex: 0,
+      currentDimensions: currentDimensions,
     );
   }
 
@@ -94,7 +113,11 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   void updateSelectedDevice(String device) {
-    state = state.copyWith(selectedDevice: device);
+    final newDimensions = PlatformDetectionService.getDimensionsForDevice(device);
+    state = state.copyWith(
+      selectedDevice: device,
+      currentDimensions: newDimensions,
+    );
   }
 
   void applyToAll() {
@@ -131,6 +154,107 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void updateGradientDirection(String direction) {
     state = state.copyWith(gradientDirection: direction);
+  }
+
+  // Screen Management Methods
+  void addScreen() {
+    if (state.screens.length >= 10) return;
+    
+    final newScreen = ScreenConfig(
+      id: 'screen_${DateTime.now().millisecondsSinceEpoch}',
+      backgroundColor: Colors.white,
+      isLandscape: false,
+    );
+    
+    final newScreens = [...state.screens, newScreen];
+    state = state.copyWith(screens: newScreens);
+  }
+
+  void duplicateScreen(int index) {
+    if (index < 0 || index >= state.screens.length || state.screens.length >= 10) return;
+    
+    final screenToDuplicate = state.screens[index];
+    final newScreen = ScreenConfig(
+      id: 'screen_${DateTime.now().millisecondsSinceEpoch}',
+      backgroundColor: screenToDuplicate.backgroundColor,
+      isLandscape: screenToDuplicate.isLandscape,
+      backgroundImagePath: screenToDuplicate.backgroundImagePath,
+      customSettings: Map.from(screenToDuplicate.customSettings),
+    );
+    
+    final newScreens = [...state.screens];
+    newScreens.insert(index + 1, newScreen);
+    state = state.copyWith(screens: newScreens);
+  }
+
+  void deleteScreen(int index) {
+    if (index < 0 || index >= state.screens.length || state.screens.length <= 1) return;
+    
+    final newScreens = [...state.screens];
+    newScreens.removeAt(index);
+    
+    int? newSelectedIndex = state.selectedScreenIndex;
+    if (newSelectedIndex != null) {
+      if (newSelectedIndex == index) {
+        newSelectedIndex = newSelectedIndex > 0 ? newSelectedIndex - 1 : 0;
+      } else if (newSelectedIndex > index) {
+        newSelectedIndex = newSelectedIndex - 1;
+      }
+      if (newSelectedIndex >= newScreens.length) {
+        newSelectedIndex = newScreens.length - 1;
+      }
+    }
+    
+    state = state.copyWith(
+      screens: newScreens,
+      selectedScreenIndex: newSelectedIndex,
+    );
+  }
+
+  void reorderScreens(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= state.screens.length || 
+        newIndex < 0 || newIndex >= state.screens.length ||
+        oldIndex == newIndex) {
+      return;
+    }
+    
+    final newScreens = [...state.screens];
+    final screen = newScreens.removeAt(oldIndex);
+    newScreens.insert(newIndex, screen);
+    
+    int? newSelectedIndex = state.selectedScreenIndex;
+    if (newSelectedIndex == oldIndex) {
+      newSelectedIndex = newIndex;
+    } else if (newSelectedIndex != null) {
+      if (oldIndex < newIndex) {
+        if (newSelectedIndex > oldIndex && newSelectedIndex <= newIndex) {
+          newSelectedIndex = newSelectedIndex - 1;
+        }
+      } else {
+        if (newSelectedIndex >= newIndex && newSelectedIndex < oldIndex) {
+          newSelectedIndex = newSelectedIndex + 1;
+        }
+      }
+    }
+    
+    state = state.copyWith(
+      screens: newScreens,
+      selectedScreenIndex: newSelectedIndex,
+    );
+  }
+
+  void selectScreen(int index) {
+    if (index < 0 || index >= state.screens.length) return;
+    
+    state = state.copyWith(selectedScreenIndex: index);
+  }
+
+  void updateScreenConfig(int index, ScreenConfig newConfig) {
+    if (index < 0 || index >= state.screens.length) return;
+    
+    final newScreens = [...state.screens];
+    newScreens[index] = newConfig;
+    state = state.copyWith(screens: newScreens);
   }
   
   void updateProject(ProjectModel project) {

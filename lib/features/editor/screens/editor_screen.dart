@@ -6,7 +6,7 @@ import '../../../core/widgets/loading_widget.dart';
 import '../../projects/providers/project_provider.dart';
 import '../widgets/editor_control_panel.dart';
 import '../widgets/editor_top_bar.dart';
-import '../widgets/screenshot_grid.dart';
+import '../widgets/main_editor/dynamic_screens_canvas.dart';
 
 class EditorScreen extends ConsumerWidget {
   const EditorScreen({super.key, required this.projectId});
@@ -92,8 +92,8 @@ class EditorScreen extends ConsumerWidget {
           Expanded(
             child: Column(
               children: [
-                // Screenshot grid
-                ScreenshotGrid(project: project),
+                // Dynamic screens canvas
+                const DynamicScreensCanvas(),
               ],
             ),
           ),

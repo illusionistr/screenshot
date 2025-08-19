@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../projects/models/project_model.dart';
 import '../../shared/models/device_model.dart';
+import '../constants/platform_dimensions.dart';
 
 // Editor tab enum
 enum EditorTab {
@@ -39,6 +40,11 @@ class EditorState {
   final ProjectModel? project;
   final List<String> availableLanguages;
   final List<DeviceModel> availableDevices;
+  
+  // Screen management
+  final List<ScreenConfig> screens;
+  final int? selectedScreenIndex;
+  final PlatformDimensions currentDimensions;
 
   const EditorState({
     this.caption = '',
@@ -58,6 +64,13 @@ class EditorState {
     this.project,
     this.availableLanguages = const [],
     this.availableDevices = const [],
+    this.screens = const [],
+    this.selectedScreenIndex,
+    this.currentDimensions = const PlatformDimensions(
+      width: 1290,
+      height: 2796,
+      deviceType: DeviceType.iphonePortrait,
+    ),
   });
 
   EditorState copyWith({
@@ -78,6 +91,9 @@ class EditorState {
     ProjectModel? project,
     List<String>? availableLanguages,
     List<DeviceModel>? availableDevices,
+    List<ScreenConfig>? screens,
+    int? selectedScreenIndex,
+    PlatformDimensions? currentDimensions,
   }) {
     return EditorState(
       caption: caption ?? this.caption,
@@ -98,6 +114,9 @@ class EditorState {
       project: project ?? this.project,
       availableLanguages: availableLanguages ?? this.availableLanguages,
       availableDevices: availableDevices ?? this.availableDevices,
+      screens: screens ?? this.screens,
+      selectedScreenIndex: selectedScreenIndex ?? this.selectedScreenIndex,
+      currentDimensions: currentDimensions ?? this.currentDimensions,
     );
   }
 }
@@ -118,6 +137,38 @@ class ScreenshotItem {
     required this.backgroundColor,
     required this.gradientColor,
   });
+}
+
+class ScreenConfig {
+  final String id;
+  final Color backgroundColor;
+  final bool isLandscape;
+  final String? backgroundImagePath;
+  final Map<String, dynamic> customSettings;
+
+  const ScreenConfig({
+    required this.id,
+    this.backgroundColor = Colors.white,
+    this.isLandscape = false,
+    this.backgroundImagePath,
+    this.customSettings = const {},
+  });
+
+  ScreenConfig copyWith({
+    String? id,
+    Color? backgroundColor,
+    bool? isLandscape,
+    String? backgroundImagePath,
+    Map<String, dynamic>? customSettings,
+  }) {
+    return ScreenConfig(
+      id: id ?? this.id,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      isLandscape: isLandscape ?? this.isLandscape,
+      backgroundImagePath: backgroundImagePath ?? this.backgroundImagePath,
+      customSettings: customSettings ?? this.customSettings,
+    );
+  }
 }
 
 // Font weight enum for easier management
