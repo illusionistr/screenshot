@@ -6,7 +6,7 @@ import '../../../core/widgets/loading_widget.dart';
 import '../../projects/providers/project_provider.dart';
 import '../widgets/editor_control_panel.dart';
 import '../widgets/editor_top_bar.dart';
-import '../widgets/main_editor/dynamic_screens_canvas.dart';
+import '../widgets/main_editor/dual_scroll_editor.dart';
 
 class EditorScreen extends ConsumerWidget {
   const EditorScreen({super.key, required this.projectId});
@@ -89,13 +89,8 @@ class EditorScreen extends ConsumerWidget {
           EditorControlPanel(project: project),
 
           // Main content area
-          Expanded(
-            child: Column(
-              children: [
-                // Dynamic screens canvas
-                const DynamicScreensCanvas(),
-              ],
-            ),
+          const Expanded(
+            child: DualScrollEditor(),
           ),
         ],
       ),

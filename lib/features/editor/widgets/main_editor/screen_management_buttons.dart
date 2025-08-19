@@ -34,8 +34,9 @@ class ScreenManagementButtons extends StatelessWidget {
         children: [
           _ManagementButton(
             icon: Icons.drag_handle,
-            tooltip: 'Reorder',
-            onPressed: onReorder,
+            tooltip: 'Long press to drag and reorder',
+            onPressed: null, // No click action needed for drag
+            color: Colors.grey.shade500,
           ),
           _ManagementButton(
             icon: Icons.fullscreen,
