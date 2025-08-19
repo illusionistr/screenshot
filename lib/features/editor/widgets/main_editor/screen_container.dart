@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/background_models.dart';
+import '../../models/text_models.dart';
 import '../../utils/background_renderer.dart';
+import '../../utils/text_renderer.dart';
 import '../../utils/platform_dimension_calculator.dart';
 import 'screen_management_buttons.dart';
 
@@ -10,6 +12,7 @@ class ScreenContainer extends StatelessWidget {
   final bool isSelected;
   final bool isLandscape;
   final ScreenBackground? background;
+  final ScreenTextConfig? textConfig;
   final VoidCallback? onTap;
   final VoidCallback? onReorder;
   final VoidCallback? onExpand;
@@ -25,6 +28,7 @@ class ScreenContainer extends StatelessWidget {
     this.isSelected = false,
     this.isLandscape = false,
     this.background,
+    this.textConfig,
     this.onTap,
     this.onReorder,
     this.onExpand,
@@ -61,6 +65,7 @@ class ScreenContainer extends StatelessWidget {
             ),
             child: Stack(
               children: [
+                // Background layer
                 Positioned.fill(
                   child: Container(
                     margin: const EdgeInsets.all(16),
@@ -68,6 +73,24 @@ class ScreenContainer extends StatelessWidget {
                     child: child ?? _buildPlaceholderContent(),
                   ),
                 ),
+                
+                // Text overlay layer
+                if (textConfig != null)
+                  Positioned.fill(
+                    child: Container(
+                      margin: const EdgeInsets.all(16),
+                      child: TextRenderer.renderTextOverlay(
+                        textConfig: textConfig!,
+                        containerSize: Size(
+                          containerSize.width - 32, // Account for margins
+                          containerSize.height - 32,
+                        ),
+                        scaleFactor: 0.7, // Scale down for preview
+                      ),
+                    ),
+                  ),
+                
+                // Selection indicator
                 if (isSelected)
                   Positioned(
                     top: 8,

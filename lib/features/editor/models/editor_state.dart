@@ -4,6 +4,8 @@ import '../../projects/models/project_model.dart';
 import '../../shared/models/device_model.dart';
 import '../constants/platform_dimensions.dart';
 import 'background_models.dart';
+import 'text_models.dart';
+import 'text_element_state.dart';
 
 // Editor tab enum
 enum EditorTab {
@@ -48,6 +50,9 @@ class EditorState {
   final int? selectedScreenIndex;
   final PlatformDimensions currentDimensions;
 
+  // Text element management
+  final TextElementState textElementState;
+
   const EditorState({
     this.caption = '',
     this.fontFamily = 'Inter',
@@ -74,6 +79,7 @@ class EditorState {
       height: 2796,
       deviceType: DeviceType.iphonePortrait,
     ),
+    this.textElementState = const TextElementState(),
   });
 
   EditorState copyWith({
@@ -98,6 +104,7 @@ class EditorState {
     List<ScreenConfig>? screens,
     int? selectedScreenIndex,
     PlatformDimensions? currentDimensions,
+    TextElementState? textElementState,
   }) {
     return EditorState(
       caption: caption ?? this.caption,
@@ -122,6 +129,7 @@ class EditorState {
       screens: screens ?? this.screens,
       selectedScreenIndex: selectedScreenIndex ?? this.selectedScreenIndex,
       currentDimensions: currentDimensions ?? this.currentDimensions,
+      textElementState: textElementState ?? this.textElementState,
     );
   }
 }
@@ -151,6 +159,7 @@ class ScreenConfig {
   final String? backgroundImagePath; // Legacy field, kept for compatibility
   final Map<String, dynamic> customSettings;
   final ScreenBackground background;
+  final ScreenTextConfig textConfig;
 
   const ScreenConfig({
     required this.id,
@@ -159,6 +168,7 @@ class ScreenConfig {
     this.backgroundImagePath,
     this.customSettings = const {},
     this.background = ScreenBackground.defaultBackground,
+    this.textConfig = const ScreenTextConfig(),
   });
 
   ScreenConfig copyWith({
@@ -168,6 +178,7 @@ class ScreenConfig {
     String? backgroundImagePath,
     Map<String, dynamic>? customSettings,
     ScreenBackground? background,
+    ScreenTextConfig? textConfig,
   }) {
     return ScreenConfig(
       id: id ?? this.id,
@@ -176,6 +187,7 @@ class ScreenConfig {
       backgroundImagePath: backgroundImagePath ?? this.backgroundImagePath,
       customSettings: customSettings ?? this.customSettings,
       background: background ?? this.background,
+      textConfig: textConfig ?? this.textConfig,
     );
   }
 }

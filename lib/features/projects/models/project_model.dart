@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../shared/models/device_model.dart';
 import '../../shared/models/screenshot_model.dart';
 import '../../shared/data/devices_data.dart';
+import '../../editor/models/text_models.dart';
 
 class ProjectModel {
   final String id;
@@ -11,6 +12,7 @@ class ProjectModel {
   final List<String> deviceIds; // List of device IDs using new device model
   final List<String> supportedLanguages; // List of language codes
   final Map<String, Map<String, List<ScreenshotModel>>> screenshots; // Language → Device → Screenshots
+  final Map<String, ScreenTextConfig> screenTextConfigs; // Screen ID → Text Configuration
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -25,6 +27,7 @@ class ProjectModel {
     required this.deviceIds,
     required this.supportedLanguages,
     required this.screenshots,
+    this.screenTextConfigs = const {},
     required this.createdAt,
     required this.updatedAt,
     this.legacyDevices,
@@ -36,6 +39,7 @@ class ProjectModel {
     List<String>? deviceIds,
     List<String>? supportedLanguages,
     Map<String, Map<String, List<ScreenshotModel>>>? screenshots,
+    Map<String, ScreenTextConfig>? screenTextConfigs,
     DateTime? updatedAt,
     Map<String, List<String>>? legacyDevices,
   }) {
@@ -47,6 +51,7 @@ class ProjectModel {
       deviceIds: deviceIds ?? this.deviceIds,
       supportedLanguages: supportedLanguages ?? this.supportedLanguages,
       screenshots: screenshots ?? this.screenshots,
+      screenTextConfigs: screenTextConfigs ?? this.screenTextConfigs,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       legacyDevices: legacyDevices ?? this.legacyDevices,
@@ -90,6 +95,17 @@ class ProjectModel {
         }
       }
     }
+    
+    // Parse screen text configurations
+    Map<String, ScreenTextConfig> screenTextConfigs = {};
+    if (data.containsKey('screenTextConfigs')) {
+      final rawConfigs = Map<String, dynamic>.from(data['screenTextConfigs'] as Map? ?? {});
+      for (final entry in rawConfigs.entries) {
+        final screenId = entry.key;
+        final configData = Map<String, dynamic>.from(entry.value as Map);
+        screenTextConfigs[screenId] = ScreenTextConfig.fromJson(configData);
+      }
+    }
 
     return ProjectModel(
       id: doc.id,
@@ -99,6 +115,7 @@ class ProjectModel {
       deviceIds: deviceIds,
       supportedLanguages: List<String>.from(data['supportedLanguages'] as List? ?? ['en']),
       screenshots: screenshots,
+      screenTextConfigs: screenTextConfigs,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       legacyDevices: legacyDevices,
@@ -151,6 +168,14 @@ class ProjectModel {
             deviceEntry.value.map((screenshot) => screenshot.toMap()).toList();
       }
     }
+    
+    // Convert screen text configurations to Firestore format
+    Map<String, dynamic> textConfigsData = {};
+    for (final entry in screenTextConfigs.entries) {
+      final screenId = entry.key;
+      final config = entry.value;
+      textConfigsData[screenId] = config.toJson();
+    }
 
     return {
       'userId': userId,
@@ -159,6 +184,7 @@ class ProjectModel {
       'deviceIds': deviceIds,
       'supportedLanguages': supportedLanguages,
       'screenshots': screenshotsData,
+      'screenTextConfigs': textConfigsData,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       // Don't save legacy devices to Firestore for new projects
@@ -221,6 +247,33 @@ class ProjectModel {
 
   bool hasScreenshotsForDevice(String deviceId, String languageCode) {
     return getScreenshotCountForDevice(deviceId, languageCode) > 0;
+  }
+
+  // Screen text configuration helper methods
+  ScreenTextConfig? getScreenTextConfig(String screenId) {
+    return screenTextConfigs[screenId];
+  }
+
+  bool hasTextConfigForScreen(String screenId) {
+    return screenTextConfigs.containsKey(screenId) && 
+           screenTextConfigs[screenId]!.visibleElementCount > 0;
+  }
+
+  int getTotalTextElementsCount() {
+    return screenTextConfigs.values
+        .map((config) => config.visibleElementCount)
+        .fold(0, (sum, count) => sum + count);
+  }
+
+  List<String> getScreensWithTextElements() {
+    return screenTextConfigs.entries
+        .where((entry) => entry.value.visibleElementCount > 0)
+        .map((entry) => entry.key)
+        .toList();
+  }
+
+  bool hasAnyTextElements() {
+    return getTotalTextElementsCount() > 0;
   }
 }
 

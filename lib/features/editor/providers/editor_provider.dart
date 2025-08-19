@@ -5,6 +5,7 @@ import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../models/editor_state.dart';
 import '../models/background_models.dart';
+import '../models/text_models.dart';
 import '../constants/platform_dimensions.dart';
 import '../services/platform_detection_service.dart';
 import '../utils/background_renderer.dart';
@@ -357,6 +358,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
       backgroundImagePath: screenToDuplicate.backgroundImagePath,
       customSettings: Map.from(screenToDuplicate.customSettings),
       background: screenToDuplicate.background, // Copy background
+      textConfig: screenToDuplicate.textConfig, // Copy text configuration
     );
     
     final newScreens = [...state.screens];
@@ -433,7 +435,173 @@ class EditorNotifier extends StateNotifier<EditorState> {
     newScreens[index] = newConfig;
     state = state.copyWith(screens: newScreens);
   }
-  
+
+  // Text Element Management Methods
+  void selectTextElement(TextFieldType type) {
+    // Update selection state
+    state = state.copyWith(
+      textElementState: state.textElementState.selectType(type),
+    );
+    
+    // Auto-create element if it doesn't exist on the current screen
+    if (state.selectedScreenIndex != null && 
+        state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      if (!currentScreen.textConfig.hasElement(type)) {
+        final newElement = TextElement.createDefault(type);
+        final updatedTextConfig = currentScreen.textConfig.addElement(newElement);
+        final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+        updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      }
+    }
+  }
+
+  void removeTextElement(TextFieldType type) {
+    if (state.selectedScreenIndex == null || 
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final updatedTextConfig = currentScreen.textConfig.removeElement(type);
+    final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+
+    // Clear selection if removing the selected element
+    if (state.textElementState.selectedType == type) {
+      state = state.copyWith(
+        textElementState: state.textElementState.clearSelection(),
+      );
+    }
+  }
+
+  void updateTextContent(TextFieldType type, String content) {
+    if (state.selectedScreenIndex == null || 
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final currentElement = currentScreen.textConfig.getElement(type);
+    
+    if (currentElement != null) {
+      final updatedElement = currentElement.copyWith(content: content);
+      final updatedTextConfig = currentScreen.textConfig.updateElement(updatedElement);
+      final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+    }
+  }
+
+  void updateTextFormatting({
+    required TextFieldType type,
+    String? fontFamily,
+    double? fontSize,
+    FontWeight? fontWeight,
+    TextAlign? textAlign,
+    Color? color,
+    bool? isVisible,
+  }) {
+    if (state.selectedScreenIndex == null || 
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final currentElement = currentScreen.textConfig.getElement(type);
+    
+    if (currentElement != null) {
+      final updatedElement = currentElement.copyWith(
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        textAlign: textAlign,
+        color: color,
+        isVisible: isVisible,
+      );
+      final updatedTextConfig = currentScreen.textConfig.updateElement(updatedElement);
+      final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+    }
+  }
+
+  void applySelectedElementFormattingToAllScreens() {
+    if (state.textElementState.selectedType == null || 
+        state.selectedScreenIndex == null || 
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final selectedType = state.textElementState.selectedType!;
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final sourceElement = currentScreen.textConfig.getElement(selectedType);
+    
+    if (sourceElement == null) return;
+
+    // Apply formatting to all screens
+    final updatedScreens = state.screens.map((screen) {
+      final existingElement = screen.textConfig.getElement(selectedType);
+      if (existingElement != null) {
+        // Update existing element with new formatting
+        final updatedElement = existingElement.copyWith(
+          fontFamily: sourceElement.fontFamily,
+          fontSize: sourceElement.fontSize,
+          fontWeight: sourceElement.fontWeight,
+          textAlign: sourceElement.textAlign,
+          color: sourceElement.color,
+        );
+        final updatedTextConfig = screen.textConfig.updateElement(updatedElement);
+        return screen.copyWith(textConfig: updatedTextConfig);
+      } else {
+        // Create new element with source formatting but default content
+        final newElement = TextElement.createDefault(selectedType).copyWith(
+          fontFamily: sourceElement.fontFamily,
+          fontSize: sourceElement.fontSize,
+          fontWeight: sourceElement.fontWeight,
+          textAlign: sourceElement.textAlign,
+          color: sourceElement.color,
+        );
+        final updatedTextConfig = screen.textConfig.addElement(newElement);
+        return screen.copyWith(textConfig: updatedTextConfig);
+      }
+    }).toList();
+
+    state = state.copyWith(screens: updatedScreens);
+  }
+
+  int getAffectedScreensCount(TextFieldType type) {
+    return state.screens.where((screen) => screen.textConfig.hasElement(type)).length;
+  }
+
+  TextElement? getCurrentSelectedTextElement() {
+    if (state.textElementState.selectedType == null || 
+        state.selectedScreenIndex == null || 
+        state.selectedScreenIndex! >= state.screens.length) {
+      return null;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    return currentScreen.textConfig.getElement(state.textElementState.selectedType!);
+  }
+
+  ScreenTextConfig? getCurrentScreenTextConfig() {
+    if (state.selectedScreenIndex == null || 
+        state.selectedScreenIndex! >= state.screens.length) {
+      return null;
+    }
+
+    return state.screens[state.selectedScreenIndex!].textConfig;
+  }
+
+  String getApplyToAllButtonText() {
+    if (state.textElementState.selectedType == null) {
+      return 'Apply to All';
+    }
+
+    final type = state.textElementState.selectedType!;
+    final count = getAffectedScreensCount(type);
+    return 'Apply to All ${type.displayName}s ($count)';
+  }
+
   void updateProject(ProjectModel project) {
     final availableDevices = project.devices;
     final availableLanguages = project.supportedLanguages;

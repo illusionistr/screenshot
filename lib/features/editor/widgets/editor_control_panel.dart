@@ -8,6 +8,7 @@ import '../providers/editor_provider.dart';
 import 'background/solid_color_tab.dart';
 import 'background/gradient_tab.dart';
 import 'background/image_background_tab.dart';
+import 'text/text_tab_content.dart';
 import 'editor_screenshot_list.dart';
 import 'screenshot_manager_modal.dart';
 
@@ -217,7 +218,7 @@ class EditorControlPanel extends ConsumerWidget {
       void Function() showScreenshotManagerModal) {
     switch (editorState.selectedTab) {
       case EditorTab.text:
-        return _buildTextTab(editorState, editorNotifier);
+        return TextTabContent(project: project);
       case EditorTab.uploads:
         return _buildUploadsTab(
             editorState,
@@ -238,142 +239,6 @@ class EditorControlPanel extends ConsumerWidget {
     }
   }
 
-  Widget _buildTextTab(EditorState editorState, EditorNotifier editorNotifier) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Caption Section
-        _SectionTitle(
-          title: 'Caption',
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE1E5E9)),
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(12),
-                    hintText: 'Enter your caption...',
-                  ),
-                  onChanged: editorNotifier.updateCaption,
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE91E63),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'English',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Font Family Section
-        _SectionTitle(
-          title: 'Font Family',
-          child: _CustomDropdown(
-            value: editorState.fontFamily,
-            items: const ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat'],
-            onChanged: editorNotifier.updateFontFamily,
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Font Size Section
-        _SectionTitle(
-          title: 'Font Size',
-          child: _CustomDropdown(
-            value: '${editorState.fontSize.toInt()}',
-            items: const ['12', '14', '16', '18', '20', '24', '28', '32'],
-            onChanged: (value) =>
-                editorNotifier.updateFontSize(double.parse(value)),
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Font Weight & Alignment Section
-        _SectionTitle(
-          title: 'Font Weight',
-          child: Row(
-            children: [
-              // Text alignment buttons
-              ...EditorTextAlign.values.map((align) => Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: _IconButton(
-                      icon: align.icon,
-                      isSelected: editorState.textAlign == align.textAlign,
-                      onPressed: () =>
-                          editorNotifier.updateTextAlign(align.textAlign),
-                    ),
-                  )),
-              const SizedBox(width: 12),
-              // Color picker
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: editorState.textColor,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: const Color(0xFFE1E5E9)),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 32),
-
-        // Apply to All Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: editorNotifier.applyToAll,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF6C757D),
-              elevation: 0,
-              side: const BorderSide(color: Color(0xFFE1E5E9)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Apply to all',
-              style: TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildUploadsTab(
       EditorState editorState,

@@ -40,6 +40,7 @@ class DynamicScreensCanvas extends ConsumerWidget {
                     isSelected: editorState.selectedScreenIndex == i,
                     isLandscape: editorState.screens[i].isLandscape,
                     background: editorState.screens[i].background,
+                    textConfig: editorState.screens[i].textConfig,
                     onTap: () => editorNotifier.selectScreen(i),
                     onReorder: null, // Remove individual reorder callback
                     onExpand: () => _expandScreen(context, editorState.screens[i], editorState.selectedDevice),
