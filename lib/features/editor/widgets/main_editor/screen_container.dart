@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/background_models.dart';
 import '../../models/text_models.dart';
+import '../../../shared/models/screenshot_model.dart';
 import '../../utils/background_renderer.dart';
 import '../../utils/text_renderer.dart';
 import '../../utils/platform_dimension_calculator.dart';
+import '../../utils/frame_renderer.dart';
 import 'screen_management_buttons.dart';
 
 class ScreenContainer extends StatelessWidget {
@@ -13,6 +15,7 @@ class ScreenContainer extends StatelessWidget {
   final bool isLandscape;
   final ScreenBackground? background;
   final ScreenTextConfig? textConfig;
+  final ScreenshotModel? assignedScreenshot;
   final VoidCallback? onTap;
   final VoidCallback? onReorder;
   final VoidCallback? onExpand;
@@ -29,6 +32,7 @@ class ScreenContainer extends StatelessWidget {
     this.isLandscape = false,
     this.background,
     this.textConfig,
+    this.assignedScreenshot,
     this.onTap,
     this.onReorder,
     this.onExpand,
@@ -52,25 +56,14 @@ class ScreenContainer extends StatelessWidget {
           child: Container(
             width: containerSize.width,
             height: containerSize.height,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              border: Border.all(
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
-                width: isSelected ? 2 : 1,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
-              ),
-            ),
+            decoration: _getMainContainerDecoration(context),
             child: Stack(
               children: [
-                // Background layer
+                // Frame and screenshot layer
                 Positioned.fill(
                   child: Container(
                     margin: const EdgeInsets.all(16),
-                    decoration: _getBackgroundDecoration(),
-                    child: child ?? _buildPlaceholderContent(),
+                    child: _buildFrameWithContent(),
                   ),
                 ),
                 
@@ -126,24 +119,73 @@ class ScreenContainer extends StatelessWidget {
     );
   }
 
-  BoxDecoration _getBackgroundDecoration() {
+  Widget _buildFrameWithContent() {
+    final containerSize = PlatformDimensionCalculator.calculateContainerSize(
+      deviceId,
+      isLandscape: isLandscape,
+    );
+    
+    final frameSize = Size(
+      containerSize.width - 32, // Account for margins
+      containerSize.height - 32,
+    );
+
+    print('DEBUG ScreenContainer: _buildFrameWithContent called');
+    print('DEBUG ScreenContainer: assignedScreenshot != null: ${assignedScreenshot != null}');
+    print('DEBUG ScreenContainer: assignedScreenshot?.storageUrl: ${assignedScreenshot?.storageUrl}');
+    print('DEBUG ScreenContainer: frameSize: $frameSize');
+
+    // Create the content that goes inside the frame (background + screenshot)
+    final Widget frameContent = _buildFrameContent();
+
+    return FrameRenderer.buildFrameContainer(
+      deviceId: deviceId,
+      containerSize: frameSize,
+      screenshotPath: assignedScreenshot?.storageUrl,
+      placeholder: frameContent,
+    );
+  }
+
+  Widget _buildFrameContent() {
+    // Always show background with placeholder - let FrameRenderer handle the screenshot
+    return Container(
+      decoration: _getBackgroundDecoration(),
+      child: child ?? _buildPlaceholderContent(),
+    );
+  }
+
+  BoxDecoration _getMainContainerDecoration(BuildContext context) {
+    // Base decoration with border and border radius
     final baseDecoration = BoxDecoration(
-      borderRadius: BorderRadius.circular(4),
-      border: Border.all(color: Colors.grey.shade200),
+      border: Border.all(
+        color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
+        width: isSelected ? 2 : 1,
+      ),
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(8),
+        topRight: Radius.circular(8),
+      ),
     );
 
     if (background == null) {
-      return baseDecoration.copyWith(color: Colors.white);
+      return baseDecoration.copyWith(color: Colors.grey.shade50);
     }
 
-    // Use BackgroundRenderer to get the proper decoration
+    // Use BackgroundRenderer to get the proper decoration and combine with border
     final backgroundDecoration = BackgroundRenderer.renderBackground(background!);
     
-    // Merge with base decoration to preserve border and border radius
     return baseDecoration.copyWith(
       color: backgroundDecoration.color,
       gradient: backgroundDecoration.gradient,
       image: backgroundDecoration.image,
+    );
+  }
+
+  BoxDecoration _getBackgroundDecoration() {
+    // This method is no longer used for main container background
+    // Keep for frame content if needed, but should be transparent
+    return const BoxDecoration(
+      color: Colors.transparent,
     );
   }
 
@@ -153,13 +195,13 @@ class ScreenContainer extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.smartphone,
+            assignedScreenshot != null ? Icons.image_outlined : Icons.smartphone,
             size: 48,
             color: Colors.grey.shade400,
           ),
           const SizedBox(height: 12),
           Text(
-            'Screenshot Layout',
+            assignedScreenshot != null ? 'Screenshot' : 'No Screenshot',
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 14,
@@ -168,7 +210,10 @@ class ScreenContainer extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            PlatformDimensionCalculator.getDimensionDisplayText(deviceId, isLandscape: isLandscape),
+            assignedScreenshot != null 
+                ? 'Tap to select different screenshot'
+                : 'Select screen then pick a screenshot',
+            textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey.shade500,
               fontSize: 12,

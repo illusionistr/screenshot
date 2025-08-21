@@ -39,7 +39,32 @@ class DeviceService {
   }
 
   static FrameVariantModel? getDefaultFrameVariant(String deviceId) {
-    return FrameVariantsData.getDefaultFrameVariant(deviceId);
+    // First try to get a real frame variant
+    final variants = getFrameVariants(deviceId);
+    final realFrameVariants = variants.where((variant) => !variant.isGeneric).toList();
+    
+    if (realFrameVariants.isNotEmpty) {
+      return realFrameVariants.first;
+    }
+    
+    // Fallback to generic frame variant
+    final genericVariants = variants.where((variant) => variant.isGeneric).toList();
+    return genericVariants.isNotEmpty ? genericVariants.first : null;
+  }
+
+  static FrameVariantModel? getGenericFrameVariant(String deviceId) {
+    final variants = getFrameVariants(deviceId);
+    return variants.where((variant) => variant.isGeneric).firstOrNull;
+  }
+
+  static bool hasRealFrameVariants(String deviceId) {
+    final variants = getFrameVariants(deviceId);
+    return variants.any((variant) => !variant.isGeneric);
+  }
+
+  static List<FrameVariantModel> getRealFrameVariants(String deviceId) {
+    final variants = getFrameVariants(deviceId);
+    return variants.where((variant) => !variant.isGeneric).toList();
   }
 
   static List<DeviceModel> searchDevices(String query) {

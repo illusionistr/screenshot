@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
 import '../../../projects/models/project_model.dart';
+import '../../../projects/providers/upload_provider.dart';
+import '../../../shared/models/screenshot_model.dart';
 import 'screen_container.dart';
 import 'add_screen_button.dart';
 import 'screen_expand_modal.dart';
@@ -17,6 +19,31 @@ class DynamicScreensCanvas extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final editorState = ref.watch(project != null ? editorProviderFamily(project) : editorProvider);
     final editorNotifier = ref.read(project != null ? editorProviderFamily(project).notifier : editorProvider.notifier);
+    
+    // Watch the project screenshots to get ScreenshotModel objects
+    final screenshotsAsync = project != null 
+        ? ref.watch(projectScreenshotsProvider(project!.id))
+        : const AsyncValue<Map<String, Map<String, List<ScreenshotModel>>>>.data({});
+        
+    // Helper function to get ScreenshotModel by ID
+    ScreenshotModel? getScreenshotById(String screenshotId) {
+      return screenshotsAsync.when(
+        data: (screenshots) {
+          for (final languageEntry in screenshots.entries) {
+            for (final deviceEntry in languageEntry.value.entries) {
+              for (final screenshot in deviceEntry.value) {
+                if (screenshot.id == screenshotId) {
+                  return screenshot;
+                }
+              }
+            }
+          }
+          return null;
+        },
+        loading: () => null,
+        error: (_, __) => null,
+      );
+    }
 
     return SizedBox(
       height: 880,
@@ -41,6 +68,9 @@ class DynamicScreensCanvas extends ConsumerWidget {
                     isLandscape: editorState.screens[i].isLandscape,
                     background: editorState.screens[i].background,
                     textConfig: editorState.screens[i].textConfig,
+                    assignedScreenshot: editorState.screens[i].assignedScreenshotId != null 
+                        ? getScreenshotById(editorState.screens[i].assignedScreenshotId!) 
+                        : null,
                     onTap: () => editorNotifier.selectScreen(i),
                     onReorder: null, // Remove individual reorder callback
                     onExpand: () => _expandScreen(context, editorState.screens[i], editorState.selectedDevice),

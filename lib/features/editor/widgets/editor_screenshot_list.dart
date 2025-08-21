@@ -282,14 +282,6 @@ class _ScreenshotThumbnailState extends State<_ScreenshotThumbnail>
         // Apply reasonable bounds for width (prevent extremely narrow/wide thumbnails)
         containerWidth = containerWidth.clamp(60.0, 400.0);
 
-        // Debug output
-        print('=== FIXED HEIGHT, DYNAMIC WIDTH ===');
-        print(
-            'Device: ${selectedDevice.name} (AR: ${deviceAspectRatio.toStringAsFixed(3)})');
-        print(
-            'Container: ${containerWidth.toStringAsFixed(1)} × ${containerHeight.toStringAsFixed(1)}');
-        print('Using: BoxFit.contain + topLeft alignment');
-        print('===================================');
       } catch (e) {
         // Fallback to default dimensions if device not found
         print('Device not found, falling back to default dimensions');
@@ -316,18 +308,7 @@ class _ScreenshotThumbnailState extends State<_ScreenshotThumbnail>
               scale: _scaleAnimation.value,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  // Debug: Print actual constraints vs our calculated size
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    print('=== SIZE MISMATCH DEBUG ===');
-                    print(
-                        'Calculated: ${containerWidth.toStringAsFixed(1)} × ${containerHeight.toStringAsFixed(1)}');
-                    print(
-                        'Max Constraints: ${constraints.maxWidth.toStringAsFixed(1)} × ${constraints.maxHeight.toStringAsFixed(1)}');
-                    print(
-                        'Difference: width=${(constraints.maxWidth - containerWidth).toStringAsFixed(1)}, height=${(constraints.maxHeight - containerHeight).toStringAsFixed(1)}');
-                    print('============================');
-                  });
-
+             
                   return Container(
                     width: containerWidth,
                     height: containerHeight,

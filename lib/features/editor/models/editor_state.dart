@@ -160,6 +160,7 @@ class ScreenConfig {
   final Map<String, dynamic> customSettings;
   final ScreenBackground background;
   final ScreenTextConfig textConfig;
+  final String? assignedScreenshotId; // NEW: ID of assigned screenshot
 
   const ScreenConfig({
     required this.id,
@@ -169,6 +170,7 @@ class ScreenConfig {
     this.customSettings = const {},
     this.background = ScreenBackground.defaultBackground,
     this.textConfig = const ScreenTextConfig(),
+    this.assignedScreenshotId,
   });
 
   ScreenConfig copyWith({
@@ -179,6 +181,7 @@ class ScreenConfig {
     Map<String, dynamic>? customSettings,
     ScreenBackground? background,
     ScreenTextConfig? textConfig,
+    String? assignedScreenshotId,
   }) {
     return ScreenConfig(
       id: id ?? this.id,
@@ -188,6 +191,7 @@ class ScreenConfig {
       customSettings: customSettings ?? this.customSettings,
       background: background ?? this.background,
       textConfig: textConfig ?? this.textConfig,
+      assignedScreenshotId: assignedScreenshotId ?? this.assignedScreenshotId,
     );
   }
 }

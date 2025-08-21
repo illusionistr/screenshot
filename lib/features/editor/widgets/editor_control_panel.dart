@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
+import '../../shared/models/screenshot_model.dart';
 import '../models/editor_state.dart';
 import '../models/background_models.dart';
 import '../providers/editor_provider.dart';
@@ -48,17 +49,37 @@ class EditorControlPanel extends ConsumerWidget {
 
     void handleScreenshotSelection(
         dynamic screenshot, EditorNotifier editorNotifier) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Screenshot selected for layout'),
-          backgroundColor: const Color(0xFFE91E63),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      // Get the current state instead of using the captured one
+      final currentState = editorNotifier.state;
+      
+      if (screenshot is ScreenshotModel && currentState.selectedScreenIndex != null) {
+        // Assign screenshot to currently selected screen (same pattern as background assignment)
+        editorNotifier.assignScreenshotToSelectedScreen(screenshot.id);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Screenshot assigned to Screen ${currentState.selectedScreenIndex! + 1}'),
+            backgroundColor: const Color(0xFFE91E63),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please select a screen first'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }
     }
 
     void showScreenshotOptions(dynamic screenshot) {
@@ -287,7 +308,12 @@ class EditorControlPanel extends ConsumerWidget {
           ),
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
+
+        // Screen Selection Status
+        _buildScreenSelectionStatus(editorState, ref),
+
+        const SizedBox(height: 16),
 
         // Horizontal Screenshot List
         EditorScreenshotList(
@@ -459,6 +485,77 @@ class EditorControlPanel extends ConsumerWidget {
           onImageSelected: editorNotifier.selectBackgroundImage,
         );
     }
+  }
+
+  Widget _buildScreenSelectionStatus(EditorState editorState, WidgetRef ref) {
+    final selectedScreenIndex = editorState.selectedScreenIndex;
+    
+    if (selectedScreenIndex == null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 20,
+              color: Colors.grey.shade600,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Select a screen in the canvas to assign screenshots',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Check if the selected screen already has a screenshot assigned
+    final currentScreen = editorState.screens[selectedScreenIndex];
+    final hasScreenshot = currentScreen.assignedScreenshotId != null;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasScreenshot ? Colors.blue.shade50 : Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: hasScreenshot ? Colors.blue.shade200 : Colors.orange.shade200,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasScreenshot ? Icons.photo_outlined : Icons.tab,
+            size: 20,
+            color: hasScreenshot ? Colors.blue.shade600 : Colors.orange.shade600,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              hasScreenshot 
+                  ? 'Screen ${selectedScreenIndex + 1} has screenshot - tap another to replace'
+                  : 'Screen ${selectedScreenIndex + 1} selected - tap a screenshot to assign it',
+              style: TextStyle(
+                color: hasScreenshot ? Colors.blue.shade800 : Colors.orange.shade800,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTemplateTab(

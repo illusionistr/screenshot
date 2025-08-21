@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
+import '../../projects/providers/upload_provider.dart';
+import '../../shared/models/screenshot_model.dart';
 import '../models/editor_state.dart';
 import '../models/background_models.dart';
 import '../models/text_models.dart';
@@ -11,7 +13,9 @@ import '../services/platform_detection_service.dart';
 import '../utils/background_renderer.dart';
 
 class EditorNotifier extends StateNotifier<EditorState> {
-  EditorNotifier([ProjectModel? project]) : super(_createInitialState(project));
+  EditorNotifier([ProjectModel? project, this.ref]) : super(_createInitialState(project));
+
+  final Ref? ref;
 
   static EditorState _createInitialState(ProjectModel? project) {
     // Mock screenshots for now - will be replaced with real screenshots later
@@ -602,6 +606,96 @@ class EditorNotifier extends StateNotifier<EditorState> {
     return 'Apply to All ${type.displayName}s ($count)';
   }
 
+  // Screenshot Assignment Methods
+  void assignScreenshotToSelectedScreen(String screenshotId) {
+    // Apply to currently selected screen (following the same pattern as background management)
+    if (state.selectedScreenIndex != null && state.selectedScreenIndex! < state.screens.length) {
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+      final updatedScreen = currentScreen.copyWith(assignedScreenshotId: screenshotId);
+      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+    }
+  }
+
+  void removeScreenshotFromScreen(int screenIndex) {
+    if (screenIndex < 0 || screenIndex >= state.screens.length) return;
+    
+    final currentScreen = state.screens[screenIndex];
+    final updatedScreen = currentScreen.copyWith(assignedScreenshotId: null);
+    updateScreenConfig(screenIndex, updatedScreen);
+  }
+
+  String? getScreenshotForScreen(int screenIndex) {
+    if (screenIndex < 0 || screenIndex >= state.screens.length) return null;
+    
+    return state.screens[screenIndex].assignedScreenshotId;
+  }
+
+  ScreenshotItem? getScreenshotItemForScreen(int screenIndex) {
+    final screenshotId = getScreenshotForScreen(screenIndex);
+    if (screenshotId == null) return null;
+    
+    try {
+      return state.screenshots.firstWhere((screenshot) => screenshot.id == screenshotId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String? getScreenshotUrlForScreen(int screenIndex) {
+    final screenshotId = getScreenshotForScreen(screenIndex);
+    if (screenshotId == null) return null;
+    
+    // For now, we need to get the ScreenshotModel from somewhere
+    // This is a temporary solution - ideally we'd store ScreenshotModel references
+    // or have a way to look them up by ID
+    return screenshotId; // This will be fixed when we have proper ScreenshotModel access
+  }
+
+  // Get the actual ScreenshotModel for a screen by looking it up in the project screenshots
+  ScreenshotModel? getScreenshotModelForScreen(int screenIndex) {
+    final screenshotId = getScreenshotForScreen(screenIndex);
+    if (screenshotId == null || ref == null || state.project == null) return null;
+    
+    try {
+      // For now, we can't synchronously access the async provider data
+      // This would require a different approach, like storing ScreenshotModels directly in state
+      // or using a consumer widget pattern to reactively update the UI
+      return null; // TODO: Implement proper ScreenshotModel lookup
+    } catch (e) {
+      return null;
+    }
+  }
+
+  List<int> getScreensWithAssignedScreenshots() {
+    final result = <int>[];
+    for (int i = 0; i < state.screens.length; i++) {
+      if (state.screens[i].assignedScreenshotId != null) {
+        result.add(i);
+      }
+    }
+    return result;
+  }
+
+  List<String> getAssignedScreenshotIds() {
+    return state.screens
+        .where((screen) => screen.assignedScreenshotId != null)
+        .map((screen) => screen.assignedScreenshotId!)
+        .toList();
+  }
+
+  bool isScreenshotAssigned(String screenshotId) {
+    return getAssignedScreenshotIds().contains(screenshotId);
+  }
+
+  int? getScreenIndexForScreenshot(String screenshotId) {
+    for (int i = 0; i < state.screens.length; i++) {
+      if (state.screens[i].assignedScreenshotId == screenshotId) {
+        return i;
+      }
+    }
+    return null;
+  }
+
   void updateProject(ProjectModel project) {
     final availableDevices = project.devices;
     final availableLanguages = project.supportedLanguages;
@@ -634,12 +728,12 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
 final editorProvider =
     StateNotifierProvider<EditorNotifier, EditorState>((ref) {
-  return EditorNotifier();
+  return EditorNotifier(null, ref);
 });
 
 // Project-specific editor provider with real-time synchronization
 final editorProviderFamily = StateNotifierProvider.family<EditorNotifier, EditorState, ProjectModel?>((ref, project) {
-  final notifier = EditorNotifier(project);
+  final notifier = EditorNotifier(project, ref);
   
   // Set up real-time synchronization if project is provided
   if (project != null) {
