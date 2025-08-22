@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
-import '../../projects/providers/upload_provider.dart';
 import '../../shared/models/screenshot_model.dart';
-import '../models/editor_state.dart';
-import '../models/background_models.dart';
-import '../models/text_models.dart';
 import '../constants/platform_dimensions.dart';
+import '../models/background_models.dart';
+import '../models/editor_state.dart';
+import '../models/text_models.dart';
 import '../services/platform_detection_service.dart';
 import '../utils/background_renderer.dart';
 
 class EditorNotifier extends StateNotifier<EditorState> {
-  EditorNotifier([ProjectModel? project, this.ref]) : super(_createInitialState(project));
+  EditorNotifier([ProjectModel? project, this.ref])
+      : super(_createInitialState(project));
 
   final Ref? ref;
 
@@ -55,34 +55,39 @@ class EditorNotifier extends StateNotifier<EditorState> {
     ];
 
     // Create initial screens
-    final initialScreens = List.generate(5, (index) => ScreenConfig(
-      id: 'screen_${index + 1}',
-      backgroundColor: Colors.white,
-      isLandscape: false,
-    ));
-    
+    final initialScreens = List.generate(
+        5,
+        (index) => ScreenConfig(
+              id: 'screen_${index + 1}',
+              backgroundColor: Colors.white,
+              isLandscape: false,
+            ));
+
     if (project == null) {
       return EditorState(
         screenshots: mockScreenshots,
         screens: initialScreens,
         selectedScreenIndex: 0,
-        currentDimensions: PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!,
+        currentDimensions:
+            PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!,
       );
     }
-    
+
     // Create initial state with project data
     final availableDevices = project.devices;
     final availableLanguages = project.supportedLanguages;
-    final selectedDevice = availableDevices.isNotEmpty ? availableDevices.first.id : '';
-    final currentDimensions = selectedDevice.isNotEmpty 
-      ? PlatformDetectionService.getDimensionsForDevice(selectedDevice)
-      : PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!;
-    
+    final selectedDevice =
+        availableDevices.isNotEmpty ? availableDevices.first.id : '';
+    final currentDimensions = selectedDevice.isNotEmpty
+        ? PlatformDetectionService.getDimensionsForDevice(selectedDevice)
+        : PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!;
+
     return EditorState(
       project: project,
       availableLanguages: availableLanguages,
       availableDevices: availableDevices,
-      selectedLanguage: availableLanguages.isNotEmpty ? availableLanguages.first : 'en',
+      selectedLanguage:
+          availableLanguages.isNotEmpty ? availableLanguages.first : 'en',
       selectedDevice: selectedDevice,
       screenshots: mockScreenshots,
       screens: initialScreens,
@@ -120,7 +125,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   void updateSelectedDevice(String device) {
-    final newDimensions = PlatformDetectionService.getDimensionsForDevice(device);
+    final newDimensions =
+        PlatformDetectionService.getDimensionsForDevice(device);
     state = state.copyWith(
       selectedDevice: device,
       currentDimensions: newDimensions,
@@ -166,9 +172,10 @@ class EditorNotifier extends StateNotifier<EditorState> {
   // Background Management Methods
   void updateSolidBackgroundColor(Color color) {
     state = state.copyWith(solidBackgroundColor: color);
-    
+
     // Apply to currently selected screen if any
-    if (state.selectedScreenIndex != null && state.selectedScreenIndex! < state.screens.length) {
+    if (state.selectedScreenIndex != null &&
+        state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
       final updatedScreen = currentScreen.copyWith(
         background: BackgroundRenderer.createSolidBackground(color),
@@ -179,7 +186,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void updateBackgroundType(BackgroundType type) {
     // Get the currently selected screen
-    if (state.selectedScreenIndex == null || state.selectedScreenIndex! >= state.screens.length) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
       return;
     }
 
@@ -215,7 +223,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void selectBackgroundImage(String imageId, String imageUrl) {
     // Apply to currently selected screen
-    if (state.selectedScreenIndex != null && state.selectedScreenIndex! < state.screens.length) {
+    if (state.selectedScreenIndex != null &&
+        state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
       final updatedScreen = currentScreen.copyWith(
         background: BackgroundRenderer.createImageBackground(
@@ -229,7 +238,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void applyBackgroundToAllScreens() {
     // Get the currently selected screen's background
-    if (state.selectedScreenIndex == null || state.selectedScreenIndex! >= state.screens.length) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
       return;
     }
 
@@ -247,9 +257,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
   // Enhanced gradient methods with real-time preview
   void updateGradientStartColorWithPreview(Color color) {
     state = state.copyWith(gradientStartColor: color);
-    
+
     // Apply to currently selected screen if it has gradient background
-    if (state.selectedScreenIndex != null && 
+    if (state.selectedScreenIndex != null &&
         state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
       if (currentScreen.background.type == BackgroundType.gradient) {
@@ -267,9 +277,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void updateGradientEndColorWithPreview(Color color) {
     state = state.copyWith(gradientEndColor: color);
-    
+
     // Apply to currently selected screen if it has gradient background
-    if (state.selectedScreenIndex != null && 
+    if (state.selectedScreenIndex != null &&
         state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
       if (currentScreen.background.type == BackgroundType.gradient) {
@@ -287,9 +297,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void updateGradientDirectionWithPreview(String direction) {
     state = state.copyWith(gradientDirection: direction);
-    
+
     // Apply to currently selected screen if it has gradient background
-    if (state.selectedScreenIndex != null && 
+    if (state.selectedScreenIndex != null &&
         state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
       if (currentScreen.background.type == BackgroundType.gradient) {
@@ -307,7 +317,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   // Helper methods for getting current screen background info
   ScreenBackground? getCurrentScreenBackground() {
-    if (state.selectedScreenIndex == null || state.selectedScreenIndex! >= state.screens.length) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
       return null;
     }
     return state.screens[state.selectedScreenIndex!].background;
@@ -315,7 +326,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   Color getCurrentScreenSolidColor() {
     final background = getCurrentScreenBackground();
-    if (background?.type == BackgroundType.solid && background?.solidColor != null) {
+    if (background?.type == BackgroundType.solid &&
+        background?.solidColor != null) {
       return background!.solidColor!;
     }
     return state.solidBackgroundColor;
@@ -332,28 +344,30 @@ class EditorNotifier extends StateNotifier<EditorState> {
   // Screen Management Methods
   void addScreen() {
     if (state.screens.length >= 10) return;
-    
+
     // Copy background from currently selected screen or use default
     ScreenBackground backgroundToUse = ScreenBackground.defaultBackground;
-    if (state.selectedScreenIndex != null && 
+    if (state.selectedScreenIndex != null &&
         state.selectedScreenIndex! < state.screens.length) {
       backgroundToUse = state.screens[state.selectedScreenIndex!].background;
     }
-    
+
     final newScreen = ScreenConfig(
       id: 'screen_${DateTime.now().millisecondsSinceEpoch}',
       backgroundColor: Colors.white,
       isLandscape: false,
       background: backgroundToUse,
     );
-    
+
     final newScreens = [...state.screens, newScreen];
     state = state.copyWith(screens: newScreens);
   }
 
   void duplicateScreen(int index) {
-    if (index < 0 || index >= state.screens.length || state.screens.length >= 10) return;
-    
+    if (index < 0 ||
+        index >= state.screens.length ||
+        state.screens.length >= 10) return;
+
     final screenToDuplicate = state.screens[index];
     final newScreen = ScreenConfig(
       id: 'screen_${DateTime.now().millisecondsSinceEpoch}',
@@ -364,18 +378,19 @@ class EditorNotifier extends StateNotifier<EditorState> {
       background: screenToDuplicate.background, // Copy background
       textConfig: screenToDuplicate.textConfig, // Copy text configuration
     );
-    
+
     final newScreens = [...state.screens];
     newScreens.insert(index + 1, newScreen);
     state = state.copyWith(screens: newScreens);
   }
 
   void deleteScreen(int index) {
-    if (index < 0 || index >= state.screens.length || state.screens.length <= 1) return;
-    
+    if (index < 0 || index >= state.screens.length || state.screens.length <= 1)
+      return;
+
     final newScreens = [...state.screens];
     newScreens.removeAt(index);
-    
+
     int? newSelectedIndex = state.selectedScreenIndex;
     if (newSelectedIndex != null) {
       if (newSelectedIndex == index) {
@@ -387,7 +402,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
         newSelectedIndex = newScreens.length - 1;
       }
     }
-    
+
     state = state.copyWith(
       screens: newScreens,
       selectedScreenIndex: newSelectedIndex,
@@ -395,16 +410,18 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   void reorderScreens(int oldIndex, int newIndex) {
-    if (oldIndex < 0 || oldIndex >= state.screens.length || 
-        newIndex < 0 || newIndex >= state.screens.length ||
+    if (oldIndex < 0 ||
+        oldIndex >= state.screens.length ||
+        newIndex < 0 ||
+        newIndex >= state.screens.length ||
         oldIndex == newIndex) {
       return;
     }
-    
+
     final newScreens = [...state.screens];
     final screen = newScreens.removeAt(oldIndex);
     newScreens.insert(newIndex, screen);
-    
+
     int? newSelectedIndex = state.selectedScreenIndex;
     if (newSelectedIndex == oldIndex) {
       newSelectedIndex = newIndex;
@@ -419,7 +436,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
         }
       }
     }
-    
+
     state = state.copyWith(
       screens: newScreens,
       selectedScreenIndex: newSelectedIndex,
@@ -428,13 +445,13 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   void selectScreen(int index) {
     if (index < 0 || index >= state.screens.length) return;
-    
+
     state = state.copyWith(selectedScreenIndex: index);
   }
 
   void updateScreenConfig(int index, ScreenConfig newConfig) {
     if (index < 0 || index >= state.screens.length) return;
-    
+
     final newScreens = [...state.screens];
     newScreens[index] = newConfig;
     state = state.copyWith(screens: newScreens);
@@ -446,22 +463,24 @@ class EditorNotifier extends StateNotifier<EditorState> {
     state = state.copyWith(
       textElementState: state.textElementState.selectType(type),
     );
-    
+
     // Auto-create element if it doesn't exist on the current screen
-    if (state.selectedScreenIndex != null && 
+    if (state.selectedScreenIndex != null &&
         state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
       if (!currentScreen.textConfig.hasElement(type)) {
         final newElement = TextElement.createDefault(type);
-        final updatedTextConfig = currentScreen.textConfig.addElement(newElement);
-        final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+        final updatedTextConfig =
+            currentScreen.textConfig.addElement(newElement);
+        final updatedScreen =
+            currentScreen.copyWith(textConfig: updatedTextConfig);
         updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
       }
     }
   }
 
   void removeTextElement(TextFieldType type) {
-    if (state.selectedScreenIndex == null || 
+    if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return;
     }
@@ -480,18 +499,20 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   void updateTextContent(TextFieldType type, String content) {
-    if (state.selectedScreenIndex == null || 
+    if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return;
     }
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
     final currentElement = currentScreen.textConfig.getElement(type);
-    
+
     if (currentElement != null) {
       final updatedElement = currentElement.copyWith(content: content);
-      final updatedTextConfig = currentScreen.textConfig.updateElement(updatedElement);
-      final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+      final updatedTextConfig =
+          currentScreen.textConfig.updateElement(updatedElement);
+      final updatedScreen =
+          currentScreen.copyWith(textConfig: updatedTextConfig);
       updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
     }
   }
@@ -505,14 +526,14 @@ class EditorNotifier extends StateNotifier<EditorState> {
     Color? color,
     bool? isVisible,
   }) {
-    if (state.selectedScreenIndex == null || 
+    if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return;
     }
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
     final currentElement = currentScreen.textConfig.getElement(type);
-    
+
     if (currentElement != null) {
       final updatedElement = currentElement.copyWith(
         fontFamily: fontFamily,
@@ -522,15 +543,17 @@ class EditorNotifier extends StateNotifier<EditorState> {
         color: color,
         isVisible: isVisible,
       );
-      final updatedTextConfig = currentScreen.textConfig.updateElement(updatedElement);
-      final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+      final updatedTextConfig =
+          currentScreen.textConfig.updateElement(updatedElement);
+      final updatedScreen =
+          currentScreen.copyWith(textConfig: updatedTextConfig);
       updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
     }
   }
 
   void applySelectedElementFormattingToAllScreens() {
-    if (state.textElementState.selectedType == null || 
-        state.selectedScreenIndex == null || 
+    if (state.textElementState.selectedType == null ||
+        state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return;
     }
@@ -538,7 +561,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final selectedType = state.textElementState.selectedType!;
     final currentScreen = state.screens[state.selectedScreenIndex!];
     final sourceElement = currentScreen.textConfig.getElement(selectedType);
-    
+
     if (sourceElement == null) return;
 
     // Apply formatting to all screens
@@ -553,7 +576,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
           textAlign: sourceElement.textAlign,
           color: sourceElement.color,
         );
-        final updatedTextConfig = screen.textConfig.updateElement(updatedElement);
+        final updatedTextConfig =
+            screen.textConfig.updateElement(updatedElement);
         return screen.copyWith(textConfig: updatedTextConfig);
       } else {
         // Create new element with source formatting but default content
@@ -573,22 +597,25 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   int getAffectedScreensCount(TextFieldType type) {
-    return state.screens.where((screen) => screen.textConfig.hasElement(type)).length;
+    return state.screens
+        .where((screen) => screen.textConfig.hasElement(type))
+        .length;
   }
 
   TextElement? getCurrentSelectedTextElement() {
-    if (state.textElementState.selectedType == null || 
-        state.selectedScreenIndex == null || 
+    if (state.textElementState.selectedType == null ||
+        state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return null;
     }
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
-    return currentScreen.textConfig.getElement(state.textElementState.selectedType!);
+    return currentScreen.textConfig
+        .getElement(state.textElementState.selectedType!);
   }
 
   ScreenTextConfig? getCurrentScreenTextConfig() {
-    if (state.selectedScreenIndex == null || 
+    if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return null;
     }
@@ -609,16 +636,18 @@ class EditorNotifier extends StateNotifier<EditorState> {
   // Screenshot Assignment Methods
   void assignScreenshotToSelectedScreen(String screenshotId) {
     // Apply to currently selected screen (following the same pattern as background management)
-    if (state.selectedScreenIndex != null && state.selectedScreenIndex! < state.screens.length) {
+    if (state.selectedScreenIndex != null &&
+        state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
-      final updatedScreen = currentScreen.copyWith(assignedScreenshotId: screenshotId);
+      final updatedScreen =
+          currentScreen.copyWith(assignedScreenshotId: screenshotId);
       updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
     }
   }
 
   void removeScreenshotFromScreen(int screenIndex) {
     if (screenIndex < 0 || screenIndex >= state.screens.length) return;
-    
+
     final currentScreen = state.screens[screenIndex];
     final updatedScreen = currentScreen.copyWith(assignedScreenshotId: null);
     updateScreenConfig(screenIndex, updatedScreen);
@@ -626,16 +655,17 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   String? getScreenshotForScreen(int screenIndex) {
     if (screenIndex < 0 || screenIndex >= state.screens.length) return null;
-    
+
     return state.screens[screenIndex].assignedScreenshotId;
   }
 
   ScreenshotItem? getScreenshotItemForScreen(int screenIndex) {
     final screenshotId = getScreenshotForScreen(screenIndex);
     if (screenshotId == null) return null;
-    
+
     try {
-      return state.screenshots.firstWhere((screenshot) => screenshot.id == screenshotId);
+      return state.screenshots
+          .firstWhere((screenshot) => screenshot.id == screenshotId);
     } catch (e) {
       return null;
     }
@@ -644,7 +674,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
   String? getScreenshotUrlForScreen(int screenIndex) {
     final screenshotId = getScreenshotForScreen(screenIndex);
     if (screenshotId == null) return null;
-    
+
     // For now, we need to get the ScreenshotModel from somewhere
     // This is a temporary solution - ideally we'd store ScreenshotModel references
     // or have a way to look them up by ID
@@ -654,8 +684,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
   // Get the actual ScreenshotModel for a screen by looking it up in the project screenshots
   ScreenshotModel? getScreenshotModelForScreen(int screenIndex) {
     final screenshotId = getScreenshotForScreen(screenIndex);
-    if (screenshotId == null || ref == null || state.project == null) return null;
-    
+    if (screenshotId == null || ref == null || state.project == null)
+      return null;
+
     try {
       // For now, we can't synchronously access the async provider data
       // This would require a different approach, like storing ScreenshotModels directly in state
@@ -699,19 +730,19 @@ class EditorNotifier extends StateNotifier<EditorState> {
   void updateProject(ProjectModel project) {
     final availableDevices = project.devices;
     final availableLanguages = project.supportedLanguages;
-    
+
     state = state.copyWith(
       project: project,
       availableLanguages: availableLanguages,
       availableDevices: availableDevices,
-      selectedLanguage: availableLanguages.isNotEmpty 
-          ? (availableLanguages.contains(state.selectedLanguage) 
-              ? state.selectedLanguage 
+      selectedLanguage: availableLanguages.isNotEmpty
+          ? (availableLanguages.contains(state.selectedLanguage)
+              ? state.selectedLanguage
               : availableLanguages.first)
           : 'en',
-      selectedDevice: availableDevices.isNotEmpty 
-          ? (availableDevices.any((d) => d.id == state.selectedDevice) 
-              ? state.selectedDevice 
+      selectedDevice: availableDevices.isNotEmpty
+          ? (availableDevices.any((d) => d.id == state.selectedDevice)
+              ? state.selectedDevice
               : availableDevices.first.id)
           : '',
     );
@@ -724,6 +755,54 @@ class EditorNotifier extends StateNotifier<EditorState> {
       updateProject(latestProject);
     }
   }
+
+  // Layout Management Methods
+
+  /// Update the selected layout for the current screen
+  void updateSelectedLayout(String layoutId) {
+    state = state.copyWith(selectedLayoutId: layoutId);
+  }
+
+  /// Update the selected frame variant (real, clay, matte, no device)
+  void updateSelectedFrameVariant(String frameVariant) {
+    state = state.copyWith(selectedFrameVariant: frameVariant);
+  }
+
+  /// Apply the selected layout to the current screen
+  void applyLayoutToCurrentScreen(String layoutId) {
+    if (state.selectedScreenIndex == null) return;
+
+    final updatedScreens = List<ScreenConfig>.from(state.screens);
+    updatedScreens[state.selectedScreenIndex!] =
+        updatedScreens[state.selectedScreenIndex!].copyWith(
+      layoutId: layoutId,
+    );
+
+    state = state.copyWith(
+      screens: updatedScreens,
+      selectedLayoutId: layoutId,
+    );
+  }
+
+  /// Apply the selected layout to all screens
+  void applyLayoutToAllScreens(String layoutId) {
+    final updatedScreens = state.screens
+        .map((screen) => screen.copyWith(
+              layoutId: layoutId,
+            ))
+        .toList();
+
+    state = state.copyWith(
+      screens: updatedScreens,
+      selectedLayoutId: layoutId,
+    );
+  }
+
+  /// Get the layout ID for the current screen
+  String? getCurrentScreenLayoutId() {
+    if (state.selectedScreenIndex == null) return null;
+    return state.screens[state.selectedScreenIndex!].layoutId;
+  }
 }
 
 final editorProvider =
@@ -732,9 +811,11 @@ final editorProvider =
 });
 
 // Project-specific editor provider with real-time synchronization
-final editorProviderFamily = StateNotifierProvider.family<EditorNotifier, EditorState, ProjectModel?>((ref, project) {
+final editorProviderFamily =
+    StateNotifierProvider.family<EditorNotifier, EditorState, ProjectModel?>(
+        (ref, project) {
   final notifier = EditorNotifier(project, ref);
-  
+
   // Set up real-time synchronization if project is provided
   if (project != null) {
     // Listen to projects stream for updates
@@ -750,6 +831,6 @@ final editorProviderFamily = StateNotifierProvider.family<EditorNotifier, Editor
       }
     });
   }
-  
+
   return notifier;
 });

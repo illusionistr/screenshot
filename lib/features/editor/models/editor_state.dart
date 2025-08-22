@@ -4,8 +4,8 @@ import '../../projects/models/project_model.dart';
 import '../../shared/models/device_model.dart';
 import '../constants/platform_dimensions.dart';
 import 'background_models.dart';
-import 'text_models.dart';
 import 'text_element_state.dart';
+import 'text_models.dart';
 
 // Editor tab enum
 enum EditorTab {
@@ -39,12 +39,12 @@ class EditorState {
   final Color gradientStartColor;
   final Color gradientEndColor;
   final String gradientDirection;
-  
+
   // Project-related data
   final ProjectModel? project;
   final List<String> availableLanguages;
   final List<DeviceModel> availableDevices;
-  
+
   // Screen management
   final List<ScreenConfig> screens;
   final int? selectedScreenIndex;
@@ -52,6 +52,10 @@ class EditorState {
 
   // Text element management
   final TextElementState textElementState;
+
+  // Layout management
+  final String selectedLayoutId;
+  final String selectedFrameVariant;
 
   const EditorState({
     this.caption = '',
@@ -80,6 +84,9 @@ class EditorState {
       deviceType: DeviceType.iphonePortrait,
     ),
     this.textElementState = const TextElementState(),
+    this.selectedLayoutId = 'centered_above',
+    this.selectedFrameVariant =
+        '', // Changed from 'generic' to empty string - will be set dynamically
   });
 
   EditorState copyWith({
@@ -105,6 +112,8 @@ class EditorState {
     int? selectedScreenIndex,
     PlatformDimensions? currentDimensions,
     TextElementState? textElementState,
+    String? selectedLayoutId,
+    String? selectedFrameVariant,
   }) {
     return EditorState(
       caption: caption ?? this.caption,
@@ -130,6 +139,8 @@ class EditorState {
       selectedScreenIndex: selectedScreenIndex ?? this.selectedScreenIndex,
       currentDimensions: currentDimensions ?? this.currentDimensions,
       textElementState: textElementState ?? this.textElementState,
+      selectedLayoutId: selectedLayoutId ?? this.selectedLayoutId,
+      selectedFrameVariant: selectedFrameVariant ?? this.selectedFrameVariant,
     );
   }
 }
@@ -161,6 +172,7 @@ class ScreenConfig {
   final ScreenBackground background;
   final ScreenTextConfig textConfig;
   final String? assignedScreenshotId; // NEW: ID of assigned screenshot
+  final String? layoutId; // NEW: ID of selected layout
 
   const ScreenConfig({
     required this.id,
@@ -171,6 +183,7 @@ class ScreenConfig {
     this.background = ScreenBackground.defaultBackground,
     this.textConfig = const ScreenTextConfig(),
     this.assignedScreenshotId,
+    this.layoutId,
   });
 
   ScreenConfig copyWith({
@@ -182,6 +195,7 @@ class ScreenConfig {
     ScreenBackground? background,
     ScreenTextConfig? textConfig,
     String? assignedScreenshotId,
+    String? layoutId,
   }) {
     return ScreenConfig(
       id: id ?? this.id,
@@ -192,6 +206,7 @@ class ScreenConfig {
       background: background ?? this.background,
       textConfig: textConfig ?? this.textConfig,
       assignedScreenshotId: assignedScreenshotId ?? this.assignedScreenshotId,
+      layoutId: layoutId ?? this.layoutId,
     );
   }
 }

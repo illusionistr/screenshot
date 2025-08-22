@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../models/device_model.dart';
 import '../models/frame_variant_model.dart';
 import '../services/device_service.dart';
 
-class DeviceCard extends StatelessWidget {
+class DeviceCard extends StatefulWidget {
   final DeviceModel device;
   final bool isSelected;
   final VoidCallback? onTap;
@@ -22,20 +23,61 @@ class DeviceCard extends StatelessWidget {
   });
 
   @override
+  State<DeviceCard> createState() => _DeviceCardState();
+}
+
+class _DeviceCardState extends State<DeviceCard> {
+  FrameVariantModel? _currentFrame;
+  bool _isLoadingFrame = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFrameVariant();
+  }
+
+  @override
+  void didUpdateWidget(DeviceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedFrame != widget.selectedFrame || 
+        oldWidget.device.id != widget.device.id) {
+      _loadFrameVariant();
+    }
+  }
+
+  Future<void> _loadFrameVariant() async {
+    setState(() {
+      _isLoadingFrame = true;
+    });
+
+    try {
+      final frame = widget.selectedFrame ?? 
+          await DeviceService.getDefaultFrameVariant(widget.device.id);
+      setState(() {
+        _currentFrame = frame;
+        _isLoadingFrame = false;
+      });
+    } catch (e) {
+      setState(() {
+        _currentFrame = null;
+        _isLoadingFrame = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final frameVariants = DeviceService.getFrameVariants(device.id);
-    final currentFrame =
-        selectedFrame ?? DeviceService.getDefaultFrameVariant(device.id);
+    final frameVariants = DeviceService.getFrameVariants(widget.device.id);
 
     return Card(
-      elevation: isSelected ? 8 : 2,
-      color: isSelected ? theme.colorScheme.primaryContainer : null,
+      elevation: widget.isSelected ? 8 : 2,
+      color: widget.isSelected ? theme.colorScheme.primaryContainer : null,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(compact ? 6.0 : 16.0),
+          padding: EdgeInsets.all(widget.compact ? 6.0 : 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -43,37 +85,37 @@ class DeviceCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: compact ? 20 : 32,
-                    height: compact ? 20 : 32,
+                    width: widget.compact ? 20 : 32,
+                    height: widget.compact ? 20 : 32,
                     decoration: BoxDecoration(
-                      color: device.platform == Platform.ios
+                      color: widget.device.platform == Platform.ios
                           ? Colors.grey.shade200
                           : Colors.green.shade100,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
-                      device.platform == Platform.ios
+                      widget.device.platform == Platform.ios
                           ? Icons.phone_iphone
                           : Icons.android,
-                      color: device.platform == Platform.ios
+                      color: widget.device.platform == Platform.ios
                           ? Colors.grey.shade600
                           : Colors.green.shade700,
-                      size: compact ? 12 : 18,
+                      size: widget.compact ? 12 : 18,
                     ),
                   ),
-                  SizedBox(width: compact ? 6 : 12),
+                  SizedBox(width: widget.compact ? 6 : 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          device.name,
-                          style: (compact
+                          widget.device.name,
+                          style: (widget.compact
                                   ? theme.textTheme.bodyMedium
                                   : theme.textTheme.titleMedium)
                               ?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isSelected
+                            color: widget.isSelected
                                 ? theme.colorScheme.onPrimaryContainer
                                 : null,
                           ),
@@ -81,113 +123,80 @@ class DeviceCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          '${device.platform.displayName} • ${device.appStoreDisplaySize}',
+                          '${widget.device.platform.displayName} • ${widget.device.appStoreDisplaySize}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: isSelected
+                            color: widget.isSelected
                                 ? theme.colorScheme.onPrimaryContainer
                                     .withValues(alpha: 0.7)
                                 : theme.colorScheme.onSurface
                                     .withValues(alpha: 0.6),
-                            fontSize: compact ? 10 : null,
+                            fontSize: widget.compact ? 10 : null,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (compact) ...[
+                        if (widget.compact) ...[
                           const SizedBox(height: 2),
                           Text(
-                            '${device.screenWidth}×${device.screenHeight}',
+                            '${widget.device.screenWidth}×${widget.device.screenHeight}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: isSelected
+                              color: widget.isSelected
                                   ? theme.colorScheme.onPrimaryContainer
-                                      .withValues(alpha: 0.6)
+                                      .withValues(alpha: 0.7)
                                   : theme.colorScheme.onSurface
                                       .withValues(alpha: 0.5),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 9,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
                     ),
                   ),
-                  if (isSelected)
+                  if (widget.isSelected)
                     Icon(
                       Icons.check_circle,
                       color: theme.colorScheme.primary,
-                      size: compact ? 14 : 20,
+                      size: widget.compact ? 16 : 20,
                     ),
                 ],
               ),
-              if (showSpecs && !compact) ...[
+              if (widget.showSpecs && !widget.compact) ...[
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.2),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SpecItem(
+                        label: 'Screen',
+                        value: '${widget.device.screenWidth}×${widget.device.screenHeight}',
+                      ),
+                    ),
+                    Expanded(
+                      child: _SpecItem(
+                        label: 'Platform',
+                        value: widget.device.platform.displayName,
+                      ),
+                    ),
+                    Expanded(
+                      child: _SpecItem(
+                        label: 'Type',
+                        value: widget.device.isTablet ? 'Tablet' : 'Phone',
+                      ),
+                    ),
+                  ],
+                ),
+                if (frameVariants.isNotEmpty &&
+                    _currentFrame != null &&
+                    !widget.compact) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Frame: ${_currentFrame!.name}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Specifications',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SpecItem(
-                              label: 'Resolution',
-                              value:
-                                  '${device.screenWidth}×${device.screenHeight}',
-                            ),
-                          ),
-                          Expanded(
-                            child: _SpecItem(
-                              label: 'Aspect Ratio',
-                              value: device.aspectRatio.toStringAsFixed(2),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SpecItem(
-                              label: 'Type',
-                              value: device.isTablet ? 'Tablet' : 'Phone',
-                            ),
-                          ),
-                          Expanded(
-                            child: _SpecItem(
-                              label: 'Frames',
-                              value: '${frameVariants.length} available',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (frameVariants.isNotEmpty &&
-                  currentFrame != null &&
-                  !compact) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Frame: ${currentFrame.name}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
+                ],
               ],
             ],
           ),

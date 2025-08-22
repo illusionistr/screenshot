@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/editor_state.dart';
-import '../../providers/editor_provider.dart';
+
 import '../../../projects/models/project_model.dart';
 import '../../../projects/providers/upload_provider.dart';
 import '../../../shared/models/screenshot_model.dart';
-import 'screen_container.dart';
+import '../../models/editor_state.dart';
+import '../../providers/editor_provider.dart';
 import 'add_screen_button.dart';
-import 'screen_expand_modal.dart';
 import 'horizontal_reorderable_row.dart';
+import 'screen_container.dart';
+import 'screen_expand_modal.dart';
 
 class DynamicScreensCanvas extends ConsumerWidget {
   final ProjectModel? project;
@@ -71,6 +72,8 @@ class DynamicScreensCanvas extends ConsumerWidget {
                     assignedScreenshot: editorState.screens[i].assignedScreenshotId != null 
                         ? getScreenshotById(editorState.screens[i].assignedScreenshotId!) 
                         : null,
+                    layoutId: editorState.screens[i].layoutId ?? editorState.selectedLayoutId,
+                    frameVariant: editorState.selectedFrameVariant,
                     onTap: () => editorNotifier.selectScreen(i),
                     onReorder: null, // Remove individual reorder callback
                     onExpand: () => _expandScreen(context, editorState.screens[i], editorState.selectedDevice),

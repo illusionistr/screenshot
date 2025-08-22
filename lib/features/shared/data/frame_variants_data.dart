@@ -4,7 +4,7 @@ class FrameVariantsData {
   FrameVariantsData._();
 
   static const List<FrameVariantModel> allFrameVariants = [
-    // iPhone 15 Pro variants
+    // iPhone 15 Pro variants (placeholder - no assets yet)
     FrameVariantModel(
       id: 'natural-titanium',
       name: 'Natural Titanium',
@@ -30,7 +30,7 @@ class FrameVariantsData {
       deviceId: 'iphone-15-pro',
     ),
 
-    // iPhone 15 Pro Max variants (same colors, different device)
+    // iPhone 15 Pro Max variants (placeholder - no assets yet)
     FrameVariantModel(
       id: 'natural-titanium',
       name: 'Natural Titanium',
@@ -56,7 +56,7 @@ class FrameVariantsData {
       deviceId: 'iphone-15-pro-max',
     ),
 
-    // iPhone 14 variants. There is only one color for those phones
+    // iPhone 14 variants (placeholder - no assets yet)
     FrameVariantModel(
       id: 'blue',
       name: 'Blue',
@@ -88,7 +88,7 @@ class FrameVariantsData {
       deviceId: 'iphone-14',
     ),
 
-    // iPhone 14 Pro variants
+    // iPhone 14 Pro variants (placeholder - no assets yet)
     FrameVariantModel(
       id: 'deep-purple',
       name: 'Deep Purple',
@@ -114,29 +114,25 @@ class FrameVariantsData {
       deviceId: 'iphone-14-pro',
     ),
 
-    // iPhone 14 Pro Max variants (same colors, different device)
+    // iPhone 14 Pro Max variants (REAL ASSETS)
     FrameVariantModel(
-      //real
       id: 'deep-purple',
       name: 'Deep Purple',
-      assetPath: 'assets/frames/iPhone14-ProMax.png',
+      assetPath: 'assets/frames/iphone-14-pro-max/deep-purple.png',
       deviceId: 'iphone-14-pro-max',
     ),
-    //real
     FrameVariantModel(
       id: 'gold',
       name: 'Gold',
-      assetPath: 'assets/frames/iPhone13-ProMax.png',
-      deviceId: 'iphone-13-pro-max',
+      assetPath: 'assets/frames/iphone-14-pro-max/gold.png',
+      deviceId: 'iphone-14-pro-max',
     ),
-    //real
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iPhone12-ProMax.png',
-      deviceId: 'iphone-12-pro-max',
+      assetPath: 'assets/frames/iphone-14-pro-max/silver.png',
+      deviceId: 'iphone-14-pro-max',
     ),
-    //real
     FrameVariantModel(
       id: 'space-black',
       name: 'Space Black',
@@ -144,12 +140,45 @@ class FrameVariantsData {
       deviceId: 'iphone-14-pro-max',
     ),
 
-    // iPad Pro 12.9" variants
+    // iPhone 13 Pro Max variants (REAL ASSETS)
     FrameVariantModel(
-      //real
+      id: 'gold',
+      name: 'Gold',
+      assetPath: 'assets/frames/iphone-13-pro-max/gold.png',
+      deviceId: 'iphone-13-pro-max',
+    ),
+    FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iPad-Pro-(12.9-inch).png',
+      assetPath: 'assets/frames/iphone-13-pro-max/silver.png',
+      deviceId: 'iphone-13-pro-max',
+    ),
+    FrameVariantModel(
+      id: 'space-black',
+      name: 'Space Black',
+      assetPath: 'assets/frames/iphone-13-pro-max/space-black.png',
+      deviceId: 'iphone-13-pro-max',
+    ),
+
+    // iPhone 12 Pro Max variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'silver',
+      name: 'Silver',
+      assetPath: 'assets/frames/iphone-12-pro-max/silver.png',
+      deviceId: 'iphone-12-pro-max',
+    ),
+    FrameVariantModel(
+      id: 'space-black',
+      name: 'Space Black',
+      assetPath: 'assets/frames/iphone-12-pro-max/space-black.png',
+      deviceId: 'iphone-12-pro-max',
+    ),
+
+    // iPad Pro 12.9" variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'silver',
+      name: 'Silver',
+      assetPath: 'assets/frames/ipad-pro-12-9/silver.png',
       deviceId: 'ipad-pro-12-9',
     ),
     FrameVariantModel(
@@ -159,12 +188,11 @@ class FrameVariantsData {
       deviceId: 'ipad-pro-12-9',
     ),
 
-    // iPad Pro 11" variants
-    //real
+    // iPad Pro 11" variants (REAL ASSETS)
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iPad-Pro-(11-inch).png',
+      assetPath: 'assets/frames/ipad-pro-11/silver.png',
       deviceId: 'ipad-pro-11',
     ),
     FrameVariantModel(
@@ -174,15 +202,27 @@ class FrameVariantsData {
       deviceId: 'ipad-pro-11',
     ),
 
-    // Pixel 8 Pro variants
-    //real
+    // iPad Air variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'silver',
+      name: 'Silver',
+      assetPath: 'assets/frames/ipad-air/silver.png',
+      deviceId: 'ipad-air',
+    ),
+    FrameVariantModel(
+      id: 'space-gray',
+      name: 'Space Gray',
+      assetPath: 'assets/frames/ipad-air/space-gray.png',
+      deviceId: 'ipad-air',
+    ),
+
+    // Pixel 8 Pro variants (REAL ASSETS)
     FrameVariantModel(
       id: 'obsidian',
       name: 'Obsidian',
       assetPath: 'assets/frames/pixel-8-pro/obsidian.png',
       deviceId: 'pixel-8-pro',
     ),
-    //real
     FrameVariantModel(
       id: 'porcelain',
       name: 'Porcelain',
@@ -201,7 +241,8 @@ class FrameVariantsData {
       assetPath: 'assets/frames/pixel-8-pro/mint.png',
       deviceId: 'pixel-8-pro',
     ),
-    // Pixel 8 variants
+
+    // Pixel 8 variants (REAL ASSETS)
     FrameVariantModel(
       id: 'obsidian',
       name: 'Obsidian',
@@ -221,37 +262,61 @@ class FrameVariantsData {
       deviceId: 'pixel-8',
     ),
 
-    // Galaxy S24 Ultra variants
-    //real
+    // Pixel 5 variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'just-black',
+      name: 'Just Black',
+      assetPath: 'assets/frames/pixel-5/just-black.png',
+      deviceId: 'pixel-5',
+    ),
+    FrameVariantModel(
+      id: 'white',
+      name: 'White',
+      assetPath: 'assets/frames/pixel-5/white.png',
+      deviceId: 'pixel-5',
+    ),
+
+    // Pixel 4 variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'just-black',
+      name: 'Just Black',
+      assetPath: 'assets/frames/pixel-4/just-black.png',
+      deviceId: 'pixel-4',
+    ),
+    FrameVariantModel(
+      id: 'white',
+      name: 'White',
+      assetPath: 'assets/frames/pixel-4/white.png',
+      deviceId: 'pixel-4',
+    ),
+
+    // Galaxy S24 Ultra variants (placeholder - no assets yet)
     FrameVariantModel(
       id: 'titanium-black',
       name: 'Titanium Black',
-      assetPath: 'assets/frames/GalaxyS8.png',
-      deviceId: 'galaxy-s8',
+      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-black.png',
+      deviceId: 'galaxy-s24-ultra',
     ),
-    //real
     FrameVariantModel(
       id: 'titanium-gray',
       name: 'Titanium Gray',
-      assetPath: 'assets/frames/GalaxyS9.png',
-      deviceId: 'galaxy-s9',
+      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-gray.png',
+      deviceId: 'galaxy-s24-ultra',
     ),
-    //real
     FrameVariantModel(
       id: 'titanium-violet',
       name: 'Titanium Violet',
-      assetPath: 'assets/frames/GalaxyS20+.png',
-      deviceId: 'galaxy-s20+',
+      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-violet.png',
+      deviceId: 'galaxy-s24-ultra',
     ),
-    //real
     FrameVariantModel(
       id: 'titanium-yellow',
       name: 'Titanium Yellow',
-      assetPath: 'assets/frames/GalaxyS21+.png',
-      deviceId: 'galaxy-s21+',
+      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-yellow.png',
+      deviceId: 'galaxy-s24-ultra',
     ),
 
-    // Galaxy S24 variants
+    // Galaxy S24 variants (placeholder - no assets yet)
     FrameVariantModel(
       id: 'onyx-black',
       name: 'Onyx Black',
@@ -277,204 +342,219 @@ class FrameVariantsData {
       deviceId: 'galaxy-s24',
     ),
 
+    // Galaxy S21+ variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'phantom-black',
+      name: 'Phantom Black',
+      assetPath: 'assets/frames/galaxy-s21-plus/phantom-black.png',
+      deviceId: 'galaxy-s21+',
+    ),
+    FrameVariantModel(
+      id: 'phantom-silver',
+      name: 'Phantom Silver',
+      assetPath: 'assets/frames/galaxy-s21-plus/phantom-silver.png',
+      deviceId: 'galaxy-s21+',
+    ),
+    FrameVariantModel(
+      id: 'phantom-violet',
+      name: 'Phantom Violet',
+      assetPath: 'assets/frames/galaxy-s21-plus/phantom-violet.png',
+      deviceId: 'galaxy-s21+',
+    ),
+
+    // Galaxy S20+ variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'cosmic-black',
+      name: 'Cosmic Black',
+      assetPath: 'assets/frames/galaxy-s20-plus/cosmic-black.png',
+      deviceId: 'galaxy-s20+',
+    ),
+    FrameVariantModel(
+      id: 'cosmic-gray',
+      name: 'Cosmic Gray',
+      assetPath: 'assets/frames/galaxy-s20-plus/cosmic-gray.png',
+      deviceId: 'galaxy-s20+',
+    ),
+
+    // Galaxy S9 variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'midnight-black',
+      name: 'Midnight Black',
+      assetPath: 'assets/frames/galaxy-s9/midnight-black.png',
+      deviceId: 'galaxy-s9',
+    ),
+    FrameVariantModel(
+      id: 'coral-blue',
+      name: 'Coral Blue',
+      assetPath: 'assets/frames/galaxy-s9/coral-blue.png',
+      deviceId: 'galaxy-s9',
+    ),
+
+    // Galaxy S8 variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'midnight-black',
+      name: 'Midnight Black',
+      assetPath: 'assets/frames/galaxy-s8/midnight-black.png',
+      deviceId: 'galaxy-s8',
+    ),
+    FrameVariantModel(
+      id: 'orchid-gray',
+      name: 'Orchid Gray',
+      assetPath: 'assets/frames/galaxy-s8/orchid-gray.png',
+      deviceId: 'galaxy-s8',
+    ),
+
     // Generic frame variants for all devices - fallback when real frames not available
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-15-pro',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-15-pro',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-15-pro-max',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-15-pro-max',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-14',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-14',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-14-pro',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-14-pro',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-14-pro-max',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-14-pro-max',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'iphone-13',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'iphone-13-pro',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-13-pro-max',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-13-pro-max',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'iphone-12',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
+      id: 'generic-iphone-12-pro-max',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'iphone-12-pro-max',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-ipad-pro-12-9',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'ipad-pro-12-9',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-ipad-pro-11',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'ipad-pro-11',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-ipad-air',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'ipad-air',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-pixel-8-pro',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'pixel-8-pro',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-pixel-8',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'pixel-8',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-pixel-5',
       name: 'Generic Frame',
       assetPath: null,
-      deviceId: 'pixel-7-pro',
+      deviceId: 'pixel-5',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-pixel-4',
       name: 'Generic Frame',
       assetPath: null,
-      deviceId: 'pixel-7',
+      deviceId: 'pixel-4',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-galaxy-s24-ultra',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'galaxy-s24-ultra',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-galaxy-s24',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'galaxy-s24',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-galaxy-s21-plus',
       name: 'Generic Frame',
       assetPath: null,
-      deviceId: 'galaxy-s23-ultra',
+      deviceId: 'galaxy-s21+',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'galaxy-s23',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'oneplus-11',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'oneplus-10-pro',
-      isGeneric: true,
-    ),
-    // Additional device IDs that may exist but not have complete frame sets
-    FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'galaxy-s8',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
-      name: 'Generic Frame',
-      assetPath: null,
-      deviceId: 'galaxy-s9',
-      isGeneric: true,
-    ),
-    FrameVariantModel(
-      id: 'generic',
+      id: 'generic-galaxy-s20-plus',
       name: 'Generic Frame',
       assetPath: null,
       deviceId: 'galaxy-s20+',
       isGeneric: true,
     ),
     FrameVariantModel(
-      id: 'generic',
+      id: 'generic-galaxy-s9',
       name: 'Generic Frame',
       assetPath: null,
-      deviceId: 'galaxy-s21+',
+      deviceId: 'galaxy-s9',
+      isGeneric: true,
+    ),
+    FrameVariantModel(
+      id: 'generic-galaxy-s8',
+      name: 'Generic Frame',
+      assetPath: null,
+      deviceId: 'galaxy-s8',
       isGeneric: true,
     ),
   ];
 
   static List<FrameVariantModel> getFrameVariantsByDeviceId(String deviceId) {
-    return allFrameVariants.where((variant) => variant.deviceId == deviceId).toList();
+    return allFrameVariants
+        .where((variant) => variant.deviceId == deviceId)
+        .toList();
   }
 
-  static FrameVariantModel? getFrameVariantById(String deviceId, String variantId) {
+  static FrameVariantModel? getFrameVariantById(
+      String deviceId, String variantId) {
     try {
       return allFrameVariants.firstWhere(
         (variant) => variant.deviceId == deviceId && variant.id == variantId,
@@ -490,6 +570,8 @@ class FrameVariantsData {
   }
 
   static List<String> getFrameVariantIds(String deviceId) {
-    return getFrameVariantsByDeviceId(deviceId).map((variant) => variant.id).toList();
+    return getFrameVariantsByDeviceId(deviceId)
+        .map((variant) => variant.id)
+        .toList();
   }
 }

@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
 import '../../shared/models/screenshot_model.dart';
-import '../models/editor_state.dart';
 import '../models/background_models.dart';
+import '../models/editor_state.dart';
 import '../providers/editor_provider.dart';
-import 'background/solid_color_tab.dart';
 import 'background/gradient_tab.dart';
 import 'background/image_background_tab.dart';
-import 'text/text_tab_content.dart';
+import 'background/solid_color_tab.dart';
 import 'editor_screenshot_list.dart';
+import 'layout/layout_tab_content.dart';
 import 'screenshot_manager_modal.dart';
+import 'text/text_tab_content.dart';
 
 class EditorControlPanel extends ConsumerWidget {
   const EditorControlPanel({super.key, required this.project});
@@ -51,14 +52,16 @@ class EditorControlPanel extends ConsumerWidget {
         dynamic screenshot, EditorNotifier editorNotifier) {
       // Get the current state instead of using the captured one
       final currentState = editorNotifier.state;
-      
-      if (screenshot is ScreenshotModel && currentState.selectedScreenIndex != null) {
+
+      if (screenshot is ScreenshotModel &&
+          currentState.selectedScreenIndex != null) {
         // Assign screenshot to currently selected screen (same pattern as background assignment)
         editorNotifier.assignScreenshotToSelectedScreen(screenshot.id);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Screenshot assigned to Screen ${currentState.selectedScreenIndex! + 1}'),
+            content: Text(
+                'Screenshot assigned to Screen ${currentState.selectedScreenIndex! + 1}'),
             backgroundColor: const Color(0xFFE91E63),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(16),
@@ -252,14 +255,13 @@ class EditorControlPanel extends ConsumerWidget {
             handleScreenshotReorder,
             showScreenshotManagerModal);
       case EditorTab.layouts:
-        return _buildLayoutsTab(editorState, editorNotifier);
+        return LayoutTabContent(project: project);
       case EditorTab.background:
         return _buildBackgroundTab(editorState, editorNotifier);
       case EditorTab.template:
         return _buildTemplateTab(editorState, editorNotifier);
     }
   }
-
 
   Widget _buildUploadsTab(
       EditorState editorState,
@@ -375,19 +377,6 @@ class EditorControlPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildLayoutsTab(
-      EditorState editorState, EditorNotifier editorNotifier) {
-    return const Center(
-      child: Text(
-        'Layouts management coming soon...',
-        style: TextStyle(
-          color: Color(0xFF6C757D),
-          fontSize: 16,
-        ),
-      ),
-    );
-  }
-
   Widget _buildBackgroundTab(
       EditorState editorState, EditorNotifier editorNotifier) {
     return Column(
@@ -411,7 +400,8 @@ class EditorControlPanel extends ConsumerWidget {
               isSelected:
                   editorState.selectedBackgroundTab == BackgroundTab.gradient,
               onTap: () {
-                editorNotifier.updateSelectedBackgroundTab(BackgroundTab.gradient);
+                editorNotifier
+                    .updateSelectedBackgroundTab(BackgroundTab.gradient);
                 editorNotifier.updateBackgroundType(BackgroundType.gradient);
               },
             ),
@@ -475,7 +465,8 @@ class EditorControlPanel extends ConsumerWidget {
           startColor: editorState.gradientStartColor,
           endColor: editorState.gradientEndColor,
           direction: editorState.gradientDirection,
-          onStartColorChanged: editorNotifier.updateGradientStartColorWithPreview,
+          onStartColorChanged:
+              editorNotifier.updateGradientStartColorWithPreview,
           onEndColorChanged: editorNotifier.updateGradientEndColorWithPreview,
           onDirectionChanged: editorNotifier.updateGradientDirectionWithPreview,
         );
@@ -489,7 +480,7 @@ class EditorControlPanel extends ConsumerWidget {
 
   Widget _buildScreenSelectionStatus(EditorState editorState, WidgetRef ref) {
     final selectedScreenIndex = editorState.selectedScreenIndex;
-    
+
     if (selectedScreenIndex == null) {
       return Container(
         padding: const EdgeInsets.all(12),
@@ -538,16 +529,19 @@ class EditorControlPanel extends ConsumerWidget {
           Icon(
             hasScreenshot ? Icons.photo_outlined : Icons.tab,
             size: 20,
-            color: hasScreenshot ? Colors.blue.shade600 : Colors.orange.shade600,
+            color:
+                hasScreenshot ? Colors.blue.shade600 : Colors.orange.shade600,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              hasScreenshot 
+              hasScreenshot
                   ? 'Screen ${selectedScreenIndex + 1} has screenshot - tap another to replace'
                   : 'Screen ${selectedScreenIndex + 1} selected - tap a screenshot to assign it',
               style: TextStyle(
-                color: hasScreenshot ? Colors.blue.shade800 : Colors.orange.shade800,
+                color: hasScreenshot
+                    ? Colors.blue.shade800
+                    : Colors.orange.shade800,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -766,4 +760,3 @@ class _BackgroundTabButton extends StatelessWidget {
     );
   }
 }
-
