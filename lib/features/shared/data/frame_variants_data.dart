@@ -8,25 +8,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'natural-titanium',
       name: 'Natural Titanium',
-      assetPath: 'assets/frames/iphone-15-pro/natural-titanium.png',
+      assetPath: 'frames/iphone-15-pro/natural-titanium.png',
       deviceId: 'iphone-15-pro',
     ),
     FrameVariantModel(
       id: 'blue-titanium',
       name: 'Blue Titanium',
-      assetPath: 'assets/frames/iphone-15-pro/blue-titanium.png',
+      assetPath: 'frames/iphone-15-pro/blue-titanium.png',
       deviceId: 'iphone-15-pro',
     ),
     FrameVariantModel(
       id: 'white-titanium',
       name: 'White Titanium',
-      assetPath: 'assets/frames/iphone-15-pro/white-titanium.png',
+      assetPath: 'frames/iphone-15-pro/white-titanium.png',
       deviceId: 'iphone-15-pro',
     ),
     FrameVariantModel(
       id: 'black-titanium',
       name: 'Black Titanium',
-      assetPath: 'assets/frames/iphone-15-pro/black-titanium.png',
+      assetPath: 'frames/iphone-15-pro/black-titanium.png',
       deviceId: 'iphone-15-pro',
     ),
 
@@ -34,25 +34,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'natural-titanium',
       name: 'Natural Titanium',
-      assetPath: 'assets/frames/iphone-15-pro-max/natural-titanium.png',
+      assetPath: 'frames/iphone-15-pro-max/natural-titanium.png',
       deviceId: 'iphone-15-pro-max',
     ),
     FrameVariantModel(
       id: 'blue-titanium',
       name: 'Blue Titanium',
-      assetPath: 'assets/frames/iphone-15-pro-max/blue-titanium.png',
+      assetPath: 'frames/iphone-15-pro-max/blue-titanium.png',
       deviceId: 'iphone-15-pro-max',
     ),
     FrameVariantModel(
       id: 'white-titanium',
       name: 'White Titanium',
-      assetPath: 'assets/frames/iphone-15-pro-max/white-titanium.png',
+      assetPath: 'frames/iphone-15-pro-max/white-titanium.png',
       deviceId: 'iphone-15-pro-max',
     ),
     FrameVariantModel(
       id: 'black-titanium',
       name: 'Black Titanium',
-      assetPath: 'assets/frames/iphone-15-pro-max/black-titanium.png',
+      assetPath: 'frames/iphone-15-pro-max/black-titanium.png',
       deviceId: 'iphone-15-pro-max',
     ),
 
@@ -60,31 +60,31 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'blue',
       name: 'Blue',
-      assetPath: 'assets/frames/iphone-14/blue.png',
+      assetPath: 'frames/iphone-14/blue.png',
       deviceId: 'iphone-14',
     ),
     FrameVariantModel(
       id: 'purple',
       name: 'Purple',
-      assetPath: 'assets/frames/iphone-14/purple.png',
+      assetPath: 'frames/iphone-14/purple.png',
       deviceId: 'iphone-14',
     ),
     FrameVariantModel(
       id: 'midnight',
       name: 'Midnight',
-      assetPath: 'assets/frames/iphone-14/midnight.png',
+      assetPath: 'frames/iphone-14/midnight.png',
       deviceId: 'iphone-14',
     ),
     FrameVariantModel(
       id: 'starlight',
       name: 'Starlight',
-      assetPath: 'assets/frames/iphone-14/starlight.png',
+      assetPath: 'frames/iphone-14/starlight.png',
       deviceId: 'iphone-14',
     ),
     FrameVariantModel(
       id: 'red',
       name: '(PRODUCT)RED',
-      assetPath: 'assets/frames/iphone-14/red.png',
+      assetPath: 'frames/iphone-14/red.png',
       deviceId: 'iphone-14',
     ),
 
@@ -92,25 +92,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'deep-purple',
       name: 'Deep Purple',
-      assetPath: 'assets/frames/iphone-14-pro/deep-purple.png',
+      assetPath: 'frames/iphone-14-pro/deep-purple.png',
       deviceId: 'iphone-14-pro',
     ),
     FrameVariantModel(
       id: 'gold',
       name: 'Gold',
-      assetPath: 'assets/frames/iphone-14-pro/gold.png',
+      assetPath: 'frames/iphone-14-pro/gold.png',
       deviceId: 'iphone-14-pro',
     ),
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iphone-14-pro/silver.png',
+      assetPath: 'frames/iphone-14-pro/silver.png',
       deviceId: 'iphone-14-pro',
     ),
     FrameVariantModel(
       id: 'space-black',
       name: 'Space Black',
-      assetPath: 'assets/frames/iphone-14-pro/space-black.png',
+      assetPath: 'frames/iphone-14-pro/space-black.png',
       deviceId: 'iphone-14-pro',
     ),
 
@@ -118,25 +118,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'deep-purple',
       name: 'Deep Purple',
-      assetPath: 'assets/frames/iphone-14-pro-max/deep-purple.png',
+      assetPath: 'frames/iphone-14-pro-max/deep-purple.png',
       deviceId: 'iphone-14-pro-max',
     ),
     FrameVariantModel(
       id: 'gold',
       name: 'Gold',
-      assetPath: 'assets/frames/iphone-14-pro-max/gold.png',
+      assetPath: 'frames/iphone-14-pro-max/gold.png',
       deviceId: 'iphone-14-pro-max',
     ),
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iphone-14-pro-max/silver.png',
+      assetPath: 'frames/iphone-14-pro-max/silver.png',
       deviceId: 'iphone-14-pro-max',
     ),
     FrameVariantModel(
       id: 'space-black',
       name: 'Space Black',
-      assetPath: 'assets/frames/iphone-14-pro-max/space-black.png',
+      assetPath: 'frames/iphone-14-pro-max/space-black.png',
       deviceId: 'iphone-14-pro-max',
     ),
 
@@ -144,19 +144,19 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'gold',
       name: 'Gold',
-      assetPath: 'assets/frames/iphone-13-pro-max/gold.png',
+      assetPath: 'frames/iphone-13-pro-max/gold.png',
       deviceId: 'iphone-13-pro-max',
     ),
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iphone-13-pro-max/silver.png',
+      assetPath: 'frames/iphone-13-pro-max/silver.png',
       deviceId: 'iphone-13-pro-max',
     ),
     FrameVariantModel(
       id: 'space-black',
       name: 'Space Black',
-      assetPath: 'assets/frames/iphone-13-pro-max/space-black.png',
+      assetPath: 'frames/iphone-13-pro-max/space-black.png',
       deviceId: 'iphone-13-pro-max',
     ),
 
@@ -164,13 +164,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/iphone-12-pro-max/silver.png',
+      assetPath: 'frames/iphone-12-pro-max/silver.png',
       deviceId: 'iphone-12-pro-max',
     ),
     FrameVariantModel(
       id: 'space-black',
       name: 'Space Black',
-      assetPath: 'assets/frames/iphone-12-pro-max/space-black.png',
+      assetPath: 'frames/iphone-12-pro-max/space-black.png',
       deviceId: 'iphone-12-pro-max',
     ),
 
@@ -178,13 +178,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/ipad-pro-12-9/silver.png',
+      assetPath: 'frames/ipad-pro-12-9/silver.png',
       deviceId: 'ipad-pro-12-9',
     ),
     FrameVariantModel(
       id: 'space-gray',
       name: 'Space Gray',
-      assetPath: 'assets/frames/ipad-pro-12-9/space-gray.png',
+      assetPath: 'frames/ipad-pro-12-9/space-gray.png',
       deviceId: 'ipad-pro-12-9',
     ),
 
@@ -192,13 +192,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/ipad-pro-11/silver.png',
+      assetPath: 'frames/ipad-pro-11/silver.png',
       deviceId: 'ipad-pro-11',
     ),
     FrameVariantModel(
       id: 'space-gray',
       name: 'Space Gray',
-      assetPath: 'assets/frames/ipad-pro-11/space-gray.png',
+      assetPath: 'frames/ipad-pro-11/space-gray.png',
       deviceId: 'ipad-pro-11',
     ),
 
@@ -206,13 +206,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'silver',
       name: 'Silver',
-      assetPath: 'assets/frames/ipad-air/silver.png',
+      assetPath: 'frames/ipad-air/silver.png',
       deviceId: 'ipad-air',
     ),
     FrameVariantModel(
       id: 'space-gray',
       name: 'Space Gray',
-      assetPath: 'assets/frames/ipad-air/space-gray.png',
+      assetPath: 'frames/ipad-air/space-gray.png',
       deviceId: 'ipad-air',
     ),
 
@@ -220,25 +220,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'obsidian',
       name: 'Obsidian',
-      assetPath: 'assets/frames/pixel-8-pro/obsidian.png',
+      assetPath: 'frames/pixel-8-pro/obsidian.png',
       deviceId: 'pixel-8-pro',
     ),
     FrameVariantModel(
       id: 'porcelain',
       name: 'Porcelain',
-      assetPath: 'assets/frames/pixel-8-pro/porcelain.png',
+      assetPath: 'frames/pixel-8-pro/porcelain.png',
       deviceId: 'pixel-8-pro',
     ),
     FrameVariantModel(
       id: 'bay',
       name: 'Bay',
-      assetPath: 'assets/frames/pixel-8-pro/bay.png',
+      assetPath: 'frames/pixel-8-pro/bay.png',
       deviceId: 'pixel-8-pro',
     ),
     FrameVariantModel(
       id: 'mint',
       name: 'Mint',
-      assetPath: 'assets/frames/pixel-8-pro/mint.png',
+      assetPath: 'frames/pixel-8-pro/mint.png',
       deviceId: 'pixel-8-pro',
     ),
 
@@ -246,19 +246,19 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'obsidian',
       name: 'Obsidian',
-      assetPath: 'assets/frames/pixel-8/obsidian.png',
+      assetPath: 'frames/pixel-8/obsidian.png',
       deviceId: 'pixel-8',
     ),
     FrameVariantModel(
       id: 'hazel',
       name: 'Hazel',
-      assetPath: 'assets/frames/pixel-8/hazel.png',
+      assetPath: 'frames/pixel-8/hazel.png',
       deviceId: 'pixel-8',
     ),
     FrameVariantModel(
       id: 'rose',
       name: 'Rose',
-      assetPath: 'assets/frames/pixel-8/rose.png',
+      assetPath: 'frames/pixel-8/rose.png',
       deviceId: 'pixel-8',
     ),
 
@@ -266,13 +266,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'just-black',
       name: 'Just Black',
-      assetPath: 'assets/frames/pixel-5/just-black.png',
+      assetPath: 'frames/pixel-5/just-black.png',
       deviceId: 'pixel-5',
     ),
     FrameVariantModel(
       id: 'white',
       name: 'White',
-      assetPath: 'assets/frames/pixel-5/white.png',
+      assetPath: 'frames/pixel-5/white.png',
       deviceId: 'pixel-5',
     ),
 
@@ -280,13 +280,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'just-black',
       name: 'Just Black',
-      assetPath: 'assets/frames/pixel-4/just-black.png',
+      assetPath: 'frames/pixel-4/just-black.png',
       deviceId: 'pixel-4',
     ),
     FrameVariantModel(
       id: 'white',
       name: 'White',
-      assetPath: 'assets/frames/pixel-4/white.png',
+      assetPath: 'frames/pixel-4/white.png',
       deviceId: 'pixel-4',
     ),
 
@@ -294,25 +294,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'titanium-black',
       name: 'Titanium Black',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-black.png',
+      assetPath: 'frames/galaxy-s24-ultra/titanium-black.png',
       deviceId: 'galaxy-s24-ultra',
     ),
     FrameVariantModel(
       id: 'titanium-gray',
       name: 'Titanium Gray',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-gray.png',
+      assetPath: 'frames/galaxy-s24-ultra/titanium-gray.png',
       deviceId: 'galaxy-s24-ultra',
     ),
     FrameVariantModel(
       id: 'titanium-violet',
       name: 'Titanium Violet',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-violet.png',
+      assetPath: 'frames/galaxy-s24-ultra/titanium-violet.png',
       deviceId: 'galaxy-s24-ultra',
     ),
     FrameVariantModel(
       id: 'titanium-yellow',
       name: 'Titanium Yellow',
-      assetPath: 'assets/frames/galaxy-s24-ultra/titanium-yellow.png',
+      assetPath: 'frames/galaxy-s24-ultra/titanium-yellow.png',
       deviceId: 'galaxy-s24-ultra',
     ),
 
@@ -320,25 +320,25 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'onyx-black',
       name: 'Onyx Black',
-      assetPath: 'assets/frames/galaxy-s24/onyx-black.png',
+      assetPath: 'frames/galaxy-s24/onyx-black.png',
       deviceId: 'galaxy-s24',
     ),
     FrameVariantModel(
       id: 'marble-gray',
       name: 'Marble Gray',
-      assetPath: 'assets/frames/galaxy-s24/marble-gray.png',
+      assetPath: 'frames/galaxy-s24/marble-gray.png',
       deviceId: 'galaxy-s24',
     ),
     FrameVariantModel(
       id: 'cobalt-violet',
       name: 'Cobalt Violet',
-      assetPath: 'assets/frames/galaxy-s24/cobalt-violet.png',
+      assetPath: 'frames/galaxy-s24/cobalt-violet.png',
       deviceId: 'galaxy-s24',
     ),
     FrameVariantModel(
       id: 'amber-yellow',
       name: 'Amber Yellow',
-      assetPath: 'assets/frames/galaxy-s24/amber-yellow.png',
+      assetPath: 'frames/galaxy-s24/amber-yellow.png',
       deviceId: 'galaxy-s24',
     ),
 
@@ -346,19 +346,19 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'phantom-black',
       name: 'Phantom Black',
-      assetPath: 'assets/frames/galaxy-s21-plus/phantom-black.png',
+      assetPath: 'frames/galaxy-s21-plus/phantom-black.png',
       deviceId: 'galaxy-s21+',
     ),
     FrameVariantModel(
       id: 'phantom-silver',
       name: 'Phantom Silver',
-      assetPath: 'assets/frames/galaxy-s21-plus/phantom-silver.png',
+      assetPath: 'frames/galaxy-s21-plus/phantom-silver.png',
       deviceId: 'galaxy-s21+',
     ),
     FrameVariantModel(
       id: 'phantom-violet',
       name: 'Phantom Violet',
-      assetPath: 'assets/frames/galaxy-s21-plus/phantom-violet.png',
+      assetPath: 'frames/galaxy-s21-plus/phantom-violet.png',
       deviceId: 'galaxy-s21+',
     ),
 
@@ -366,13 +366,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'cosmic-black',
       name: 'Cosmic Black',
-      assetPath: 'assets/frames/galaxy-s20-plus/cosmic-black.png',
+      assetPath: 'frames/galaxy-s20-plus/cosmic-black.png',
       deviceId: 'galaxy-s20+',
     ),
     FrameVariantModel(
       id: 'cosmic-gray',
       name: 'Cosmic Gray',
-      assetPath: 'assets/frames/galaxy-s20-plus/cosmic-gray.png',
+      assetPath: 'frames/galaxy-s20-plus/cosmic-gray.png',
       deviceId: 'galaxy-s20+',
     ),
 
@@ -380,13 +380,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'midnight-black',
       name: 'Midnight Black',
-      assetPath: 'assets/frames/galaxy-s9/midnight-black.png',
+      assetPath: 'frames/galaxy-s9/midnight-black.png',
       deviceId: 'galaxy-s9',
     ),
     FrameVariantModel(
       id: 'coral-blue',
       name: 'Coral Blue',
-      assetPath: 'assets/frames/galaxy-s9/coral-blue.png',
+      assetPath: 'frames/galaxy-s9/coral-blue.png',
       deviceId: 'galaxy-s9',
     ),
 
@@ -394,13 +394,13 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'midnight-black',
       name: 'Midnight Black',
-      assetPath: 'assets/frames/galaxy-s8/midnight-black.png',
+      assetPath: 'frames/galaxy-s8/midnight-black.png',
       deviceId: 'galaxy-s8',
     ),
     FrameVariantModel(
       id: 'orchid-gray',
       name: 'Orchid Gray',
-      assetPath: 'assets/frames/galaxy-s8/orchid-gray.png',
+      assetPath: 'frames/galaxy-s8/orchid-gray.png',
       deviceId: 'galaxy-s8',
     ),
 
