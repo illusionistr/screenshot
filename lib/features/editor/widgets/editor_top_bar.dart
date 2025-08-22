@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../providers/editor_provider.dart';
+import 'export/export_button.dart';
 
 class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
   const EditorTopBar({super.key, required this.project});
@@ -146,14 +147,9 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
 
           const SizedBox(width: 12),
 
-          _TopBarButton(
-            text: 'Export',
-            color: AppConstants.primaryColor,
-            textColor: Colors.white,
-            icon: Icons.download,
-            onPressed: () {
-              // Handle export
-            },
+          ExportButton(
+            editorState: editorState,
+            project: project,
           ),
 
           const SizedBox(width: 16),
