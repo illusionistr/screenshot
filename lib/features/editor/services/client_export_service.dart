@@ -546,7 +546,7 @@ class ClientExportService {
   static Future<void> _drawTextOverlays(
       Canvas canvas, ScreenTextConfig textConfig, Size exportSize) async {
     for (final element in textConfig.visibleElements) {
-      final position = _getTextPosition(element.type, exportSize);
+      final position = _getTextPosition(element, exportSize);
 
       // Scale font size for export resolution (assuming preview is ~800px height, export is ~2796px)
       final scaleFactor = exportSize.height / 800;
@@ -604,24 +604,65 @@ class ClientExportService {
   }
 
   /// Get text position for export resolution
-  static Rect _getTextPosition(TextFieldType type, Size exportSize) {
+  static Rect _getTextPosition(TextElement element, Size exportSize) {
     const padding = 32.0; // Double the preview padding for high-res
 
+    // Use custom vertical position if set, otherwise fall back to defaults
+    final verticalPos =
+        element.verticalPosition ?? _getDefaultVerticalPosition(element.type);
+    final horizontalPos = element.textAlign;
+
+    // Calculate vertical position
+    double top;
+    switch (verticalPos) {
+      case VerticalPosition.top:
+        top = exportSize.height * 0.05; // 5% from top
+        break;
+      case VerticalPosition.middle:
+        top = exportSize.height * 0.5; // Center vertically
+        break;
+      case VerticalPosition.bottom:
+        top = exportSize.height * 0.8; // 80% from top
+        break;
+    }
+
+    // Calculate horizontal position based on text alignment
+    double left;
+    double width;
+    switch (horizontalPos) {
+      case TextAlign.left:
+        left = padding;
+        width = exportSize.width * 0.4; // 40% width for left side
+        break;
+      case TextAlign.center:
+        left = exportSize.width * 0.3; // 30% from left for center positioning
+        width = exportSize.width * 0.4; // 40% width for center
+        break;
+      case TextAlign.right:
+        left = exportSize.width * 0.6; // 60% from left
+        width = exportSize.width * 0.4 - padding; // 40% width minus padding
+        break;
+      default:
+        left = exportSize.width * 0.3; // Default to center
+        width = exportSize.width * 0.4;
+        break;
+    }
+
+    return Rect.fromLTWH(
+      left,
+      top,
+      width,
+      exportSize.height * 0.15, // 15% height for text area
+    );
+  }
+
+  /// Get default vertical position for text element type
+  static VerticalPosition _getDefaultVerticalPosition(TextFieldType type) {
     switch (type) {
       case TextFieldType.title:
-        return Rect.fromLTWH(
-          padding,
-          exportSize.height * 0.05, // 5% from top
-          exportSize.width - (padding * 2),
-          exportSize.height * 0.15, // 15% height for title area
-        );
+        return VerticalPosition.top;
       case TextFieldType.subtitle:
-        return Rect.fromLTWH(
-          padding,
-          exportSize.height * 0.80, // 80% from top
-          exportSize.width - (padding * 2),
-          exportSize.height * 0.15, // 15% height for subtitle area
-        );
+        return VerticalPosition.bottom;
     }
   }
 
@@ -691,14 +732,6 @@ class ClientExportService {
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, exportSize);
     final deviceSize = LayoutRenderer.calculateDeviceSize(config, exportSize);
-
-    // Draw the device frame with rotation
-    final deviceRect = Rect.fromLTWH(
-      devicePosition.dx - deviceSize.width / 2,
-      devicePosition.dy - deviceSize.height / 2,
-      deviceSize.width,
-      deviceSize.height,
-    );
 
     // Apply rotation transformation
     canvas.save();

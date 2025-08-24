@@ -85,24 +85,7 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE91E63),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                'Live Preview',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+           
           ],
         ),
         const SizedBox(height: 12),
@@ -134,92 +117,13 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
                   editorNotifier.updateTextContent(selectedType, value);
                 },
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Color(0xFFE1E5E9)),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      selectedType == TextFieldType.title 
-                        ? Icons.title 
-                        : Icons.subtitles,
-                      size: 16,
-                      color: const Color(0xFFE91E63),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_controller.text.length} characters',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6C757D),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (selectedType == TextFieldType.title)
-                      const Text(
-                        'Displayed at top',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6C757D),
-                        ),
-                      )
-                    else
-                      const Text(
-                        'Displayed at bottom',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF6C757D),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+              
             ],
           ),
         ),
         const SizedBox(height: 12),
         
-        // Quick actions
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _controller.clear();
-                  editorNotifier.updateTextContent(selectedType, '');
-                },
-                icon: const Icon(Icons.clear, size: 16),
-                label: const Text('Clear'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF6C757D),
-                  side: const BorderSide(color: Color(0xFFE1E5E9)),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  final defaultText = selectedType.displayName;
-                  _controller.text = defaultText;
-                  editorNotifier.updateTextContent(selectedType, defaultText);
-                },
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Reset'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF6C757D),
-                  side: const BorderSide(color: Color(0xFFE1E5E9)),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-              ),
-            ),
-          ],
-        ),
+       
       ],
     );
   }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/text_models.dart';
-import '../../models/editor_state.dart';
-import '../../providers/editor_provider.dart';
 import '../../../projects/models/project_model.dart';
+import '../../models/editor_state.dart';
+import '../../models/text_models.dart';
+import '../../providers/editor_provider.dart';
 import '../background/color_picker_dialog.dart';
 
 class TextFormattingPanel extends ConsumerWidget {
@@ -19,7 +19,7 @@ class TextFormattingPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final editorState = ref.watch(editorProviderFamily(project));
     final editorNotifier = ref.read(editorProviderFamily(project).notifier);
-    
+
     final selectedType = editorState.textElementState.selectedType;
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
 
@@ -62,7 +62,101 @@ class TextFormattingPanel extends ConsumerWidget {
           title: 'Font Family',
           child: _CustomDropdown(
             value: currentElement.fontFamily,
-            items: const ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Nunito'],
+            items: const [
+              // System Fonts (Always Available)
+              'Arial',
+              'Helvetica Neue',
+              'Calibri',
+              'Georgia',
+              'Times New Roman',
+              'Garamond',
+
+              // Popular Google Fonts - Sans Serif
+              'Inter',
+              'Roboto',
+              'Open Sans',
+              'Lato',
+              'Montserrat',
+              'Poppins',
+              'Nunito',
+              'Source Sans Pro',
+              'Ubuntu',
+              'Karla',
+              'Quicksand',
+              'Comfortaa',
+              'Mukti',
+
+              // Display & Brand Fonts
+              'Oswald',
+              'Bebas Neue',
+              'Playfair Display',
+              'Cinzel',
+              'Abril Fatface',
+              'Dancing Script',
+              'Pacifico',
+              'Amatic SC',
+              'Great Vibes',
+              'Satisfy',
+
+              // Professional & Serif Fonts
+              'Merriweather',
+              'Libre Baskerville',
+              'Crimson Text',
+              'Lora',
+              'Vollkorn',
+              'Source Serif Pro',
+              'PT Serif',
+              'Noto Serif',
+
+              // Modern & Geometric Fonts
+              'Futura PT',
+              'Gothic A1',
+              'Rajdhani',
+              'Orbitron',
+              'Audiowide',
+              'Syncopate',
+              'Monoton',
+
+              // Rounded & Friendly Fonts
+              'Rounded Mplus 1c',
+              'M PLUS Rounded 1c',
+              'Noto Sans JP',
+              'Fredoka One',
+              'Chewy',
+              'Baloo 2',
+              'Happy Monkey',
+              'Comic Neue',
+
+              // Clean & Minimal Fonts
+              'DM Sans',
+              'Manrope',
+              'Epilogue',
+              'Jost',
+              'Red Hat Display',
+              'Space Grotesk',
+              'Syne',
+              'Chivo',
+
+              // Retro & Vintage Fonts
+              'Press Start 2P',
+              'VT323',
+              'Special Elite',
+              'Courier Prime',
+              'Cutive Mono',
+              'Nova Mono',
+              'Fira Code',
+              'JetBrains Mono',
+
+              // Handwriting & Script Fonts
+              'Indie Flower',
+              'Patrick Hand',
+              'Caveat',
+              'Shadows Into Light',
+              'Sacramento',
+              'Marck Script',
+              'Parisienne',
+              'Tangerine',
+            ],
             onChanged: (value) {
               editorNotifier.updateTextFormatting(
                 type: selectedType,
@@ -79,7 +173,18 @@ class TextFormattingPanel extends ConsumerWidget {
           title: 'Font Size',
           child: _CustomDropdown(
             value: '${currentElement.fontSize.toInt()}',
-            items: const ['12', '14', '16', '18', '20', '24', '28', '32', '36', '40'],
+            items: const [
+              '12',
+              '14',
+              '16',
+              '18',
+              '20',
+              '24',
+              '28',
+              '32',
+              '36',
+              '40'
+            ],
             onChanged: (value) {
               editorNotifier.updateTextFormatting(
                 type: selectedType,
@@ -116,26 +221,56 @@ class TextFormattingPanel extends ConsumerWidget {
 
         const SizedBox(height: 16),
 
+        // Vertical Position Section
+        _FormattingSection(
+          title: 'Vertical Alignment',
+          child: Row(
+            children: VerticalPosition.values.map((position) {
+              final isSelected = (currentElement.verticalPosition ??
+                      _getDefaultVerticalPosition(currentElement.type)) ==
+                  position;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _PositionButton(
+                  displayName: _getVerticalPositionDisplayName(position),
+                  isSelected: isSelected,
+                  onPressed: () {
+                    // Create updated element with new vertical position
+                    final updatedElement = currentElement.copyWith(
+                      verticalPosition: position,
+                    );
+
+                    // Update the element in state
+                    editorNotifier.updateTextElement(updatedElement);
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         // Text Alignment Section
         _FormattingSection(
-          title: 'Text Alignment',
+          title: 'Horizontal Alignment',
           child: Row(
             children: [
               ...EditorTextAlign.values.map((align) => Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: _IconButton(
-                  icon: align.icon,
-                  isSelected: currentElement.textAlign == align.textAlign,
-                  onPressed: () {
-                    editorNotifier.updateTextFormatting(
-                      type: selectedType,
-                      textAlign: align.textAlign,
-                    );
-                  },
-                ),
-              )),
+                    padding: const EdgeInsets.only(right: 4),
+                    child: _IconButton(
+                      icon: align.icon,
+                      isSelected: currentElement.textAlign == align.textAlign,
+                      onPressed: () {
+                        editorNotifier.updateTextFormatting(
+                          type: selectedType,
+                          textAlign: align.textAlign,
+                        );
+                      },
+                    ),
+                  )),
               const SizedBox(width: 16),
-              
+
               // Color picker
               _ColorPickerSection(
                 currentColor: currentElement.color,
@@ -151,6 +286,28 @@ class TextFormattingPanel extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  // Helper method to get display name for vertical position
+  String _getVerticalPositionDisplayName(VerticalPosition position) {
+    switch (position) {
+      case VerticalPosition.top:
+        return 'Top';
+      case VerticalPosition.middle:
+        return 'Middle';
+      case VerticalPosition.bottom:
+        return 'Bottom';
+    }
+  }
+
+  // Helper method to get default vertical position for text type
+  VerticalPosition _getDefaultVerticalPosition(TextFieldType type) {
+    switch (type) {
+      case TextFieldType.title:
+        return VerticalPosition.top;
+      case TextFieldType.subtitle:
+        return VerticalPosition.bottom;
+    }
   }
 }
 
@@ -249,16 +406,55 @@ class _WeightButton extends StatelessWidget {
           color: isSelected ? const Color(0xFFE91E63) : Colors.white,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: isSelected 
-              ? const Color(0xFFE91E63)
-              : const Color(0xFFE1E5E9),
+            color:
+                isSelected ? const Color(0xFFE91E63) : const Color(0xFFE1E5E9),
           ),
         ),
         child: Text(
-          weight.displayName.substring(0, 1), // First letter only (L, N, M, S, B)
+          weight.displayName
+              .substring(0, 1), // First letter only (L, N, M, S, B)
           style: TextStyle(
             fontSize: 12,
             fontWeight: weight.fontWeight,
+            color: isSelected ? Colors.white : const Color(0xFF6C757D),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PositionButton extends StatelessWidget {
+  const _PositionButton({
+    required this.displayName,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final String displayName;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE91E63) : Colors.white,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color:
+                isSelected ? const Color(0xFFE91E63) : const Color(0xFFE1E5E9),
+          ),
+        ),
+        child: Text(
+          displayName,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
             color: isSelected ? Colors.white : const Color(0xFF6C757D),
           ),
         ),

@@ -17,6 +17,25 @@ enum TextFieldType {
   }
 }
 
+/// Vertical positioning options for text elements
+enum VerticalPosition {
+  top('top', 'Top'),
+  middle('middle', 'Middle'),
+  bottom('bottom', 'Bottom');
+
+  const VerticalPosition(this.id, this.displayName);
+
+  final String id;
+  final String displayName;
+
+  factory VerticalPosition.fromString(String value) {
+    return VerticalPosition.values.firstWhere(
+      (position) => position.id == value,
+      orElse: () => VerticalPosition.top,
+    );
+  }
+}
+
 class TextElement {
   final String id;
   final TextFieldType type;
@@ -27,6 +46,7 @@ class TextElement {
   final TextAlign textAlign;
   final Color color;
   final bool isVisible;
+  final VerticalPosition? verticalPosition; // NEW: Vertical positioning
 
   const TextElement({
     required this.id,
@@ -38,6 +58,7 @@ class TextElement {
     this.textAlign = TextAlign.center,
     this.color = Colors.black,
     this.isVisible = true,
+    this.verticalPosition, // NEW: Vertical positioning parameter
   });
 
   factory TextElement.createDefault(TextFieldType type) {
@@ -46,7 +67,8 @@ class TextElement {
       type: type,
       content: type.displayName,
       fontSize: type == TextFieldType.title ? 24.0 : 16.0,
-      fontWeight: type == TextFieldType.title ? FontWeight.bold : FontWeight.normal,
+      fontWeight:
+          type == TextFieldType.title ? FontWeight.bold : FontWeight.normal,
     );
   }
 
@@ -60,6 +82,7 @@ class TextElement {
     TextAlign? textAlign,
     Color? color,
     bool? isVisible,
+    VerticalPosition? verticalPosition, // NEW: Vertical position parameter
   }) {
     return TextElement(
       id: id ?? this.id,
@@ -71,6 +94,8 @@ class TextElement {
       textAlign: textAlign ?? this.textAlign,
       color: color ?? this.color,
       isVisible: isVisible ?? this.isVisible,
+      verticalPosition: verticalPosition ??
+          this.verticalPosition, // NEW: Vertical position field
     );
   }
 
@@ -85,6 +110,8 @@ class TextElement {
       'textAlign': textAlign.index,
       'color': color.value,
       'isVisible': isVisible,
+      'verticalPosition':
+          verticalPosition?.id, // NEW: Serialize vertical position
     };
   }
 
@@ -95,10 +122,15 @@ class TextElement {
       content: json['content'] as String,
       fontFamily: json['fontFamily'] as String? ?? 'Inter',
       fontSize: (json['fontSize'] as num?)?.toDouble() ?? 16.0,
-      fontWeight: FontWeight.values[json['fontWeight'] as int? ?? FontWeight.normal.index],
-      textAlign: TextAlign.values[json['textAlign'] as int? ?? TextAlign.center.index],
+      fontWeight: FontWeight
+          .values[json['fontWeight'] as int? ?? FontWeight.normal.index],
+      textAlign:
+          TextAlign.values[json['textAlign'] as int? ?? TextAlign.center.index],
       color: Color(json['color'] as int? ?? Colors.black.value),
       isVisible: json['isVisible'] as bool? ?? true,
+      verticalPosition: json['verticalPosition'] != null
+          ? VerticalPosition.fromString(json['verticalPosition'] as String)
+          : null, // NEW: Deserialize vertical position
     );
   }
 
@@ -114,7 +146,9 @@ class TextElement {
         other.fontWeight == fontWeight &&
         other.textAlign == textAlign &&
         other.color == color &&
-        other.isVisible == isVisible;
+        other.isVisible == isVisible &&
+        other.verticalPosition ==
+            verticalPosition; // NEW: Include verticalPosition in equality
   }
 
   @override
@@ -129,12 +163,13 @@ class TextElement {
       textAlign,
       color,
       isVisible,
+      verticalPosition, // NEW: Include verticalPosition in hashCode
     );
   }
 
   @override
   String toString() {
-    return 'TextElement(id: $id, type: $type, content: $content, fontFamily: $fontFamily, fontSize: $fontSize, fontWeight: $fontWeight, textAlign: $textAlign, color: $color, isVisible: $isVisible)';
+    return 'TextElement(id: $id, type: $type, content: $content, fontFamily: $fontFamily, fontSize: $fontSize, fontWeight: $fontWeight, textAlign: $textAlign, color: $color, isVisible: $isVisible, verticalPosition: $verticalPosition)'; // NEW: Include verticalPosition in toString
   }
 }
 
@@ -194,11 +229,12 @@ class ScreenTextConfig {
     return ScreenTextConfig(elements: updatedElements);
   }
 
-  ScreenTextConfig copyFormattingFrom(TextElement sourceElement, TextFieldType targetType) {
+  ScreenTextConfig copyFormattingFrom(
+      TextElement sourceElement, TextFieldType targetType) {
     if (!elements.containsKey(targetType)) {
       return this;
     }
-    
+
     final targetElement = elements[targetType]!;
     final updatedElement = targetElement.copyWith(
       fontFamily: sourceElement.fontFamily,
@@ -207,7 +243,7 @@ class ScreenTextConfig {
       textAlign: sourceElement.textAlign,
       color: sourceElement.color,
     );
-    
+
     return updateElement(updatedElement);
   }
 
@@ -215,7 +251,7 @@ class ScreenTextConfig {
     if (hasElement(type)) {
       return this;
     }
-    
+
     final newElement = TextElement.createDefault(type);
     return addElement(newElement);
   }
@@ -239,21 +275,20 @@ class ScreenTextConfig {
   factory ScreenTextConfig.fromJson(Map<String, dynamic> json) {
     final elementsData = json['elements'] as Map<String, dynamic>? ?? {};
     final elements = <TextFieldType, TextElement>{};
-    
+
     for (final entry in elementsData.entries) {
       final type = TextFieldType.fromString(entry.key);
       final element = TextElement.fromJson(entry.value as Map<String, dynamic>);
       elements[type] = element;
     }
-    
+
     return ScreenTextConfig(elements: elements);
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ScreenTextConfig &&
-        _mapEquals(other.elements, elements);
+    return other is ScreenTextConfig && _mapEquals(other.elements, elements);
   }
 
   @override

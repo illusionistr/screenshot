@@ -199,7 +199,7 @@ class _TextElementOption extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     child: const Icon(
-                      Icons.close,
+                      Icons.delete,
                       size: 16,
                       color: Color(0xFF6C757D),
                     ),

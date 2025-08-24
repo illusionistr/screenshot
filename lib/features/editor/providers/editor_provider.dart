@@ -597,9 +597,20 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   int getAffectedScreensCount(TextFieldType type) {
-    return state.screens
-        .where((screen) => screen.textConfig.hasElement(type))
-        .length;
+    return state.screens.length;
+  }
+
+  void updateTextElement(TextElement updatedElement) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final updatedTextConfig =
+        currentScreen.textConfig.updateElement(updatedElement);
+    final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
   }
 
   TextElement? getCurrentSelectedTextElement() {
