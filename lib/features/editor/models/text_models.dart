@@ -36,17 +36,118 @@ enum VerticalPosition {
   }
 }
 
-class TextElement {
-  final String id;
-  final TextFieldType type;
-  final String content;
+/// Represents a segment of text with its own formatting
+class TextSegment {
+  final String text;
   final String fontFamily;
   final double fontSize;
   final FontWeight fontWeight;
-  final TextAlign textAlign;
   final Color color;
+  final bool isItalic;
+  final bool isUnderline;
+
+  const TextSegment({
+    required this.text,
+    this.fontFamily = 'Inter',
+    this.fontSize = 16.0,
+    this.fontWeight = FontWeight.normal,
+    this.color = Colors.black,
+    this.isItalic = false,
+    this.isUnderline = false,
+  });
+
+  TextSegment copyWith({
+    String? text,
+    String? fontFamily,
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    bool? isItalic,
+    bool? isUnderline,
+  }) {
+    return TextSegment(
+      text: text ?? this.text,
+      fontFamily: fontFamily ?? this.fontFamily,
+      fontSize: fontSize ?? this.fontSize,
+      fontWeight: fontWeight ?? this.fontWeight,
+      color: color ?? this.color,
+      isItalic: isItalic ?? this.isItalic,
+      isUnderline: isUnderline ?? this.isUnderline,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'text': text,
+      'fontFamily': fontFamily,
+      'fontSize': fontSize,
+      'fontWeight': fontWeight.index,
+      'color': color.value,
+      'isItalic': isItalic,
+      'isUnderline': isUnderline,
+    };
+  }
+
+  factory TextSegment.fromJson(Map<String, dynamic> json) {
+    return TextSegment(
+      text: json['text'] as String,
+      fontFamily: json['fontFamily'] as String? ?? 'Inter',
+      fontSize: (json['fontSize'] as num?)?.toDouble() ?? 16.0,
+      fontWeight: FontWeight
+          .values[json['fontWeight'] as int? ?? FontWeight.normal.index],
+      color: Color(json['color'] as int? ?? Colors.black.value),
+      isItalic: json['isItalic'] as bool? ?? false,
+      isUnderline: json['isUnderline'] as bool? ?? false,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is TextSegment &&
+        other.text == text &&
+        other.fontFamily == fontFamily &&
+        other.fontSize == fontSize &&
+        other.fontWeight == fontWeight &&
+        other.color == color &&
+        other.isItalic == isItalic &&
+        other.isUnderline == isUnderline;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      text,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      color,
+      isItalic,
+      isUnderline,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'TextSegment(text: "$text", fontFamily: $fontFamily, fontSize: $fontSize, fontWeight: $fontWeight, color: $color, isItalic: $isItalic, isUnderline: $isUnderline)';
+  }
+}
+
+class TextElement {
+  final String id;
+  final TextFieldType type;
+  final String content; // For backward compatibility
+  final String fontFamily; // For backward compatibility
+  final double fontSize; // For backward compatibility
+  final FontWeight fontWeight; // For backward compatibility
+  final TextAlign textAlign;
+  final Color color; // For backward compatibility
   final bool isVisible;
   final VerticalPosition? verticalPosition; // NEW: Vertical positioning
+
+  // NEW: Rich text support
+  final List<TextSegment>? segments; // If null, uses simple text mode
+  final bool isRichText; // Whether to use segments or simple text
 
   const TextElement({
     required this.id,
@@ -59,6 +160,8 @@ class TextElement {
     this.color = Colors.black,
     this.isVisible = true,
     this.verticalPosition, // NEW: Vertical positioning parameter
+    this.segments, // NEW: Rich text segments
+    this.isRichText = false, // NEW: Rich text flag
   });
 
   factory TextElement.createDefault(TextFieldType type) {
@@ -83,6 +186,8 @@ class TextElement {
     Color? color,
     bool? isVisible,
     VerticalPosition? verticalPosition, // NEW: Vertical position parameter
+    List<TextSegment>? segments, // NEW: Segments parameter
+    bool? isRichText, // NEW: Rich text flag parameter
   }) {
     return TextElement(
       id: id ?? this.id,
@@ -96,6 +201,8 @@ class TextElement {
       isVisible: isVisible ?? this.isVisible,
       verticalPosition: verticalPosition ??
           this.verticalPosition, // NEW: Vertical position field
+      segments: segments ?? this.segments, // NEW: Segments field
+      isRichText: isRichText ?? this.isRichText, // NEW: Rich text flag field
     );
   }
 
@@ -112,6 +219,10 @@ class TextElement {
       'isVisible': isVisible,
       'verticalPosition':
           verticalPosition?.id, // NEW: Serialize vertical position
+      'isRichText': isRichText, // NEW: Serialize rich text flag
+      'segments': segments
+          ?.map((segment) => segment.toJson())
+          .toList(), // NEW: Serialize segments
     };
   }
 
@@ -131,6 +242,14 @@ class TextElement {
       verticalPosition: json['verticalPosition'] != null
           ? VerticalPosition.fromString(json['verticalPosition'] as String)
           : null, // NEW: Deserialize vertical position
+      isRichText: json['isRichText'] as bool? ??
+          false, // NEW: Deserialize rich text flag
+      segments: json['segments'] != null
+          ? (json['segments'] as List)
+              .map((segmentJson) =>
+                  TextSegment.fromJson(segmentJson as Map<String, dynamic>))
+              .toList()
+          : null, // NEW: Deserialize segments
     );
   }
 
@@ -148,7 +267,10 @@ class TextElement {
         other.color == color &&
         other.isVisible == isVisible &&
         other.verticalPosition ==
-            verticalPosition; // NEW: Include verticalPosition in equality
+            verticalPosition && // NEW: Include verticalPosition in equality
+        other.isRichText == isRichText && // NEW: Include isRichText in equality
+        _segmentsEqual(
+            other.segments, segments); // NEW: Include segments in equality
   }
 
   @override
@@ -164,12 +286,25 @@ class TextElement {
       color,
       isVisible,
       verticalPosition, // NEW: Include verticalPosition in hashCode
+      isRichText, // NEW: Include isRichText in hashCode
+      segments, // NEW: Include segments in hashCode
     );
   }
 
   @override
   String toString() {
-    return 'TextElement(id: $id, type: $type, content: $content, fontFamily: $fontFamily, fontSize: $fontSize, fontWeight: $fontWeight, textAlign: $textAlign, color: $color, isVisible: $isVisible, verticalPosition: $verticalPosition)'; // NEW: Include verticalPosition in toString
+    return 'TextElement(id: $id, type: $type, content: $content, fontFamily: $fontFamily, fontSize: $fontSize, fontWeight: $fontWeight, textAlign: $textAlign, color: $color, isVisible: $isVisible, verticalPosition: $verticalPosition, isRichText: $isRichText, segments: $segments)'; // NEW: Include rich text fields in toString
+  }
+
+  // Helper method to compare segments lists
+  static bool _segmentsEqual(List<TextSegment>? a, List<TextSegment>? b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }
 

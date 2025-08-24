@@ -550,20 +550,23 @@ class ClientExportService {
 
       // Scale font size for export resolution (assuming preview is ~800px height, export is ~2796px)
       final scaleFactor = exportSize.height / 800;
-      final exportFontSize = element.fontSize * scaleFactor;
+
+      // Create text span based on whether it's rich text or simple text
+      final textSpan = element.isRichText && element.segments != null
+          ? _buildRichTextSpanForExport(element, scaleFactor)
+          : TextSpan(
+              text: element.content,
+              style: TextStyle(
+                fontFamily: element.fontFamily,
+                fontSize: (element.fontSize * scaleFactor).clamp(16.0, 200.0),
+                fontWeight: element.fontWeight,
+                color: element.color,
+                height: 1.2,
+              ),
+            );
 
       final textPainter = TextPainter(
-        text: TextSpan(
-          text: element.content,
-          style: TextStyle(
-            fontFamily: element.fontFamily,
-            fontSize: exportFontSize.clamp(
-                16.0, 200.0), // Reasonable bounds for export
-            fontWeight: element.fontWeight,
-            color: element.color,
-            height: 1.2,
-          ),
-        ),
+        text: textSpan,
         textDirection: TextDirection.ltr,
         textAlign: element.textAlign,
         maxLines: element.type == TextFieldType.title ? 3 : 2,
@@ -601,6 +604,27 @@ class ClientExportService {
       print('Error loading asset image: $e');
       return null;
     }
+  }
+
+  /// Build rich text span for export
+  static TextSpan _buildRichTextSpanForExport(
+      TextElement element, double scaleFactor) {
+    final textSpans = element.segments!.map((segment) {
+      return TextSpan(
+        text: segment.text,
+        style: TextStyle(
+          fontFamily: segment.fontFamily,
+          fontSize: (segment.fontSize * scaleFactor).clamp(16.0, 200.0),
+          fontWeight: segment.fontWeight,
+          color: segment.color,
+          fontStyle: segment.isItalic ? FontStyle.italic : FontStyle.normal,
+          decoration: segment.isUnderline ? TextDecoration.underline : null,
+          height: 1.2,
+        ),
+      );
+    }).toList();
+
+    return TextSpan(children: textSpans);
   }
 
   /// Get text position for export resolution

@@ -508,12 +508,32 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final currentElement = currentScreen.textConfig.getElement(type);
 
     if (currentElement != null) {
-      final updatedElement = currentElement.copyWith(content: content);
-      final updatedTextConfig =
-          currentScreen.textConfig.updateElement(updatedElement);
-      final updatedScreen =
-          currentScreen.copyWith(textConfig: updatedTextConfig);
-      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      if (currentElement.isRichText && currentElement.segments != null) {
+        // Update rich text segments
+        final updatedSegments = currentElement.segments!.map((segment) {
+          // For now, update all segments with the same text content
+          // In a more advanced implementation, this could handle multiple segments
+          return segment.copyWith(text: content);
+        }).toList();
+
+        final updatedElement = currentElement.copyWith(
+          content: content, // Keep content field in sync for compatibility
+          segments: updatedSegments,
+        );
+        final updatedTextConfig =
+            currentScreen.textConfig.updateElement(updatedElement);
+        final updatedScreen =
+            currentScreen.copyWith(textConfig: updatedTextConfig);
+        updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      } else {
+        // Update simple text content
+        final updatedElement = currentElement.copyWith(content: content);
+        final updatedTextConfig =
+            currentScreen.textConfig.updateElement(updatedElement);
+        final updatedScreen =
+            currentScreen.copyWith(textConfig: updatedTextConfig);
+        updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+      }
     }
   }
 
@@ -607,6 +627,95 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
+    final updatedTextConfig =
+        currentScreen.textConfig.updateElement(updatedElement);
+    final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+  }
+
+  // Rich Text Operations
+  void convertToRichText(TextFieldType type) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final currentElement = currentScreen.textConfig.getElement(type);
+
+    if (currentElement == null) {
+      return;
+    }
+
+    // Convert simple text to rich text segments
+    final segments = [
+      TextSegment(
+        text: currentElement.content,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      )
+    ];
+
+    final richTextElement = currentElement.copyWith(
+      isRichText: true,
+      segments: segments,
+    );
+
+    final updatedTextConfig =
+        currentScreen.textConfig.updateElement(richTextElement);
+    final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+  }
+
+  void convertToSimpleText(TextFieldType type) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final currentElement = currentScreen.textConfig.getElement(type);
+
+    if (currentElement == null) {
+      return;
+    }
+
+    // Convert rich text segments back to simple text
+    final simpleText = currentElement.segments?.map((s) => s.text).join() ??
+        currentElement.content;
+
+    final simpleElement = currentElement.copyWith(
+      content: simpleText,
+      isRichText: false,
+      segments: null,
+    );
+
+    final updatedTextConfig =
+        currentScreen.textConfig.updateElement(simpleElement);
+    final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+  }
+
+  void applyRichTextFormatting(
+      TextFieldType type, TextSegment Function(TextSegment) formatter) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final currentElement = currentScreen.textConfig.getElement(type);
+
+    if (currentElement == null ||
+        !currentElement.isRichText ||
+        currentElement.segments == null) {
+      return;
+    }
+
+    final updatedSegments = currentElement.segments!.map(formatter).toList();
+    final updatedElement = currentElement.copyWith(segments: updatedSegments);
     final updatedTextConfig =
         currentScreen.textConfig.updateElement(updatedElement);
     final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);

@@ -5,9 +5,9 @@ import '../../../projects/models/project_model.dart';
 import '../../../shared/widgets/scrollable_tab_container.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
-import 'text_content_editor.dart';
 import 'text_element_selector.dart';
 import 'text_formatting_panel.dart';
+import 'unified_text_editor.dart';
 
 class TextTabContent extends ConsumerWidget {
   const TextTabContent({
@@ -33,8 +33,8 @@ class TextTabContent extends ConsumerWidget {
         if (hasSelection) ...[
           const SizedBox(height: 24),
 
-          // Content Editor
-          TextContentEditor(project: project),
+          // Unified Text Editor
+          UnifiedTextEditor(project: project),
 
           const SizedBox(height: 24),
 
@@ -130,14 +130,10 @@ class _ApplyToAllButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedType = editorState.textElementState.selectedType;
     final buttonText = editorNotifier.getApplyToAllButtonText();
-    final affectedCount = selectedType != null
-        ? editorNotifier.getAffectedScreensCount(selectedType)
-        : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-       
         // Apply button
         SizedBox(
           width: double.infinity,

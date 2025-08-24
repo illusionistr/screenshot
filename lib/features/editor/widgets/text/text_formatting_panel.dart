@@ -48,152 +48,13 @@ class TextFormattingPanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${selectedType.displayName} Formatting',
+          '${selectedType.displayName} Advanced Formatting',
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: Color(0xFF495057),
           ),
         ),
-        const SizedBox(height: 16),
-
-        // Font Family Section
-        _FormattingSection(
-          title: 'Font Family',
-          child: _CustomDropdown(
-            value: currentElement.fontFamily,
-            items: const [
-              // System Fonts (Always Available)
-              'Arial',
-              'Helvetica Neue',
-              'Calibri',
-              'Georgia',
-              'Times New Roman',
-              'Garamond',
-
-              // Popular Google Fonts - Sans Serif
-              'Inter',
-              'Roboto',
-              'Open Sans',
-              'Lato',
-              'Montserrat',
-              'Poppins',
-              'Nunito',
-              'Source Sans Pro',
-              'Ubuntu',
-              'Karla',
-              'Quicksand',
-              'Comfortaa',
-              'Mukti',
-
-              // Display & Brand Fonts
-              'Oswald',
-              'Bebas Neue',
-              'Playfair Display',
-              'Cinzel',
-              'Abril Fatface',
-              'Dancing Script',
-              'Pacifico',
-              'Amatic SC',
-              'Great Vibes',
-              'Satisfy',
-
-              // Professional & Serif Fonts
-              'Merriweather',
-              'Libre Baskerville',
-              'Crimson Text',
-              'Lora',
-              'Vollkorn',
-              'Source Serif Pro',
-              'PT Serif',
-              'Noto Serif',
-
-              // Modern & Geometric Fonts
-              'Futura PT',
-              'Gothic A1',
-              'Rajdhani',
-              'Orbitron',
-              'Audiowide',
-              'Syncopate',
-              'Monoton',
-
-              // Rounded & Friendly Fonts
-              'Rounded Mplus 1c',
-              'M PLUS Rounded 1c',
-              'Noto Sans JP',
-              'Fredoka One',
-              'Chewy',
-              'Baloo 2',
-              'Happy Monkey',
-              'Comic Neue',
-
-              // Clean & Minimal Fonts
-              'DM Sans',
-              'Manrope',
-              'Epilogue',
-              'Jost',
-              'Red Hat Display',
-              'Space Grotesk',
-              'Syne',
-              'Chivo',
-
-              // Retro & Vintage Fonts
-              'Press Start 2P',
-              'VT323',
-              'Special Elite',
-              'Courier Prime',
-              'Cutive Mono',
-              'Nova Mono',
-              'Fira Code',
-              'JetBrains Mono',
-
-              // Handwriting & Script Fonts
-              'Indie Flower',
-              'Patrick Hand',
-              'Caveat',
-              'Shadows Into Light',
-              'Sacramento',
-              'Marck Script',
-              'Parisienne',
-              'Tangerine',
-            ],
-            onChanged: (value) {
-              editorNotifier.updateTextFormatting(
-                type: selectedType,
-                fontFamily: value,
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Font Size Section
-        _FormattingSection(
-          title: 'Font Size',
-          child: _CustomDropdown(
-            value: '${currentElement.fontSize.toInt()}',
-            items: const [
-              '12',
-              '14',
-              '16',
-              '18',
-              '20',
-              '24',
-              '28',
-              '32',
-              '36',
-              '40'
-            ],
-            onChanged: (value) {
-              editorNotifier.updateTextFormatting(
-                type: selectedType,
-                fontSize: double.parse(value),
-              );
-            },
-          ),
-        ),
-
         const SizedBox(height: 16),
 
         // Font Weight Section
@@ -269,18 +130,6 @@ class TextFormattingPanel extends ConsumerWidget {
                       },
                     ),
                   )),
-              const SizedBox(width: 16),
-
-              // Color picker
-              _ColorPickerSection(
-                currentColor: currentElement.color,
-                onColorChanged: (color) {
-                  editorNotifier.updateTextFormatting(
-                    type: selectedType,
-                    color: color,
-                  );
-                },
-              ),
             ],
           ),
         ),
@@ -336,50 +185,6 @@ class _FormattingSection extends StatelessWidget {
         const SizedBox(height: 8),
         child,
       ],
-    );
-  }
-}
-
-class _CustomDropdown extends StatelessWidget {
-  const _CustomDropdown({
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  final String value;
-  final List<String> items;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFE1E5E9)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          items: items
-              .map((item) => DropdownMenuItem(
-                    value: item,
-                    child: Text(
-                      item,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ))
-              .toList(),
-          onChanged: (newValue) {
-            if (newValue != null) {
-              onChanged(newValue);
-            }
-          },
-        ),
-      ),
     );
   }
 }
@@ -519,7 +324,7 @@ class _ColorPickerSectionState extends State<_ColorPickerSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Color',
+          'Colore',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,

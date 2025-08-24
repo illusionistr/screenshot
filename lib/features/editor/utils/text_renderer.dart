@@ -46,18 +46,20 @@ class TextRenderer {
           horizontal: 16 * scaleFactor,
           vertical: 8 * scaleFactor,
         ),
-        child: Text(
-          element.content,
-          style: _getGoogleFontStyle(
-            element.fontFamily,
-            fontSize: scaledFontSize.clamp(8.0, 100.0),
-            fontWeight: element.fontWeight,
-            color: element.color,
-          ),
-          textAlign: element.textAlign,
-          maxLines: element.type == TextFieldType.title ? 3 : 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        child: element.isRichText && element.segments != null
+            ? _buildRichText(element, scaledFontSize.clamp(8.0, 100.0))
+            : Text(
+                element.content,
+                style: _getGoogleFontStyle(
+                  element.fontFamily,
+                  fontSize: scaledFontSize.clamp(8.0, 100.0),
+                  fontWeight: element.fontWeight,
+                  color: element.color,
+                ),
+                textAlign: element.textAlign,
+                maxLines: element.type == TextFieldType.title ? 3 : 2,
+                overflow: TextOverflow.ellipsis,
+              ),
       ),
     );
   }
@@ -124,6 +126,31 @@ class TextRenderer {
       case TextFieldType.subtitle:
         return VerticalPosition.bottom; // Default to bottom
     }
+  }
+
+  /// Builds rich text from segments
+  static Widget _buildRichText(TextElement element, double baseFontSize) {
+    final textSpans = element.segments!.map((segment) {
+      return TextSpan(
+        text: segment.text,
+        style: _getGoogleFontStyle(
+          segment.fontFamily,
+          fontSize: segment.fontSize,
+          fontWeight: segment.fontWeight,
+          color: segment.color,
+        ).copyWith(
+          fontStyle: segment.isItalic ? FontStyle.italic : FontStyle.normal,
+          decoration: segment.isUnderline ? TextDecoration.underline : null,
+        ),
+      );
+    }).toList();
+
+    return Text.rich(
+      TextSpan(children: textSpans),
+      textAlign: element.textAlign,
+      maxLines: element.type == TextFieldType.title ? 3 : 2,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 
   /// Creates a TextStyle using Google Fonts or fallback to system fonts
