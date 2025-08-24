@@ -730,16 +730,13 @@ class _InteractiveTextWidgetState
     required FontWeight fontWeight,
     required Color color,
   }) {
-    // Base style
-    final baseStyle = TextStyle(
+    // Use the same Google Fonts mapping as the main TextRenderer
+    return TextRenderer._getGoogleFontStyle(
+      fontFamily,
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
-      height: 1.2,
     );
-
-    // For now, use the base style. In the future, we could add Google Fonts support
-    return baseStyle.copyWith(fontFamily: fontFamily);
   }
 }
 
