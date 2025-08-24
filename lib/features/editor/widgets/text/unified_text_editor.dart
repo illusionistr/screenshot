@@ -24,6 +24,7 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
   late FocusNode _focusNode;
   final GlobalKey _colorPickerButtonKey = GlobalKey();
   TextSelection? _currentSelection;
+  TextSelection? _preservedSelection; // Store selection when dropdown opens
   // Always in rich text mode now - no need for mode switching
 
   @override
@@ -61,10 +62,40 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
   void _onTextChanged() {
     // Update selection immediately when text changes
     _updateSelection();
+
+    // Sync text content with the provider
+    _syncTextContent();
+  }
+
+  void _syncTextContent() {
+    final editorNotifier =
+        ref.read(editorProviderFamily(widget.project).notifier);
+    final currentElement = editorNotifier.getCurrentSelectedTextElement();
+
+    if (currentElement != null) {
+      final selectedType = currentElement.type;
+      final newContent = _textController.text;
+
+      // Only update if content has actually changed
+      final currentCombinedText =
+          currentElement.isRichText && currentElement.segments != null
+              ? currentElement.segments!.map((s) => s.text).join()
+              : currentElement.content;
+
+      if (currentCombinedText != newContent) {
+        editorNotifier.updateTextContent(selectedType, newContent);
+      }
+    }
   }
 
   void _onFocusChanged() {
-    // Focus change handling can be added later if needed
+    // When focus is lost, preserve the current selection if it's valid
+    if (!_focusNode.hasFocus &&
+        _currentSelection != null &&
+        _currentSelection!.start != _currentSelection!.end) {
+      print('DEBUG: Focus lost, preserving selection: $_currentSelection');
+      _preservedSelection = _currentSelection;
+    }
   }
 
   void _updateSelection() {
@@ -74,6 +105,34 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
         _currentSelection = newSelection;
       });
     }
+  }
+
+  /// Preserve the current text selection before dropdown interaction
+  void _preserveSelection() {
+    print('DEBUG: _preserveSelection called');
+    print('DEBUG: Current _currentSelection: $_currentSelection');
+    if (_currentSelection != null &&
+        _currentSelection!.start != _currentSelection!.end) {
+      _preservedSelection = _currentSelection;
+      print('DEBUG: Preserved selection: $_preservedSelection');
+    } else {
+      print('DEBUG: No valid selection to preserve');
+    }
+  }
+
+  /// Restore the preserved selection after dropdown interaction
+  void _restoreSelection() {
+    if (_preservedSelection != null) {
+      _textController.selection = _preservedSelection!;
+      _currentSelection = _preservedSelection;
+      print('DEBUG: Restored selection: $_currentSelection');
+      _preservedSelection = null; // Clear after use
+    }
+  }
+
+  /// Get the effective selection (current or preserved)
+  TextSelection? get _effectiveSelection {
+    return _currentSelection ?? _preservedSelection;
   }
 
   @override
@@ -252,18 +311,18 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
             child: _FontFamilyDropdown(
               currentFont: currentElement.fontFamily,
               onFontChanged: (font) {
-                // If element is rich text, apply to segments, otherwise update simple text
-                if (currentElement.isRichText) {
-                  editorNotifier.applyRichTextFormatting(
-                    selectedType,
-                    (segment) => segment.copyWith(fontFamily: font),
-                  );
-                } else {
-                  editorNotifier.updateTextFormatting(
-                    type: selectedType,
-                    fontFamily: font,
-                  );
-                }
+                // Apply font family to selection or entire text
+                _applyFontFamilyToSelection(selectedType, editorNotifier, font);
+              },
+              onDropdownOpened: () {
+                // Preserve selection before dropdown opens
+                print('DEBUG: Font family dropdown opened');
+                _preserveSelection();
+              },
+              onTap: () {
+                // Also preserve selection when dropdown is tapped
+                print('DEBUG: Font family dropdown tapped');
+                _preserveSelection();
               },
             ),
           ),
@@ -274,14 +333,13 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
             child: _FontSizeButton(
               currentSize: currentElement.fontSize,
               onSizeChanged: (size) {
-                // Apply font size to rich text
-                if (!currentElement.isRichText) {
-                  editorNotifier.convertToRichText(selectedType);
-                }
-                editorNotifier.applyRichTextFormatting(
-                  selectedType,
-                  (segment) => segment.copyWith(fontSize: size),
-                );
+                // Apply font size to selection or entire text
+                _applyFontSizeToSelection(selectedType, editorNotifier, size);
+              },
+              onDropdownOpened: () {
+                // Preserve selection before dropdown opens
+                print('DEBUG: Font size dropdown opened');
+                _preserveSelection();
               },
             ),
           ),
@@ -764,16 +822,346 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
       (segment) => segment.copyWith(color: color),
     );
   }
+
+  void _applyFontFamilyToSelection(TextFieldType selectedType,
+      EditorNotifier editorNotifier, String fontFamily) {
+    // Get the current element
+    final currentElement = editorNotifier.getCurrentSelectedTextElement();
+
+    if (currentElement == null) return;
+
+    print('DEBUG: _applyFontFamilyToSelection called');
+    print('DEBUG: _currentSelection: $_currentSelection');
+    print('DEBUG: _preservedSelection: $_preservedSelection');
+    print('DEBUG: _effectiveSelection: $_effectiveSelection');
+
+    // Check if there's a valid text selection (current or preserved)
+    if (_effectiveSelection != null &&
+        _effectiveSelection!.start != _effectiveSelection!.end &&
+        _effectiveSelection!.start >= 0 &&
+        _effectiveSelection!.end <= _textController.text.length) {
+      print('DEBUG: Applying font family to selection: $_effectiveSelection');
+      // Apply font family to selected text only
+      _applyFontFamilyToSelectionOnly(selectedType, editorNotifier, fontFamily);
+      // Restore selection after applying
+      _restoreSelection();
+    } else {
+      print('DEBUG: No valid selection, applying to entire text');
+      // No selection or invalid selection - apply to entire text
+      _applyFontFamilyToAll(selectedType, editorNotifier, fontFamily);
+    }
+  }
+
+  void _applyFontSizeToSelection(TextFieldType selectedType,
+      EditorNotifier editorNotifier, double fontSize) {
+    // Get the current element
+    final currentElement = editorNotifier.getCurrentSelectedTextElement();
+
+    if (currentElement == null) return;
+
+    print('DEBUG: _applyFontSizeToSelection called');
+    print('DEBUG: _currentSelection: $_currentSelection');
+    print('DEBUG: _preservedSelection: $_preservedSelection');
+    print('DEBUG: _effectiveSelection: $_effectiveSelection');
+
+    // Check if there's a valid text selection (current or preserved)
+    if (_effectiveSelection != null &&
+        _effectiveSelection!.start != _effectiveSelection!.end &&
+        _effectiveSelection!.start >= 0 &&
+        _effectiveSelection!.end <= _textController.text.length) {
+      print('DEBUG: Applying font size to selection: $_effectiveSelection');
+      // Apply font size to selected text only
+      _applyFontSizeToSelectionOnly(selectedType, editorNotifier, fontSize);
+      // Restore selection after applying
+      _restoreSelection();
+    } else {
+      print('DEBUG: No valid selection, applying to entire text');
+      // No selection or invalid selection - apply to entire text
+      _applyFontSizeToAll(selectedType, editorNotifier, fontSize);
+    }
+  }
+
+  void _applyFontFamilyToSelectionOnly(TextFieldType selectedType,
+      EditorNotifier editorNotifier, String fontFamily) {
+    final fullText = _textController.text;
+    final selection = _effectiveSelection!;
+
+    // Get current element and ensure it's in rich text mode
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    if (!currentElement.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Get the updated element after potential conversion
+    final updatedElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final existingSegments = updatedElement.segments ?? [];
+
+    // If no segments exist, create them from scratch
+    if (existingSegments.isEmpty) {
+      _createNewSegmentsWithFontFamily(
+          selectedType, editorNotifier, fontFamily, fullText, selection);
+      return;
+    }
+
+    // Find the segment that contains the selection
+    int targetSegmentIndex = -1;
+    int cumulativeLength = 0;
+
+    for (int i = 0; i < existingSegments.length; i++) {
+      final segment = existingSegments[i];
+      final segmentStart = cumulativeLength;
+      final segmentEnd = cumulativeLength + segment.text.length;
+
+      // Check if selection overlaps with this segment
+      if (selection.start < segmentEnd && selection.end > segmentStart) {
+        targetSegmentIndex = i;
+        break;
+      }
+
+      cumulativeLength += segment.text.length;
+    }
+
+    // If we found a segment, update its font family
+    if (targetSegmentIndex >= 0) {
+      final targetSegment = existingSegments[targetSegmentIndex];
+      final newSegments = List<TextSegment>.from(existingSegments);
+
+      // Update the segment with new font family
+      newSegments[targetSegmentIndex] =
+          targetSegment.copyWith(fontFamily: fontFamily);
+
+      // Update the element
+      final finalElement = updatedElement.copyWith(
+        segments: newSegments,
+        content: fullText,
+      );
+
+      editorNotifier.updateTextElement(finalElement);
+    } else {
+      // No segment found, create new segments
+      _createNewSegmentsWithFontFamily(
+          selectedType, editorNotifier, fontFamily, fullText, selection);
+    }
+  }
+
+  void _applyFontSizeToSelectionOnly(TextFieldType selectedType,
+      EditorNotifier editorNotifier, double fontSize) {
+    final fullText = _textController.text;
+    final selection = _effectiveSelection!;
+
+    // Get current element and ensure it's in rich text mode
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    if (!currentElement.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Get the updated element after potential conversion
+    final updatedElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final existingSegments = updatedElement.segments ?? [];
+
+    // If no segments exist, create them from scratch
+    if (existingSegments.isEmpty) {
+      _createNewSegmentsWithFontSize(
+          selectedType, editorNotifier, fontSize, fullText, selection);
+      return;
+    }
+
+    // Find the segment that contains the selection
+    int targetSegmentIndex = -1;
+    int cumulativeLength = 0;
+
+    for (int i = 0; i < existingSegments.length; i++) {
+      final segment = existingSegments[i];
+      final segmentStart = cumulativeLength;
+      final segmentEnd = cumulativeLength + segment.text.length;
+
+      // Check if selection overlaps with this segment
+      if (selection.start < segmentEnd && selection.end > segmentStart) {
+        targetSegmentIndex = i;
+        break;
+      }
+
+      cumulativeLength += segment.text.length;
+    }
+
+    // If we found a segment, update its font size
+    if (targetSegmentIndex >= 0) {
+      final targetSegment = existingSegments[targetSegmentIndex];
+      final newSegments = List<TextSegment>.from(existingSegments);
+
+      // Update the segment with new font size
+      newSegments[targetSegmentIndex] =
+          targetSegment.copyWith(fontSize: fontSize);
+
+      // Update the element
+      final finalElement = updatedElement.copyWith(
+        segments: newSegments,
+        content: fullText,
+      );
+
+      editorNotifier.updateTextElement(finalElement);
+    } else {
+      // No segment found, create new segments
+      _createNewSegmentsWithFontSize(
+          selectedType, editorNotifier, fontSize, fullText, selection);
+    }
+  }
+
+  void _applyFontFamilyToAll(TextFieldType selectedType,
+      EditorNotifier editorNotifier, String fontFamily) {
+    // Always convert to rich text first if not already
+    if (!editorNotifier.getCurrentSelectedTextElement()!.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Apply font family to the entire text
+    editorNotifier.applyRichTextFormatting(
+      selectedType,
+      (segment) => segment.copyWith(fontFamily: fontFamily),
+    );
+  }
+
+  void _applyFontSizeToAll(TextFieldType selectedType,
+      EditorNotifier editorNotifier, double fontSize) {
+    // Always convert to rich text first if not already
+    if (!editorNotifier.getCurrentSelectedTextElement()!.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Apply font size to the entire text
+    editorNotifier.applyRichTextFormatting(
+      selectedType,
+      (segment) => segment.copyWith(fontSize: fontSize),
+    );
+  }
+
+  void _createNewSegmentsWithFontFamily(
+      TextFieldType selectedType,
+      EditorNotifier editorNotifier,
+      String fontFamily,
+      String fullText,
+      TextSelection selection) {
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final beforeText = fullText.substring(0, selection.start);
+    final selectedText = fullText.substring(selection.start, selection.end);
+    final afterText = fullText.substring(selection.end);
+
+    final newSegments = <TextSegment>[];
+
+    // Add before text
+    if (beforeText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: beforeText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Add selected text with new font family
+    if (selectedText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: selectedText,
+        fontFamily: fontFamily, // Apply the selected font family
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+        isItalic: false,
+        isUnderline: false,
+      ));
+    }
+
+    // Add after text
+    if (afterText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: afterText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Update the element
+    final updatedElement = currentElement.copyWith(
+      segments: newSegments,
+      content: fullText,
+    );
+
+    editorNotifier.updateTextElement(updatedElement);
+  }
+
+  void _createNewSegmentsWithFontSize(
+      TextFieldType selectedType,
+      EditorNotifier editorNotifier,
+      double fontSize,
+      String fullText,
+      TextSelection selection) {
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final beforeText = fullText.substring(0, selection.start);
+    final selectedText = fullText.substring(selection.start, selection.end);
+    final afterText = fullText.substring(selection.end);
+
+    final newSegments = <TextSegment>[];
+
+    // Add before text
+    if (beforeText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: beforeText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Add selected text with new font size
+    if (selectedText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: selectedText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: fontSize, // Apply the selected font size
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+        isItalic: false,
+        isUnderline: false,
+      ));
+    }
+
+    // Add after text
+    if (afterText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: afterText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Update the element
+    final updatedElement = currentElement.copyWith(
+      segments: newSegments,
+      content: fullText,
+    );
+
+    editorNotifier.updateTextElement(updatedElement);
+  }
 }
 
 class _FontFamilyDropdown extends StatelessWidget {
   const _FontFamilyDropdown({
     required this.currentFont,
     required this.onFontChanged,
+    this.onDropdownOpened,
+    this.onTap,
   });
 
   final String currentFont;
   final ValueChanged<String> onFontChanged;
+  final VoidCallback? onDropdownOpened;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -827,6 +1215,7 @@ class _FontFamilyDropdown extends StatelessWidget {
             onFontChanged(value);
           }
         },
+        onTap: onTap ?? onDropdownOpened,
         isExpanded: true,
         underline: const SizedBox(),
         items: fonts.map((font) {
@@ -961,10 +1350,12 @@ class _FontSizeButton extends StatelessWidget {
   const _FontSizeButton({
     required this.currentSize,
     required this.onSizeChanged,
+    this.onDropdownOpened,
   });
 
   final double currentSize;
   final ValueChanged<double> onSizeChanged;
+  final VoidCallback? onDropdownOpened;
 
   @override
   Widget build(BuildContext context) {
@@ -992,6 +1383,7 @@ class _FontSizeButton extends StatelessWidget {
               color: Color(0xFF6C757D),
             ),
             onSelected: onSizeChanged,
+            onOpened: onDropdownOpened,
             itemBuilder: (context) => [
               12.0,
               14.0,

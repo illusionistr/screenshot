@@ -509,16 +509,14 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
     if (currentElement != null) {
       if (currentElement.isRichText && currentElement.segments != null) {
-        // Update rich text segments
-        final updatedSegments = currentElement.segments!.map((segment) {
-          // For now, update all segments with the same text content
-          // In a more advanced implementation, this could handle multiple segments
-          return segment.copyWith(text: content);
-        }).toList();
+        // For rich text, we need to rebuild segments based on the new content
+        // while preserving formatting where possible
+        final newSegments =
+            _rebuildSegmentsFromContent(currentElement, content);
 
         final updatedElement = currentElement.copyWith(
           content: content, // Keep content field in sync for compatibility
-          segments: updatedSegments,
+          segments: newSegments,
         );
         final updatedTextConfig =
             currentScreen.textConfig.updateElement(updatedElement);
@@ -535,6 +533,45 @@ class EditorNotifier extends StateNotifier<EditorState> {
         updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
       }
     }
+  }
+
+  /// Rebuilds segments from new content while preserving formatting
+  List<TextSegment> _rebuildSegmentsFromContent(
+      TextElement element, String newContent) {
+    if (element.segments == null || element.segments!.isEmpty) {
+      // No existing segments, create a single segment with default formatting
+      return [
+        TextSegment(
+          text: newContent,
+          fontFamily: element.fontFamily,
+          fontSize: element.fontSize,
+          fontWeight: element.fontWeight,
+          color: element.color,
+        )
+      ];
+    }
+
+    // If the new content is the same as the combined segments, keep existing segments
+    final currentCombinedText = element.segments!.map((s) => s.text).join();
+    if (currentCombinedText == newContent) {
+      return element.segments!;
+    }
+
+    // For now, create a single segment with the new content using the first segment's formatting
+    // This is a simplified approach - a more advanced implementation could try to preserve
+    // formatting across text changes
+    final firstSegment = element.segments!.first;
+    return [
+      TextSegment(
+        text: newContent,
+        fontFamily: firstSegment.fontFamily,
+        fontSize: firstSegment.fontSize,
+        fontWeight: firstSegment.fontWeight,
+        color: firstSegment.color,
+        isItalic: firstSegment.isItalic,
+        isUnderline: firstSegment.isUnderline,
+      )
+    ];
   }
 
   void updateTextFormatting({
