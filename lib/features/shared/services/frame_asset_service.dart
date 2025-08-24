@@ -21,6 +21,7 @@ class FrameAssetService {
     try {
       // Try to load the asset to check if it exists
       await rootBundle.load(assetPath);
+      print('Asset $assetPath is available');
       _assetAvailabilityCache[assetPath] = true;
       return true;
     } catch (e) {

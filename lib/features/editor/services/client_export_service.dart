@@ -339,6 +339,7 @@ class ClientExportService {
     try {
       // Load device frame asset
       final frameImage = await _loadImageFromAsset(assetPath);
+      print('Frame image: $frameImage');
       if (frameImage != null) {
         // Calculate scaling factor to fit frame to export size
         final frameAspectRatio = frameImage.width / frameImage.height;

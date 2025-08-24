@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/device_model.dart';
 
 class DevicesData {
@@ -15,7 +16,12 @@ class DevicesData {
       screenWidth: 1290,
       screenHeight: 2796,
       screenPosition: Offset(11, 46),
-      availableFrames: ['natural-titanium', 'blue-titanium', 'white-titanium', 'black-titanium'],
+      availableFrames: [
+        'natural-titanium',
+        'blue-titanium',
+        'white-titanium',
+        'black-titanium'
+      ],
       appStoreDisplaySize: '6.1-inch',
     ),
     DeviceModel(
@@ -27,7 +33,12 @@ class DevicesData {
       screenWidth: 1290,
       screenHeight: 2796,
       screenPosition: Offset(67, 58),
-      availableFrames: ['natural-titanium', 'blue-titanium', 'white-titanium', 'black-titanium'],
+      availableFrames: [
+        'natural-titanium',
+        'blue-titanium',
+        'white-titanium',
+        'black-titanium'
+      ],
       appStoreDisplaySize: '6.7-inch',
     ),
     DeviceModel(
@@ -170,9 +181,9 @@ class DevicesData {
       platform: Platform.android,
       frameWidth: 1344,
       frameHeight: 2992,
-      screenWidth: 1344,
-      screenHeight: 2992,
-      screenPosition: Offset(0, 0),
+      screenWidth: 1200,
+      screenHeight: 2700,
+      screenPosition: Offset(72, 146),
       availableFrames: ['obsidian', 'porcelain', 'bay', 'mint'],
       appStoreDisplaySize: '6.7-inch',
     ),
@@ -182,9 +193,9 @@ class DevicesData {
       platform: Platform.android,
       frameWidth: 1200,
       frameHeight: 2400,
-      screenPosition: Offset(0, 0),
-      screenWidth: 1080,
-      screenHeight: 2400,
+      screenWidth: 1000,
+      screenHeight: 2200,
+      screenPosition: Offset(100, 100),
       availableFrames: ['obsidian', 'hazel', 'rose'],
       appStoreDisplaySize: '6.2-inch',
     ),
@@ -221,7 +232,12 @@ class DevicesData {
       screenWidth: 1440,
       screenHeight: 3120,
       screenPosition: Offset(0, 0),
-      availableFrames: ['titanium-black', 'titanium-gray', 'titanium-violet', 'titanium-yellow'],
+      availableFrames: [
+        'titanium-black',
+        'titanium-gray',
+        'titanium-violet',
+        'titanium-yellow'
+      ],
       appStoreDisplaySize: '6.8-inch',
     ),
     DeviceModel(
@@ -233,7 +249,12 @@ class DevicesData {
       screenWidth: 1080,
       screenHeight: 2340,
       screenPosition: Offset(0, 0),
-      availableFrames: ['onyx-black', 'marble-gray', 'cobalt-violet', 'amber-yellow'],
+      availableFrames: [
+        'onyx-black',
+        'marble-gray',
+        'cobalt-violet',
+        'amber-yellow'
+      ],
       appStoreDisplaySize: '6.2-inch',
     ),
     DeviceModel(

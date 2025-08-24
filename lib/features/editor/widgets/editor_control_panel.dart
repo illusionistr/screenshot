@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
 import '../../shared/models/screenshot_model.dart';
+import '../../shared/widgets/scrollable_tab_container.dart';
 import '../models/background_models.dart';
 import '../models/editor_state.dart';
 import '../providers/editor_provider.dart';
@@ -273,182 +274,185 @@ class EditorControlPanel extends ConsumerWidget {
       void Function(dynamic) showScreenshotOptions,
       void Function(int, int, EditorNotifier) handleScreenshotReorder,
       void Function() showScreenshotManagerModal) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Manage App Screens Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => showScreenshotManagerModal(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE91E63),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Manage App Screens Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => showScreenshotManagerModal(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE91E63),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-            ),
-            child: const Text(
-              'Manage App Screens',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        const Text(
-          'Upload, organize, and manage your app screenshots',
-          style: TextStyle(
-            color: Color(0xFF6C757D),
-            fontSize: 14,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Screen Selection Status
-        _buildScreenSelectionStatus(editorState, ref),
-
-        const SizedBox(height: 16),
-
-        // Horizontal Screenshot List
-        EditorScreenshotList(
-          project: project,
-          height: kScreenshotListHeight +
-              75, // Fixed height + space for header/padding
-          onScreenshotTap: (screenshot) {
-            // Handle screenshot selection for layout
-            handleScreenshotSelection(screenshot, editorNotifier);
-          },
-          onScreenshotLongPress: (screenshot) {
-            // Show screenshot options menu
-            showScreenshotOptions(screenshot);
-          },
-          onScreenshotReorder: (oldIndex, newIndex) {
-            // Handle screenshot reordering
-            handleScreenshotReorder(oldIndex, newIndex, editorNotifier);
-          },
-        ),
-
-        const SizedBox(height: 24),
-
-        // Spacer to push quick actions to bottom
-        const Spacer(),
-
-        // Quick Actions
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => showScreenshotManagerModal(),
-                icon: const Icon(Icons.add_photo_alternate, size: 16),
-                label: const Text('Upload'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFE91E63),
-                  side: const BorderSide(color: Color(0xFFE91E63)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+              child: const Text(
+                'Manage App Screens',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  // TODO: Implement batch operations
-                },
-                icon: const Icon(Icons.select_all, size: 16),
-                label: const Text('Select All'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF6C757D),
-                  side: const BorderSide(color: Color(0xFFE1E5E9)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+          ),
+
+          const SizedBox(height: 16),
+
+          const Text(
+            'Upload, organize, and manage your app screenshots',
+            style: TextStyle(
+              color: Color(0xFF6C757D),
+              fontSize: 14,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Screen Selection Status
+          _buildScreenSelectionStatus(editorState, ref),
+
+          const SizedBox(height: 16),
+
+          // Horizontal Screenshot List
+          EditorScreenshotList(
+            project: project,
+            height: kScreenshotListHeight +
+                75, // Fixed height + space for header/padding
+            onScreenshotTap: (screenshot) {
+              // Handle screenshot selection for layout
+              handleScreenshotSelection(screenshot, editorNotifier);
+            },
+            onScreenshotLongPress: (screenshot) {
+              // Show screenshot options menu
+              showScreenshotOptions(screenshot);
+            },
+            onScreenshotReorder: (oldIndex, newIndex) {
+              // Handle screenshot reordering
+              handleScreenshotReorder(oldIndex, newIndex, editorNotifier);
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // Quick Actions (moved to bottom but not using Spacer to avoid overflow)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 20, bottom: 20),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.grey.shade200),
               ),
             ),
-          ],
-        ),
-      ],
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => showScreenshotManagerModal(),
+                    icon: const Icon(Icons.add_photo_alternate, size: 16),
+                    label: const Text('Upload'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFE91E63),
+                      side: const BorderSide(color: Color(0xFFE91E63)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      // TODO: Implement batch operations
+                    },
+                    icon: const Icon(Icons.select_all, size: 16),
+                    label: const Text('Select All'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF6C757D),
+                      side: const BorderSide(color: Color(0xFFE1E5E9)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildBackgroundTab(
       EditorState editorState, EditorNotifier editorNotifier) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Background Tabs
-        Row(
-          children: [
-            _BackgroundTabButton(
-              label: 'Color',
-              isSelected:
-                  editorState.selectedBackgroundTab == BackgroundTab.color,
-              onTap: () {
-                editorNotifier.updateSelectedBackgroundTab(BackgroundTab.color);
-                editorNotifier.updateBackgroundType(BackgroundType.solid);
-              },
-            ),
-            const SizedBox(width: 8),
-            _BackgroundTabButton(
-              label: 'Gradient',
-              isSelected:
-                  editorState.selectedBackgroundTab == BackgroundTab.gradient,
-              onTap: () {
-                editorNotifier
-                    .updateSelectedBackgroundTab(BackgroundTab.gradient);
-                editorNotifier.updateBackgroundType(BackgroundType.gradient);
-              },
-            ),
-            const SizedBox(width: 8),
-            _BackgroundTabButton(
-              label: 'Image',
-              isSelected:
-                  editorState.selectedBackgroundTab == BackgroundTab.image,
-              onTap: () {
-                editorNotifier.updateSelectedBackgroundTab(BackgroundTab.image);
-                editorNotifier.updateBackgroundType(BackgroundType.image);
-              },
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 24),
-
-        // Tab Content
-        Expanded(
-          child: _buildBackgroundTabContent(editorState, editorNotifier),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Apply to All Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: editorNotifier.applyBackgroundToAllScreens,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFFE91E63),
-              elevation: 0,
-              side: const BorderSide(color: Color(0xFFE91E63)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Apply to all screens',
-              style: TextStyle(fontWeight: FontWeight.w500),
+    return ScrollableTabContainerWithSticky(
+      padding: const EdgeInsets.all(20),
+      fixedHeader: Row(
+        children: [
+          _BackgroundTabButton(
+            label: 'Color',
+            isSelected:
+                editorState.selectedBackgroundTab == BackgroundTab.color,
+            onTap: () {
+              editorNotifier.updateSelectedBackgroundTab(BackgroundTab.color);
+              editorNotifier.updateBackgroundType(BackgroundType.solid);
+            },
+          ),
+          const SizedBox(width: 8),
+          _BackgroundTabButton(
+            label: 'Gradient',
+            isSelected:
+                editorState.selectedBackgroundTab == BackgroundTab.gradient,
+            onTap: () {
+              editorNotifier
+                  .updateSelectedBackgroundTab(BackgroundTab.gradient);
+              editorNotifier.updateBackgroundType(BackgroundType.gradient);
+            },
+          ),
+          const SizedBox(width: 8),
+          _BackgroundTabButton(
+            label: 'Image',
+            isSelected:
+                editorState.selectedBackgroundTab == BackgroundTab.image,
+            onTap: () {
+              editorNotifier.updateSelectedBackgroundTab(BackgroundTab.image);
+              editorNotifier.updateBackgroundType(BackgroundType.image);
+            },
+          ),
+        ],
+      ),
+      scrollableContent: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          // Tab Content
+          _buildBackgroundTabContent(editorState, editorNotifier),
+        ],
+      ),
+      fixedFooter: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: editorNotifier.applyBackgroundToAllScreens,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFFE91E63),
+            elevation: 0,
+            side: const BorderSide(color: Color(0xFFE91E63)),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
+          child: const Text(
+            'Apply to all screens',
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
         ),
-      ],
+      ),
     );
   }
 
@@ -554,14 +558,18 @@ class EditorControlPanel extends ConsumerWidget {
 
   Widget _buildTemplateTab(
       EditorState editorState, EditorNotifier editorNotifier) {
-    return const Center(
-      child: Text(
-        'Template management coming soon...',
-        style: TextStyle(
-          color: Color(0xFF6C757D),
-          fontSize: 16,
+    return ScrollableTabContainer.unified(
+      children: [
+        const Center(
+          child: Text(
+            'Template management coming soon...',
+            style: TextStyle(
+              color: Color(0xFF6C757D),
+              fontSize: 16,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

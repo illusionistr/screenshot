@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../projects/models/project_model.dart';
+import '../../../shared/widgets/scrollable_tab_container.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
-import '../../../projects/models/project_model.dart';
-import 'text_element_selector.dart';
 import 'text_content_editor.dart';
+import 'text_element_selector.dart';
 import 'text_formatting_panel.dart';
 
 class TextTabContent extends ConsumerWidget {
@@ -20,29 +21,28 @@ class TextTabContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final editorState = ref.watch(editorProviderFamily(project));
     final editorNotifier = ref.read(editorProviderFamily(project).notifier);
-    
+
     final selectedType = editorState.textElementState.selectedType;
     final hasSelection = selectedType != null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ScrollableTabContainer.unified(
       children: [
         // Text Element Selector
         TextElementSelector(project: project),
-        
+
         if (hasSelection) ...[
           const SizedBox(height: 24),
-          
+
           // Content Editor
           TextContentEditor(project: project),
-          
+
           const SizedBox(height: 24),
-          
+
           // Formatting Panel
           TextFormattingPanel(project: project),
-          
+
           const SizedBox(height: 24),
-          
+
           // Apply to All Button
           _ApplyToAllButton(
             project: project,
@@ -51,7 +51,7 @@ class TextTabContent extends ConsumerWidget {
           ),
         ] else ...[
           const SizedBox(height: 24),
-          
+
           // Help text when no selection
           Container(
             padding: const EdgeInsets.all(20),
@@ -87,7 +87,7 @@ class TextTabContent extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Quick tips
                 _FeatureTip(
                   icon: Icons.live_tv,
@@ -130,9 +130,9 @@ class _ApplyToAllButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedType = editorState.textElementState.selectedType;
     final buttonText = editorNotifier.getApplyToAllButtonText();
-    final affectedCount = selectedType != null 
-      ? editorNotifier.getAffectedScreensCount(selectedType)
-      : 0;
+    final affectedCount = selectedType != null
+        ? editorNotifier.getAffectedScreensCount(selectedType)
+        : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,16 +165,16 @@ class _ApplyToAllButton extends StatelessWidget {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Apply button
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () {
               editorNotifier.applySelectedElementFormattingToAllScreens();
-              
+
               // Show confirmation
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
