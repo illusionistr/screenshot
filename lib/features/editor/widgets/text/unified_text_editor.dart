@@ -23,6 +23,7 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
   late TextEditingController _textController;
   late FocusNode _focusNode;
   final GlobalKey _colorPickerButtonKey = GlobalKey();
+  TextSelection? _currentSelection;
   // Always in rich text mode now - no need for mode switching
 
   @override
@@ -31,7 +32,7 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
     _textController = TextEditingController();
     _focusNode = FocusNode();
 
-    // Listen to text changes and cursor position
+    // Listen to text changes, cursor position, and selection changes
     _textController.addListener(_onTextChanged);
     _focusNode.addListener(_onFocusChanged);
 
@@ -58,11 +59,21 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
   }
 
   void _onTextChanged() {
-    // Text changed - will be handled when user types
+    // Update selection immediately when text changes
+    _updateSelection();
   }
 
   void _onFocusChanged() {
     // Focus change handling can be added later if needed
+  }
+
+  void _updateSelection() {
+    final newSelection = _textController.selection;
+    if (newSelection != _currentSelection) {
+      setState(() {
+        _currentSelection = newSelection;
+      });
+    }
   }
 
   @override
@@ -125,39 +136,45 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
 
         const SizedBox(height: 8),
 
-        // Text input area
-        TextField(
-          controller: _textController,
-          focusNode: _focusNode,
-          maxLines: selectedType == TextFieldType.title ? 3 : 2,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE1E5E9)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE91E63)),
-            ),
-            contentPadding: const EdgeInsets.all(16),
-            hintText: 'Enter your ${selectedType.displayName.toLowerCase()}...',
-            hintStyle: const TextStyle(
-              color: Color(0xFF6C757D),
-              fontSize: 14,
-            ),
-            filled: true,
-            fillColor: Colors.white,
-          ),
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF495057),
-          ),
-          onChanged: (value) {
-            // Update the text content
-            editorNotifier.updateTextContent(selectedType, value);
-          },
-        ),
+        // Advanced text input with selection support
+        _buildAdvancedTextField(selectedType, editorNotifier),
       ],
+    );
+  }
+
+  Widget _buildAdvancedTextField(
+      TextFieldType selectedType, EditorNotifier editorNotifier) {
+    return TextField(
+      controller: _textController,
+      focusNode: _focusNode,
+      maxLines: selectedType == TextFieldType.title ? 3 : 2,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE1E5E9)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE91E63)),
+        ),
+        contentPadding: const EdgeInsets.all(16),
+        hintText: 'Enter your ${selectedType.displayName.toLowerCase()}...',
+        hintStyle: const TextStyle(
+          color: Color(0xFF6C757D),
+          fontSize: 14,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      style: const TextStyle(
+        fontSize: 14,
+        color: Color(0xFF495057),
+      ),
+      onChanged: (value) {
+        // Update the text content
+        editorNotifier.updateTextContent(selectedType, value);
+        _updateSelection();
+      },
     );
   }
 
@@ -208,14 +225,7 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
             currentColor: currentElement.color,
             buttonKey: _colorPickerButtonKey,
             onColorChanged: (color) {
-              // Apply color to rich text
-              if (!currentElement.isRichText) {
-                editorNotifier.convertToRichText(selectedType);
-              }
-              editorNotifier.applyRichTextFormatting(
-                selectedType,
-                (segment) => segment.copyWith(color: color),
-              );
+              _applyColorToSelection(selectedType, editorNotifier, color);
             },
           ),
 
@@ -285,13 +295,354 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
     // Get the current element
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
 
-    // Always convert to rich text first if not already
-    if (currentElement != null && !currentElement.isRichText) {
+    if (currentElement == null) return;
+
+    // Check if there's a valid text selection
+    if (_currentSelection != null &&
+        _currentSelection!.start != _currentSelection!.end &&
+        _currentSelection!.start >= 0 &&
+        _currentSelection!.end <= _textController.text.length) {
+      // Apply formatting to selected text only
+      _applyFormattingToSelection(selectedType, editorNotifier, format);
+    } else {
+      // No selection or invalid selection - apply to entire text
+      _applyFormattingToAll(selectedType, editorNotifier, format);
+    }
+  }
+
+  void _applyFormattingToSelection(TextFieldType selectedType,
+      EditorNotifier editorNotifier, String format) {
+    final fullText = _textController.text;
+    final selection = _currentSelection!;
+
+    print('DEBUG: Applying $format to selection: $selection');
+    print('DEBUG: Full text: "$fullText"');
+    print(
+        'DEBUG: Selection text: "${fullText.substring(selection.start, selection.end)}"');
+
+    // Get current element and ensure it's in rich text mode
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    if (!currentElement.isRichText) {
       editorNotifier.convertToRichText(selectedType);
     }
 
-    // Apply formatting to the entire text for now
-    // In a more advanced version, this would apply to selected text only
+    // Get the updated element after potential conversion
+    final updatedElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final existingSegments = updatedElement.segments ?? [];
+
+    print('DEBUG: Current element isRichText: ${currentElement.isRichText}');
+    print('DEBUG: Updated element isRichText: ${updatedElement.isRichText}');
+    print('DEBUG: Existing segments count: ${existingSegments.length}');
+
+    for (int i = 0; i < existingSegments.length; i++) {
+      print(
+          'DEBUG: Segment $i: "${existingSegments[i].text}" (length: ${existingSegments[i].text.length})');
+    }
+
+    // If no segments exist, create them from scratch
+    if (existingSegments.isEmpty) {
+      print('DEBUG: No segments exist, creating new ones');
+      _createNewSegmentsWithFormatting(
+          selectedType, editorNotifier, format, fullText, selection);
+      return;
+    }
+
+    // Find all segments that the selection overlaps with
+    final overlappingSegments = <int>[];
+    int cumulativeLength = 0;
+
+    print('DEBUG: Finding all overlapping segments...');
+    for (int i = 0; i < existingSegments.length; i++) {
+      final segment = existingSegments[i];
+      final segmentStart = cumulativeLength;
+      final segmentEnd = cumulativeLength + segment.text.length;
+
+      print('DEBUG: Checking segment $i: start=$segmentStart, end=$segmentEnd');
+      print('DEBUG: Selection: start=${selection.start}, end=${selection.end}');
+
+      // Check if selection overlaps with this segment
+      if (selection.start < segmentEnd && selection.end > segmentStart) {
+        overlappingSegments.add(i);
+        print('DEBUG: Segment $i overlaps with selection');
+      }
+
+      cumulativeLength += segment.text.length;
+    }
+
+    print('DEBUG: Overlapping segments: $overlappingSegments');
+
+    // Handle the formatting based on overlapping segments
+    if (overlappingSegments.isNotEmpty) {
+      print('DEBUG: Processing overlapping segments');
+      _applyFormattingToMultipleSegments(selectedType, editorNotifier, format,
+          existingSegments, overlappingSegments, fullText, selection);
+    } else {
+      print('DEBUG: No overlapping segments found, creating new ones');
+      // No segments found, create new segments
+      _createNewSegmentsWithFormatting(
+          selectedType, editorNotifier, format, fullText, selection);
+    }
+  }
+
+  void _createNewSegmentsWithFormatting(
+      TextFieldType selectedType,
+      EditorNotifier editorNotifier,
+      String format,
+      String fullText,
+      TextSelection selection) {
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final beforeText = fullText.substring(0, selection.start);
+    final selectedText = fullText.substring(selection.start, selection.end);
+    final afterText = fullText.substring(selection.end);
+
+    final newSegments = <TextSegment>[];
+
+    // Add before text
+    if (beforeText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: beforeText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Add selected text with formatting
+    if (selectedText.isNotEmpty) {
+      var fontWeight = currentElement.fontWeight;
+      var isItalic = false;
+      var isUnderline = false;
+
+      // Apply the requested formatting
+      switch (format) {
+        case 'bold':
+          fontWeight = FontWeight.bold;
+          break;
+        case 'italic':
+          isItalic = true;
+          break;
+        case 'underline':
+          isUnderline = true;
+          break;
+      }
+
+      newSegments.add(TextSegment(
+        text: selectedText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: fontWeight,
+        color: currentElement.color,
+        isItalic: isItalic,
+        isUnderline: isUnderline,
+      ));
+    }
+
+    // Add after text
+    if (afterText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: afterText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Update the element
+    final updatedElement = currentElement.copyWith(
+      segments: newSegments,
+      content: fullText,
+    );
+
+    editorNotifier.updateTextElement(updatedElement);
+  }
+
+  void _applyFormattingToMultipleSegments(
+      TextFieldType selectedType,
+      EditorNotifier editorNotifier,
+      String format,
+      List<TextSegment> existingSegments,
+      List<int> overlappingSegmentIndices,
+      String fullText,
+      TextSelection selection) {
+    print(
+        'DEBUG: Applying formatting to ${overlappingSegmentIndices.length} segments');
+
+    final newSegments = <TextSegment>[];
+    int currentTextPosition = 0;
+
+    for (int i = 0; i < existingSegments.length; i++) {
+      final segment = existingSegments[i];
+      final segmentStart = currentTextPosition;
+      final segmentEnd = currentTextPosition + segment.text.length;
+
+      print(
+          'DEBUG: Processing segment $i: "$segment.text" (positions $segmentStart-$segmentEnd)');
+
+      if (overlappingSegmentIndices.contains(i)) {
+        // This segment overlaps with the selection - split it
+        print('DEBUG: Segment $i overlaps - splitting');
+
+        final overlapStart =
+            selection.start > segmentStart ? selection.start : segmentStart;
+        final overlapEnd =
+            selection.end < segmentEnd ? selection.end : segmentEnd;
+
+        print('DEBUG: Overlap region: $overlapStart-$overlapEnd');
+
+        // Calculate relative positions within this segment
+        final relativeOverlapStart = overlapStart - segmentStart;
+        final relativeOverlapEnd = overlapEnd - segmentStart;
+
+        print(
+            'DEBUG: Relative overlap: $relativeOverlapStart-$relativeOverlapEnd');
+
+        // Split the segment into parts
+        final beforeOverlap = relativeOverlapStart > 0
+            ? segment.text.substring(0, relativeOverlapStart)
+            : '';
+
+        final overlapText = segment.text.substring(
+            relativeOverlapStart,
+            relativeOverlapEnd > segment.text.length
+                ? segment.text.length
+                : relativeOverlapEnd);
+
+        final afterOverlap = relativeOverlapEnd < segment.text.length
+            ? segment.text.substring(relativeOverlapEnd)
+            : '';
+
+        print(
+            'DEBUG: Split results - Before: "$beforeOverlap", Overlap: "$overlapText", After: "$afterOverlap"');
+
+        // Add before overlap segment (if any)
+        if (beforeOverlap.isNotEmpty) {
+          newSegments.add(segment.copyWith(text: beforeOverlap));
+        }
+
+        // Add overlap segment with formatting applied
+        if (overlapText.isNotEmpty) {
+          var newFontWeight = segment.fontWeight;
+          var newIsItalic = segment.isItalic;
+          var newIsUnderline = segment.isUnderline;
+
+          // Apply the requested formatting
+          switch (format) {
+            case 'bold':
+              newFontWeight = newFontWeight == FontWeight.bold
+                  ? FontWeight.normal
+                  : FontWeight.bold;
+              break;
+            case 'italic':
+              newIsItalic = !newIsItalic;
+              break;
+            case 'underline':
+              newIsUnderline = !newIsUnderline;
+              break;
+          }
+
+          newSegments.add(segment.copyWith(
+            text: overlapText,
+            fontWeight: newFontWeight,
+            isItalic: newIsItalic,
+            isUnderline: newIsUnderline,
+          ));
+        }
+
+        // Add after overlap segment (if any)
+        if (afterOverlap.isNotEmpty) {
+          newSegments.add(segment.copyWith(text: afterOverlap));
+        }
+      } else {
+        // This segment doesn't overlap - keep it as is
+        print('DEBUG: Segment $i does not overlap - keeping as is');
+        newSegments.add(segment);
+      }
+
+      currentTextPosition += segment.text.length;
+    }
+
+    print('DEBUG: Final segments after multi-segment processing:');
+    for (int i = 0; i < newSegments.length; i++) {
+      print('DEBUG: Segment $i: "${newSegments[i].text}"');
+    }
+
+    // Update the element with the new segments
+    final updatedElement =
+        editorNotifier.getCurrentSelectedTextElement()!.copyWith(
+              segments: newSegments,
+              content: fullText,
+            );
+
+    editorNotifier.updateTextElement(updatedElement);
+  }
+
+  void _createNewSegmentsWithColor(
+      TextFieldType selectedType,
+      EditorNotifier editorNotifier,
+      Color color,
+      String fullText,
+      TextSelection selection) {
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final beforeText = fullText.substring(0, selection.start);
+    final selectedText = fullText.substring(selection.start, selection.end);
+    final afterText = fullText.substring(selection.end);
+
+    final newSegments = <TextSegment>[];
+
+    // Add before text
+    if (beforeText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: beforeText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Add selected text with new color
+    if (selectedText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: selectedText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: color, // Apply the selected color
+        isItalic: false,
+        isUnderline: false,
+      ));
+    }
+
+    // Add after text
+    if (afterText.isNotEmpty) {
+      newSegments.add(TextSegment(
+        text: afterText,
+        fontFamily: currentElement.fontFamily,
+        fontSize: currentElement.fontSize,
+        fontWeight: currentElement.fontWeight,
+        color: currentElement.color,
+      ));
+    }
+
+    // Update the element
+    final updatedElement = currentElement.copyWith(
+      segments: newSegments,
+      content: fullText,
+    );
+
+    editorNotifier.updateTextElement(updatedElement);
+  }
+
+  void _applyFormattingToAll(TextFieldType selectedType,
+      EditorNotifier editorNotifier, String format) {
+    // Always convert to rich text first if not already
+    if (!editorNotifier.getCurrentSelectedTextElement()!.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Apply formatting to the entire text
     switch (format) {
       case 'bold':
         editorNotifier.applyRichTextFormatting(
@@ -316,6 +667,102 @@ class _UnifiedTextEditorState extends ConsumerState<UnifiedTextEditor> {
         );
         break;
     }
+  }
+
+  void _applyColorToSelection(
+      TextFieldType selectedType, EditorNotifier editorNotifier, Color color) {
+    // Get the current element
+    final currentElement = editorNotifier.getCurrentSelectedTextElement();
+
+    if (currentElement == null) return;
+
+    // Check if there's a valid text selection
+    if (_currentSelection != null &&
+        _currentSelection!.start != _currentSelection!.end &&
+        _currentSelection!.start >= 0 &&
+        _currentSelection!.end <= _textController.text.length) {
+      // Apply color to selected text only
+      _applyColorToSelectionOnly(selectedType, editorNotifier, color);
+    } else {
+      // No selection or invalid selection - apply to entire text
+      _applyColorToAll(selectedType, editorNotifier, color);
+    }
+  }
+
+  void _applyColorToSelectionOnly(
+      TextFieldType selectedType, EditorNotifier editorNotifier, Color color) {
+    final fullText = _textController.text;
+    final selection = _currentSelection!;
+
+    // Get current element and ensure it's in rich text mode
+    final currentElement = editorNotifier.getCurrentSelectedTextElement()!;
+    if (!currentElement.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Get the updated element after potential conversion
+    final updatedElement = editorNotifier.getCurrentSelectedTextElement()!;
+    final existingSegments = updatedElement.segments ?? [];
+
+    // If no segments exist, create them from scratch
+    if (existingSegments.isEmpty) {
+      _createNewSegmentsWithColor(
+          selectedType, editorNotifier, color, fullText, selection);
+      return;
+    }
+
+    // Find the segment that contains the selection
+    int targetSegmentIndex = -1;
+    int cumulativeLength = 0;
+
+    for (int i = 0; i < existingSegments.length; i++) {
+      final segment = existingSegments[i];
+      final segmentStart = cumulativeLength;
+      final segmentEnd = cumulativeLength + segment.text.length;
+
+      // Check if selection overlaps with this segment
+      if (selection.start < segmentEnd && selection.end > segmentStart) {
+        targetSegmentIndex = i;
+        break;
+      }
+
+      cumulativeLength += segment.text.length;
+    }
+
+    // If we found a segment, update its color
+    if (targetSegmentIndex >= 0) {
+      final targetSegment = existingSegments[targetSegmentIndex];
+      final newSegments = List<TextSegment>.from(existingSegments);
+
+      // Update the segment with new color
+      newSegments[targetSegmentIndex] = targetSegment.copyWith(color: color);
+
+      // Update the element
+      final finalElement = updatedElement.copyWith(
+        segments: newSegments,
+        content: fullText,
+      );
+
+      editorNotifier.updateTextElement(finalElement);
+    } else {
+      // No segment found, create new segments
+      _createNewSegmentsWithColor(
+          selectedType, editorNotifier, color, fullText, selection);
+    }
+  }
+
+  void _applyColorToAll(
+      TextFieldType selectedType, EditorNotifier editorNotifier, Color color) {
+    // Always convert to rich text first if not already
+    if (!editorNotifier.getCurrentSelectedTextElement()!.isRichText) {
+      editorNotifier.convertToRichText(selectedType);
+    }
+
+    // Apply color to the entire text
+    editorNotifier.applyRichTextFormatting(
+      selectedType,
+      (segment) => segment.copyWith(color: color),
+    );
   }
 }
 
