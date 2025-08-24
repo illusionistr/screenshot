@@ -137,37 +137,7 @@ class _ApplyToAllButton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Button description
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFFFFCC80)),
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Color(0xFFE65100),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Apply formatting to $affectedCount existing ${selectedType?.displayName.toLowerCase()}s and create missing ones with default content.',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFE65100),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
+       
         // Apply button
         SizedBox(
           width: double.infinity,
