@@ -13,19 +13,23 @@ import 'screen_expand_modal.dart';
 
 class DynamicScreensCanvas extends ConsumerWidget {
   final ProjectModel? project;
-  
+
   const DynamicScreensCanvas({super.key, this.project});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorState = ref.watch(project != null ? editorProviderFamily(project) : editorProvider);
-    final editorNotifier = ref.read(project != null ? editorProviderFamily(project).notifier : editorProvider.notifier);
-    
+    final editorState = ref.watch(
+        project != null ? editorProviderFamily(project) : editorProvider);
+    final editorNotifier = ref.read(project != null
+        ? editorProviderFamily(project).notifier
+        : editorProvider.notifier);
+
     // Watch the project screenshots to get ScreenshotModel objects
-    final screenshotsAsync = project != null 
+    final screenshotsAsync = project != null
         ? ref.watch(projectScreenshotsProvider(project!.id))
-        : const AsyncValue<Map<String, Map<String, List<ScreenshotModel>>>>.data({});
-        
+        : const AsyncValue<
+            Map<String, Map<String, List<ScreenshotModel>>>>.data({});
+
     // Helper function to get ScreenshotModel by ID
     ScreenshotModel? getScreenshotById(String screenshotId) {
       return screenshotsAsync.when(
@@ -69,18 +73,23 @@ class DynamicScreensCanvas extends ConsumerWidget {
                     isLandscape: editorState.screens[i].isLandscape,
                     background: editorState.screens[i].background,
                     textConfig: editorState.screens[i].textConfig,
-                    assignedScreenshot: editorState.screens[i].assignedScreenshotId != null 
-                        ? getScreenshotById(editorState.screens[i].assignedScreenshotId!) 
-                        : null,
-                    layoutId: editorState.screens[i].layoutId ?? editorState.selectedLayoutId,
+                    assignedScreenshot:
+                        editorState.screens[i].assignedScreenshotId != null
+                            ? getScreenshotById(
+                                editorState.screens[i].assignedScreenshotId!)
+                            : null,
+                    layoutId: editorState.screens[i].layoutId ??
+                        editorState.selectedLayoutId,
                     frameVariant: editorState.selectedFrameVariant,
+                    project: project,
                     onTap: () => editorNotifier.selectScreen(i),
                     onReorder: null, // Remove individual reorder callback
-                    onExpand: () => _expandScreen(context, editorState.screens[i], editorState.selectedDevice),
+                    onExpand: () => _expandScreen(context,
+                        editorState.screens[i], editorState.selectedDevice),
                     onDuplicate: () => editorNotifier.duplicateScreen(i),
-                    onDelete: editorState.screens.length > 1 
-                      ? () => _confirmDelete(context, editorNotifier, i)
-                      : null,
+                    onDelete: editorState.screens.length > 1
+                        ? () => _confirmDelete(context, editorNotifier, i)
+                        : null,
                     showDeleteButton: editorState.screens.length > 1,
                   ),
               ],
@@ -90,9 +99,9 @@ class DynamicScreensCanvas extends ConsumerWidget {
               deviceId: editorState.selectedDevice,
               currentScreenCount: editorState.screens.length,
               maxScreens: 10,
-              onPressed: editorState.screens.length < 10 
-                ? () => editorNotifier.addScreen()
-                : null,
+              onPressed: editorState.screens.length < 10
+                  ? () => editorNotifier.addScreen()
+                  : null,
             ),
           ],
         ),
@@ -100,7 +109,8 @@ class DynamicScreensCanvas extends ConsumerWidget {
     );
   }
 
-  void _expandScreen(BuildContext context, ScreenConfig screen, String deviceId) {
+  void _expandScreen(
+      BuildContext context, ScreenConfig screen, String deviceId) {
     ScreenExpandModal.show(
       context,
       screenId: screen.id,
@@ -109,12 +119,14 @@ class DynamicScreensCanvas extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, EditorNotifier editorNotifier, int index) {
+  void _confirmDelete(
+      BuildContext context, EditorNotifier editorNotifier, int index) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Screen'),
-        content: const Text('Are you sure you want to delete this screen layout? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to delete this screen layout? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -134,5 +146,4 @@ class DynamicScreensCanvas extends ConsumerWidget {
       ),
     );
   }
-
 }

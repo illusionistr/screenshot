@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../projects/models/project_model.dart';
 import '../../../shared/models/screenshot_model.dart';
 import '../../constants/layouts_data.dart';
 import '../../models/background_models.dart';
@@ -22,6 +23,7 @@ class ScreenContainer extends StatelessWidget {
   final ScreenshotModel? assignedScreenshot;
   final String? layoutId;
   final String frameVariant;
+  final ProjectModel? project;
   final VoidCallback? onTap;
   final VoidCallback? onReorder;
   final VoidCallback? onExpand;
@@ -41,6 +43,7 @@ class ScreenContainer extends StatelessWidget {
     this.assignedScreenshot,
     this.layoutId,
     this.frameVariant = 'real',
+    this.project,
     this.onTap,
     this.onReorder,
     this.onExpand,
@@ -80,13 +83,12 @@ class ScreenContainer extends StatelessWidget {
                   Positioned.fill(
                     child: Container(
                       margin: const EdgeInsets.all(16),
-                      child: TextRenderer.renderTextOverlay(
-                        textConfig: textConfig!,
-                        containerSize: Size(
+                      child: _buildTextOverlay(
+                        textConfig!,
+                        Size(
                           containerSize.width - 32, // Account for margins
                           containerSize.height - 32,
                         ),
-                        scaleFactor: 0.7, // Scale down for preview
                       ),
                     ),
                   ),
@@ -378,6 +380,26 @@ class ScreenContainer extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildTextOverlay(
+      text_models.ScreenTextConfig textConfig, Size containerSize) {
+    // Use interactive text overlay if project is available
+    if (project != null) {
+      return TextRenderer.renderInteractiveTextOverlay(
+        textConfig: textConfig,
+        containerSize: containerSize,
+        project: project!,
+        scaleFactor: 0.7, // Scale down for preview
+      );
+    }
+
+    // Fall back to static text overlay
+    return TextRenderer.renderTextOverlay(
+      textConfig: textConfig,
+      containerSize: containerSize,
+      scaleFactor: 0.7, // Scale down for preview
     );
   }
 }

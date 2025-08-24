@@ -226,22 +226,46 @@ class TextFormattingPanel extends ConsumerWidget {
           title: 'Vertical Alignment',
           child: Row(
             children: VerticalPosition.values.map((position) {
-              final isSelected = (currentElement.verticalPosition ??
-                      _getDefaultVerticalPosition(currentElement.type)) ==
+              // Get the current screen text config to check grouping
+              final currentScreenTextConfig =
+                  editorNotifier.getCurrentScreenTextConfig();
+              final isGrouped =
+                  currentScreenTextConfig?.hasBothElementsVisible == true &&
+                      currentScreenTextConfig?.textGrouping ==
+                          TextGrouping.together;
+
+              // Use primary element for positioning display if grouped
+              final positioningElement = isGrouped
+                  ? currentScreenTextConfig?.primaryElement ?? currentElement
+                  : currentElement;
+
+              final isSelected = (positioningElement.verticalPosition ??
+                      _getDefaultVerticalPosition(positioningElement.type)) ==
                   position;
+
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: _PositionButton(
                   displayName: _getVerticalPositionDisplayName(position),
                   isSelected: isSelected,
                   onPressed: () {
-                    // Create updated element with new vertical position
-                    final updatedElement = currentElement.copyWith(
-                      verticalPosition: position,
-                    );
-
-                    // Update the element in state
-                    editorNotifier.updateTextElement(updatedElement);
+                    if (isGrouped) {
+                      // When grouped, always update the primary element for positioning
+                      final primaryElement =
+                          currentScreenTextConfig?.primaryElement;
+                      if (primaryElement != null) {
+                        final updatedElement = primaryElement.copyWith(
+                          verticalPosition: position,
+                        );
+                        editorNotifier.updateTextElement(updatedElement);
+                      }
+                    } else {
+                      // When not grouped, update the current element
+                      final updatedElement = currentElement.copyWith(
+                        verticalPosition: position,
+                      );
+                      editorNotifier.updateTextElement(updatedElement);
+                    }
                   },
                 ),
               );

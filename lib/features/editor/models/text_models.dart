@@ -17,6 +17,24 @@ enum TextFieldType {
   }
 }
 
+/// Text grouping options for title and subtitle
+enum TextGrouping {
+  separated('separated', 'Separated'),
+  together('together', 'Together');
+
+  const TextGrouping(this.id, this.displayName);
+
+  final String id;
+  final String displayName;
+
+  factory TextGrouping.fromString(String value) {
+    return TextGrouping.values.firstWhere(
+      (grouping) => grouping.id == value,
+      orElse: () => TextGrouping.separated,
+    );
+  }
+}
+
 /// Vertical positioning options for text elements
 enum VerticalPosition {
   top('top', 'Top'),
@@ -175,9 +193,11 @@ class TextElement {
 
 class ScreenTextConfig {
   final Map<TextFieldType, TextElement> elements;
+  final TextGrouping textGrouping;
 
   const ScreenTextConfig({
     this.elements = const {},
+    this.textGrouping = TextGrouping.separated,
   });
 
   factory ScreenTextConfig.empty() {
@@ -208,10 +228,23 @@ class ScreenTextConfig {
     return visibleElements.length;
   }
 
+  /// Checks if both title and subtitle elements exist and are visible
+  bool get hasBothElementsVisible {
+    return hasElement(TextFieldType.title) &&
+        hasElement(TextFieldType.subtitle);
+  }
+
+  /// Gets the primary element for positioning when grouped (title takes precedence)
+  TextElement? get primaryElement {
+    return getElement(TextFieldType.title) ??
+        getElement(TextFieldType.subtitle);
+  }
+
   ScreenTextConfig addElement(TextElement element) {
     final updatedElements = Map<TextFieldType, TextElement>.from(elements);
     updatedElements[element.type] = element;
-    return ScreenTextConfig(elements: updatedElements);
+    return ScreenTextConfig(
+        elements: updatedElements, textGrouping: textGrouping);
   }
 
   ScreenTextConfig updateElement(TextElement element) {
@@ -220,13 +253,15 @@ class ScreenTextConfig {
     }
     final updatedElements = Map<TextFieldType, TextElement>.from(elements);
     updatedElements[element.type] = element;
-    return ScreenTextConfig(elements: updatedElements);
+    return ScreenTextConfig(
+        elements: updatedElements, textGrouping: textGrouping);
   }
 
   ScreenTextConfig removeElement(TextFieldType type) {
     final updatedElements = Map<TextFieldType, TextElement>.from(elements);
     updatedElements.remove(type);
-    return ScreenTextConfig(elements: updatedElements);
+    return ScreenTextConfig(
+        elements: updatedElements, textGrouping: textGrouping);
   }
 
   ScreenTextConfig copyFormattingFrom(
@@ -247,6 +282,10 @@ class ScreenTextConfig {
     return updateElement(updatedElement);
   }
 
+  ScreenTextConfig updateGrouping(TextGrouping newGrouping) {
+    return ScreenTextConfig(elements: elements, textGrouping: newGrouping);
+  }
+
   ScreenTextConfig createElementIfNotExists(TextFieldType type) {
     if (hasElement(type)) {
       return this;
@@ -258,9 +297,11 @@ class ScreenTextConfig {
 
   ScreenTextConfig copyWith({
     Map<TextFieldType, TextElement>? elements,
+    TextGrouping? textGrouping,
   }) {
     return ScreenTextConfig(
       elements: elements ?? this.elements,
+      textGrouping: textGrouping ?? this.textGrouping,
     );
   }
 
@@ -269,6 +310,7 @@ class ScreenTextConfig {
       'elements': elements.map(
         (key, value) => MapEntry(key.id, value.toJson()),
       ),
+      'textGrouping': textGrouping.id,
     };
   }
 
@@ -282,23 +324,32 @@ class ScreenTextConfig {
       elements[type] = element;
     }
 
-    return ScreenTextConfig(elements: elements);
+    final textGrouping = json['textGrouping'] != null
+        ? TextGrouping.fromString(json['textGrouping'] as String)
+        : TextGrouping.separated;
+
+    return ScreenTextConfig(
+      elements: elements,
+      textGrouping: textGrouping,
+    );
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ScreenTextConfig && _mapEquals(other.elements, elements);
+    return other is ScreenTextConfig &&
+        _mapEquals(other.elements, elements) &&
+        other.textGrouping == textGrouping;
   }
 
   @override
   int get hashCode {
-    return elements.hashCode;
+    return Object.hash(elements, textGrouping);
   }
 
   @override
   String toString() {
-    return 'ScreenTextConfig(elements: $elements)';
+    return 'ScreenTextConfig(elements: $elements, textGrouping: $textGrouping)';
   }
 
   static bool _mapEquals<K, V>(Map<K, V>? a, Map<K, V>? b) {

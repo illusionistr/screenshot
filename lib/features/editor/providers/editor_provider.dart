@@ -457,6 +457,15 @@ class EditorNotifier extends StateNotifier<EditorState> {
     state = state.copyWith(screens: newScreens);
   }
 
+  void updateScreenTextConfig(ScreenTextConfig textConfig) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) return;
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final updatedScreen = currentScreen.copyWith(textConfig: textConfig);
+    updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+  }
+
   // Text Element Management Methods
   void selectTextElement(TextFieldType type) {
     // Update selection state
@@ -532,10 +541,29 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
-    final currentElement = currentScreen.textConfig.getElement(type);
 
-    if (currentElement != null) {
-      final updatedElement = currentElement.copyWith(
+    // Check if elements are grouped
+    final isGrouped = currentScreen.textConfig.hasBothElementsVisible &&
+        currentScreen.textConfig.textGrouping == TextGrouping.together;
+    final isPositioningChange = textAlign != null;
+
+    // Determine which element to update
+    TextElement? elementToUpdate;
+    TextFieldType elementTypeToUpdate = type;
+
+    if (isGrouped && isPositioningChange) {
+      // For positioning changes in grouped mode, always update the primary element
+      elementToUpdate = currentScreen.textConfig.primaryElement;
+      if (elementToUpdate != null) {
+        elementTypeToUpdate = elementToUpdate.type;
+      }
+    } else {
+      // For non-positioning changes or non-grouped mode, update the specific element
+      elementToUpdate = currentScreen.textConfig.getElement(type);
+    }
+
+    if (elementToUpdate != null) {
+      final updatedElement = elementToUpdate.copyWith(
         fontFamily: fontFamily,
         fontSize: fontSize,
         fontWeight: fontWeight,
@@ -543,6 +571,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
         color: color,
         isVisible: isVisible,
       );
+
       final updatedTextConfig =
           currentScreen.textConfig.updateElement(updatedElement);
       final updatedScreen =
@@ -607,8 +636,27 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
+
+    // Check if elements are grouped and this is a positioning change
+    final isGrouped = currentScreen.textConfig.hasBothElementsVisible &&
+        currentScreen.textConfig.textGrouping == TextGrouping.together;
+    final isPositioningChange = updatedElement.verticalPosition != null;
+
+    TextElement elementToUpdate = updatedElement;
+
+    if (isGrouped && isPositioningChange) {
+      // For positioning changes in grouped mode, always update the primary element
+      final primaryElement = currentScreen.textConfig.primaryElement;
+      if (primaryElement != null) {
+        // Update the primary element with the new positioning
+        elementToUpdate = primaryElement.copyWith(
+          verticalPosition: updatedElement.verticalPosition,
+        );
+      }
+    }
+
     final updatedTextConfig =
-        currentScreen.textConfig.updateElement(updatedElement);
+        currentScreen.textConfig.updateElement(elementToUpdate);
     final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
     updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
   }

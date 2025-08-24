@@ -137,7 +137,6 @@ class _ApplyToAllButton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-       
         // Apply button
         SizedBox(
           width: double.infinity,
