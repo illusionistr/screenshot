@@ -4,7 +4,7 @@ import '../../models/layout_models.dart';
 
 class LayoutPreviewCard extends StatelessWidget {
   const LayoutPreviewCard({
-    super.key,
+    super.key, 
     required this.layout,
     required this.isSelected,
     required this.onTap,

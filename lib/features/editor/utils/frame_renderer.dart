@@ -28,19 +28,19 @@ class FrameRenderer {
         borderRadius: BorderRadius.circular(device.isTablet ? 24 : 20),
         color: Colors.transparent,
         border: Border.all(
-          color: Colors.grey.shade400,
-          width: 3,
+          color: Colors.black,
+          width: 5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(device.isTablet ? 21 : 17),
+        borderRadius: BorderRadius.circular(device.isTablet ? 19 : 15),
         child: child,
       ),
     );

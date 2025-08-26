@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/text_models.dart';
+
 /// Enum for device frame positions within the layout
 enum LayoutPosition {
   centered,
@@ -38,6 +40,8 @@ class LayoutConfig {
   final TextAlign subtitleAlignment;
   final List<String> supportedFrameVariants; // real, clay, matte, no device
   final bool isLandscape;
+  final TextGrouping
+      defaultTextGrouping; // NEW: Default grouping for this layout
 
   const LayoutConfig({
     required this.id,
@@ -54,6 +58,7 @@ class LayoutConfig {
     this.subtitleAlignment = TextAlign.center,
     this.supportedFrameVariants = const ['real', 'clay', 'matte', 'no device'],
     this.isLandscape = false,
+    this.defaultTextGrouping = TextGrouping.separated, // Default to separated
   });
 
   LayoutConfig copyWith({
@@ -71,6 +76,7 @@ class LayoutConfig {
     TextAlign? subtitleAlignment,
     List<String>? supportedFrameVariants,
     bool? isLandscape,
+    TextGrouping? defaultTextGrouping, // NEW: Include in copyWith
   }) {
     return LayoutConfig(
       id: id ?? this.id,
@@ -88,6 +94,8 @@ class LayoutConfig {
       supportedFrameVariants:
           supportedFrameVariants ?? this.supportedFrameVariants,
       isLandscape: isLandscape ?? this.isLandscape,
+      defaultTextGrouping: defaultTextGrouping ??
+          this.defaultTextGrouping, // NEW: Include in copyWith
     );
   }
 }
@@ -120,4 +128,3 @@ class LayoutModel {
     );
   }
 }
-
