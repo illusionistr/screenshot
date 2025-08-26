@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../projects/models/project_model.dart';
 import '../../constants/layouts_data.dart';
 import '../../models/editor_state.dart';
+import '../../models/layout_models.dart';
 import '../../providers/editor_provider.dart';
 import 'layout_controls.dart';
 import 'layout_preview_card.dart';
@@ -47,8 +48,8 @@ class LayoutTabContent extends ConsumerWidget {
 
         const SizedBox(height: 16),
 
-        // Apply Buttons
-        _buildApplyButtons(editorState, editorNotifier),
+        // Apply to All Button (since individual application is now immediate)
+        _buildApplyToAllButton(editorState, editorNotifier),
       ],
     );
   }
@@ -67,7 +68,7 @@ class LayoutTabContent extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Select a layout below to change in your screenshot',
+          'Select a layout to apply immediately to the current screen',
           style: TextStyle(
             fontSize: 14,
             color: Color(0xFF6C757D),
@@ -117,14 +118,35 @@ class LayoutTabContent extends ConsumerWidget {
               itemCount: layouts.length,
               itemBuilder: (context, layoutIndex) {
                 final layout = layouts[layoutIndex];
-                final isSelected =
-                    editorState.selectedLayoutId == layout.config.id;
+                // Check if this layout is applied to the current screen
+                final currentScreenLayoutId =
+                    editorNotifier.getCurrentScreenLayoutId();
+                final isSelected = currentScreenLayoutId == layout.config.id;
 
                 return LayoutPreviewCard(
                   layout: layout,
                   isSelected: isSelected,
                   onTap: () {
-                    editorNotifier.updateSelectedLayout(layout.config.id);
+                    // Apply layout immediately to current screen
+                    if (editorState.selectedScreenIndex != null) {
+                      editorNotifier
+                          .applyLayoutToCurrentScreen(layout.config.id);
+
+                      // Show feedback
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Applied "${layout.config.name}" to Screen ${editorState.selectedScreenIndex! + 1}'),
+                          backgroundColor: const Color(0xFFE91E63),
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.all(16),
+                          duration: const Duration(seconds: 2),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
+                        ),
+                      );
+                    }
                   },
                 );
               },
@@ -137,68 +159,40 @@ class LayoutTabContent extends ConsumerWidget {
     );
   }
 
-  Widget _buildApplyButtons(
+  Widget _buildApplyToAllButton(
       EditorState editorState, EditorNotifier editorNotifier) {
+    final currentScreenLayoutId = editorNotifier.getCurrentScreenLayoutId();
+    final currentLayout = currentScreenLayoutId != null
+        ? LayoutsData.getLayoutById(currentScreenLayoutId)
+        : null;
+
     return Builder(
-      builder: (context) => Column(
-        children: [
-          // Apply to Current Screen
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: editorState.selectedScreenIndex != null
-                  ? () => editorNotifier
-                      .applyLayoutToCurrentScreen(editorState.selectedLayoutId)
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE91E63),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                editorState.selectedScreenIndex != null
-                    ? 'Apply to Screen ${editorState.selectedScreenIndex! + 1}'
-                    : 'Select a screen first',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+      builder: (context) => SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: currentLayout != null && editorState.screens.isNotEmpty
+              ? () => _showApplyToAllConfirmation(
+                  context, editorNotifier, editorState, currentLayout)
+              : null,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFE91E63),
+            side: const BorderSide(color: Color(0xFFE91E63)),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-
-          const SizedBox(height: 12),
-
-          // Apply to All Screens
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: editorState.screens.isNotEmpty
-                  ? () => _showApplyToAllConfirmation(
-                      context, editorNotifier, editorState)
-                  : null,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFE91E63),
-                side: const BorderSide(color: Color(0xFFE91E63)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Apply to all screens',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-              ),
+          child: Text(
+            currentLayout != null
+                ? 'Apply "${currentLayout.config.name}" to all ${editorState.screens.length} screens'
+                : 'Select a layout first',
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
             ),
+            textAlign: TextAlign.center,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -207,13 +201,14 @@ class LayoutTabContent extends ConsumerWidget {
     BuildContext context,
     EditorNotifier editorNotifier,
     EditorState editorState,
+    LayoutModel currentLayout,
   ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Apply Layout to All Screens'),
         content: Text(
-          'This will apply the "${LayoutsData.getLayoutById(editorState.selectedLayoutId)?.config.name ?? 'selected'}" layout to all ${editorState.screens.length} screens. This action cannot be undone.',
+          'This will apply the "${currentLayout.config.name}" layout to all ${editorState.screens.length} screens.\n\n⚠️ This will override existing text positioning and grouping on all screens.',
         ),
         actions: [
           TextButton(
@@ -223,16 +218,17 @@ class LayoutTabContent extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              editorNotifier
-                  .applyLayoutToAllScreens(editorState.selectedLayoutId);
+              editorNotifier.applyLayoutToAllScreens(currentLayout.config.id);
 
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Layout applied to all screens'),
-                  backgroundColor: Color(0xFFE91E63),
+                SnackBar(
+                  content: Text(
+                      'Applied "${currentLayout.config.name}" to all ${editorState.screens.length} screens'),
+                  backgroundColor: const Color(0xFFE91E63),
                   behavior: SnackBarBehavior.floating,
-                  margin: EdgeInsets.all(16),
-                  shape: RoundedRectangleBorder(
+                  margin: const EdgeInsets.all(16),
+                  duration: const Duration(seconds: 3),
+                  shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(8)),
                   ),
                 ),

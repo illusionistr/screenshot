@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../../shared/models/screenshot_model.dart';
+import '../constants/layouts_data.dart';
 import '../constants/platform_dimensions.dart';
 import '../models/background_models.dart';
 import '../models/editor_state.dart';
 import '../models/text_models.dart';
+import '../services/layout_application_service.dart';
 import '../services/platform_detection_service.dart';
 import '../utils/background_renderer.dart';
 
@@ -1012,30 +1014,75 @@ class EditorNotifier extends StateNotifier<EditorState> {
   void applyLayoutToCurrentScreen(String layoutId) {
     if (state.selectedScreenIndex == null) return;
 
-    final updatedScreens = List<ScreenConfig>.from(state.screens);
-    updatedScreens[state.selectedScreenIndex!] =
-        updatedScreens[state.selectedScreenIndex!].copyWith(
-      layoutId: layoutId,
-    );
+    try {
+      // Get the layout configuration
+      final layout = LayoutsData.getLayoutById(layoutId);
+      if (layout == null) {
+        throw Exception('Layout with ID "$layoutId" not found');
+      }
 
-    state = state.copyWith(
-      screens: updatedScreens,
-      selectedLayoutId: layoutId,
-    );
+      // Get the current screen
+      final currentScreen = state.screens[state.selectedScreenIndex!];
+
+      // Apply layout using the Layout Application Service
+      final updatedScreen = LayoutApplicationService.applyLayoutToScreen(
+        screen: currentScreen,
+        layout: layout.config,
+      );
+
+      // Update the screen with layout ID and layout-applied configuration
+      final finalScreen = updatedScreen.copyWith(layoutId: layoutId);
+
+      // Update state with the modified screen
+      final updatedScreens = List<ScreenConfig>.from(state.screens);
+      updatedScreens[state.selectedScreenIndex!] = finalScreen;
+
+      state = state.copyWith(
+        screens: updatedScreens,
+        selectedLayoutId: layoutId,
+      );
+    } catch (e) {
+      // Log error - in a real app, you might want to show a user-friendly error message
+      print('Error applying layout to current screen: $e');
+      // For now, silently fail - the UI will remain unchanged
+    }
   }
 
   /// Apply the selected layout to all screens
+  /// Note: This method applies layout to ALL screens, but the main behavior should be applyLayoutToCurrentScreen
   void applyLayoutToAllScreens(String layoutId) {
-    final updatedScreens = state.screens
-        .map((screen) => screen.copyWith(
-              layoutId: layoutId,
-            ))
-        .toList();
+    try {
+      // Get the layout configuration
+      final layout = LayoutsData.getLayoutById(layoutId);
+      if (layout == null) {
+        throw Exception('Layout with ID "$layoutId" not found');
+      }
 
-    state = state.copyWith(
-      screens: updatedScreens,
-      selectedLayoutId: layoutId,
-    );
+      // Apply layout to each screen using the Layout Application Service
+      final updatedScreens = <ScreenConfig>[];
+      for (final screen in state.screens) {
+        try {
+          final updatedScreen = LayoutApplicationService.applyLayoutToScreen(
+            screen: screen,
+            layout: layout.config,
+          );
+          updatedScreens.add(updatedScreen.copyWith(layoutId: layoutId));
+        } catch (e) {
+          // If applying to one screen fails, keep the original screen
+          print('Error applying layout to screen ${screen.id}: $e');
+          updatedScreens.add(screen);
+        }
+      }
+
+      state = state.copyWith(
+        screens: updatedScreens,
+        selectedLayoutId: layoutId,
+      );
+    } catch (e) {
+      // Log error - in a real app, you might want to show a user-friendly error message
+      print('Error applying layout to all screens: $e');
+      // For now, silently fail - the UI will remain unchanged
+    }
   }
 
   /// Get the layout ID for the current screen
