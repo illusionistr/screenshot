@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/platform_detection_service.dart';
 
 class PlatformDimensionCalculator {
-  static const double containerHeight = 800.0;
+  static const double containerHeight = 700.0;
 
   static Size calculateContainerSize(String deviceId, {bool isLandscape = false}) {
     final dimensions = PlatformDetectionService.getDimensionsForDevice(

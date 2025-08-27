@@ -73,7 +73,7 @@ class ScreenContainer extends StatelessWidget {
                 // Frame and screenshot layer
                 Positioned.fill(
                   child: Container(
-                    margin: const EdgeInsets.all(16),
+                   
                     child: _buildFrameWithContent(),
                   ),
                 ),
@@ -137,18 +137,18 @@ class ScreenContainer extends StatelessWidget {
     );
 
     final frameSize = Size(
-      containerSize.width - 32, // Account for margins
-      containerSize.height - 32,
+      containerSize.width , // Account for margins
+      containerSize.height ,
     );
 
-    print('DEBUG ScreenContainer: _buildFrameWithContent called');
-    print(
-        'DEBUG ScreenContainer: assignedScreenshot != null: ${assignedScreenshot != null}');
-    print(
-        'DEBUG ScreenContainer: assignedScreenshot?.storageUrl: ${assignedScreenshot?.storageUrl}');
-    print('DEBUG ScreenContainer: frameSize: $frameSize');
-    print('DEBUG ScreenContainer: layoutId: $layoutId');
-    print('DEBUG ScreenContainer: frameVariant: $frameVariant');
+    // print('DEBUG ScreenContainer: _buildFrameWithContent called');
+    // print(
+    //     'DEBUG ScreenContainer: assignedScreenshot != null: ${assignedScreenshot != null}');
+    // print(
+    //     'DEBUG ScreenContainer: assignedScreenshot?.storageUrl: ${assignedScreenshot?.storageUrl}');
+    // print('DEBUG ScreenContainer: frameSize: $frameSize');
+    // print('DEBUG ScreenContainer: layoutId: $layoutId');
+    // print('DEBUG ScreenContainer: frameVariant: $frameVariant');
 
     // Create the content that goes inside the frame (background + screenshot)
     final Widget frameContent = _buildFrameContent();
@@ -258,7 +258,7 @@ class ScreenContainer extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            assignedScreenshot != null ? 'Screenshot' : 'No Screenshot',
+            assignedScreenshot != null ? 'Screenshot' : 'No Screenshot fsdfe',
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 14,
@@ -299,7 +299,6 @@ class ScreenContainer extends StatelessWidget {
     }
 
     final config = layout.config;
-
     // Calculate device frame position and size based on layout
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, frameSize);
@@ -308,9 +307,9 @@ class ScreenContainer extends StatelessWidget {
     return Stack(
       children: [
         // Background content
-        Positioned.fill(child: frameContent),
+       // Positioned.fill(child: frameContent),
 
-        // Device frame with screenshot
+        // Device frame with screenshot - now using real/generic frames
         Positioned(
           left: devicePosition.dx - deviceSize.width / 2,
           top: devicePosition.dy - deviceSize.height / 2,
@@ -318,35 +317,52 @@ class ScreenContainer extends StatelessWidget {
             angle: config.deviceRotation *
                 3.14159 /
                 180, // Convert degrees to radians
-            child: Container(
-              width: deviceSize.width,
-              height: deviceSize.height,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: assignedScreenshot?.storageUrl != null
+            child: FutureBuilder<Widget>(
+              future: FrameRenderer.buildSmartFrameContainer(
+                deviceId: deviceId,
+                containerSize: deviceSize,
+                selectedVariantId:
+                    frameVariant.isNotEmpty ? frameVariant : null,
+                screenshotPath: assignedScreenshot?.storageUrl,
+                screenshotWidget: assignedScreenshot?.storageUrl != null
                     ? Image.network(
                         assignedScreenshot!.storageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            frameContent,
+                        errorBuilder: (context, error, stackTrace) {
+                          return frameContent;
+                        },
                       )
-                    : frameContent,
+                    : null,
+                placeholder: frameContent,
               ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    width: deviceSize.width,
+                    height: deviceSize.height,
+                    color: Colors.grey.shade100,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  // Fallback to generic frame on error
+                  return FrameRenderer.renderGenericFrame(
+                    child: frameContent,
+                    containerSize: deviceSize,
+                    deviceId: deviceId,
+                  );
+                }
+
+                return snapshot.data ??
+                    FrameRenderer.renderGenericFrame(
+                      child: frameContent,
+                      containerSize: deviceSize,
+                      deviceId: deviceId,
+                    );
+              },
             ),
           ),
         ),

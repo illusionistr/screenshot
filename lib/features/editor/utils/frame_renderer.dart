@@ -93,6 +93,17 @@ class FrameRenderer {
     String? screenshotPath,
     Widget? placeholder,
   }) {
+    print('DEBUG _renderRealFrame: assetPath=$assetPath');
+
+    // Calculate scale factors from original frame dimensions to container dimensions
+    final scaleX = containerSize.width / device.frameWidth;
+    final scaleY = containerSize.height / device.frameHeight;
+
+    print(
+        'DEBUG _renderRealFrame: Original frame=${device.frameWidth}x${device.frameHeight}, Container=${containerSize.width}x${containerSize.height}');
+    print(
+        'DEBUG _renderRealFrame: Scale factors: scaleX=$scaleX, scaleY=$scaleY');
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -101,34 +112,36 @@ class FrameRenderer {
           assetPath,
           width: containerSize.width,
           height: containerSize.height,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            // Fallback to generic frame if asset fails to load
-            final content = screenshotPath != null
-                ? Image.network(
-                    screenshotPath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return placeholder ??
-                          _buildDefaultScreenshotPlaceholder(device);
-                    },
-                  )
-                : placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-
-            return renderGenericFrame(
-              child: content,
-              containerSize: containerSize,
-              deviceId: device.id,
-            );
-          },
+          fit: BoxFit.cover,
+          // errorBuilder: (context, error, stackTrace) {
+          //   print('DEBUG _renderRealFrame: error=$error');
+          //   // Fallback to generic frame if asset fails to load
+          //   final content = screenshotPath != null
+          //       ? Image.network(
+          //           screenshotPath,
+          //           fit: BoxFit.cover,
+          //           errorBuilder: (context, error, stackTrace) {
+          //             return placeholder ??
+          //                 _buildDefaultScreenshotPlaceholder(device);
+          //           },
+          //         )
+          //       : placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+          //   return renderGenericFrame(
+          //     child: content,
+          //     containerSize: containerSize,
+          //     deviceId: device.id,
+          //   );
+          // },
         ),
         // Screenshot content positioned over device screen area
         if (screenshotPath != null || placeholder != null)
           Positioned(
-            left: device.screenPosition.dx,
-            top: device.screenPosition.dy,
-            width: device.screenWidth.toDouble(),
-            height: device.screenHeight.toDouble(),
+            // Scale the screen position coordinates by the scale factors
+            left: device.screenPosition.dx * scaleX,
+            top: device.screenPosition.dy * scaleY,
+            // Scale the screen dimensions by the scale factors
+            width: device.screenWidth * scaleX,
+            height: device.screenHeight * scaleY,
             child: ClipRRect(
               borderRadius:
                   BorderRadius.circular(8.0), // Adjust based on device
@@ -137,6 +150,7 @@ class FrameRenderer {
                       screenshotPath,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
+                        print('DEBUG _renderRealFrame: error=$error');
                         return placeholder ??
                             _buildDefaultScreenshotPlaceholder(device);
                       },
