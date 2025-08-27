@@ -172,7 +172,7 @@ class ScreenConfig {
   final ScreenBackground background;
   final ScreenTextConfig textConfig;
   final String? assignedScreenshotId; // NEW: ID of assigned screenshot
-  final String? layoutId; // NEW: ID of selected layout
+  final String layoutId; // NEW: ID of selected layout (never null, has default)
 
   const ScreenConfig({
     required this.id,
@@ -183,8 +183,9 @@ class ScreenConfig {
     this.background = ScreenBackground.defaultBackground,
     this.textConfig = const ScreenTextConfig(),
     this.assignedScreenshotId,
-    this.layoutId,
-  });
+    String? layoutId, // Keep nullable in constructor for backward compatibility
+  }) : layoutId =
+            layoutId ?? 'centered_above'; // Use default layout if not provided
 
   ScreenConfig copyWith({
     String? id,
@@ -195,7 +196,7 @@ class ScreenConfig {
     ScreenBackground? background,
     ScreenTextConfig? textConfig,
     String? assignedScreenshotId,
-    String? layoutId,
+    String? layoutId, // Keep nullable in copyWith for flexibility
   }) {
     return ScreenConfig(
       id: id ?? this.id,
@@ -206,7 +207,7 @@ class ScreenConfig {
       background: background ?? this.background,
       textConfig: textConfig ?? this.textConfig,
       assignedScreenshotId: assignedScreenshotId ?? this.assignedScreenshotId,
-      layoutId: layoutId ?? this.layoutId,
+      layoutId: layoutId ?? this.layoutId, // Will use default if null
     );
   }
 }

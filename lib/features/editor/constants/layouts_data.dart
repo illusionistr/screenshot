@@ -281,6 +281,31 @@ class LayoutsData {
     return layouts.first;
   }
 
+  /// Get default layout ID
+  static String getDefaultLayoutId() {
+    return layouts.first.config.id;
+  }
+
+  /// Get layout by ID or return default if not found
+  static LayoutModel getLayoutOrDefault(String? layoutId) {
+    if (layoutId == null) {
+      return getDefaultLayout();
+    }
+
+    final layout = getLayoutById(layoutId);
+    return layout ?? getDefaultLayout();
+  }
+
+  /// Get layout config by ID or return default if not found
+  static LayoutConfig getLayoutConfigOrDefault(String? layoutId) {
+    return getLayoutOrDefault(layoutId).config;
+  }
+
+  /// Check if a layout ID is valid
+  static bool isValidLayoutId(String layoutId) {
+    return layouts.any((layout) => layout.config.id == layoutId);
+  }
+
   /// Get all categories
   static List<String> getCategories() {
     return layouts.map((layout) => layout.category).toSet().toList();

@@ -21,7 +21,7 @@ class ScreenContainer extends StatelessWidget {
   final ScreenBackground? background;
   final text_models.ScreenTextConfig? textConfig;
   final ScreenshotModel? assignedScreenshot;
-  final String? layoutId;
+  final String layoutId;
   final String frameVariant;
   final ProjectModel? project;
   final VoidCallback? onTap;
@@ -41,7 +41,7 @@ class ScreenContainer extends StatelessWidget {
     this.background,
     this.textConfig,
     this.assignedScreenshot,
-    this.layoutId,
+    required this.layoutId,
     this.frameVariant = 'real',
     this.project,
     this.onTap,
@@ -73,7 +73,6 @@ class ScreenContainer extends StatelessWidget {
                 // Frame and screenshot layer
                 Positioned.fill(
                   child: Container(
-                   
                     child: _buildFrameWithContent(),
                   ),
                 ),
@@ -137,65 +136,17 @@ class ScreenContainer extends StatelessWidget {
     );
 
     final frameSize = Size(
-      containerSize.width , // Account for margins
-      containerSize.height ,
+      containerSize.width, // Account for margins
+      containerSize.height,
     );
-
-    // print('DEBUG ScreenContainer: _buildFrameWithContent called');
-    // print(
-    //     'DEBUG ScreenContainer: assignedScreenshot != null: ${assignedScreenshot != null}');
-    // print(
-    //     'DEBUG ScreenContainer: assignedScreenshot?.storageUrl: ${assignedScreenshot?.storageUrl}');
-    // print('DEBUG ScreenContainer: frameSize: $frameSize');
-    // print('DEBUG ScreenContainer: layoutId: $layoutId');
-    // print('DEBUG ScreenContainer: frameVariant: $frameVariant');
 
     // Create the content that goes inside the frame (background + screenshot)
     final Widget frameContent = _buildFrameContent();
 
-    // Use layout-aware frame rendering if layout is specified
-    if (layoutId != null) {
-      return _buildLayoutAwareFrame(
-        frameSize: frameSize,
-        frameContent: frameContent,
-      );
-    }
-
-    // Use the new smart frame container with asset validation
-    return FutureBuilder<Widget>(
-      future: FrameRenderer.buildSmartFrameContainer(
-        deviceId: deviceId,
-        containerSize: frameSize,
-        selectedVariantId: frameVariant.isNotEmpty ? frameVariant : null,
-        screenshotPath: assignedScreenshot?.storageUrl,
-        placeholder: frameContent,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            width: frameSize.width,
-            height: frameSize.height,
-            color: Colors.grey.shade100,
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          // Fallback to generic frame on error
-          return FrameRenderer.buildFrameContainer(
-            deviceId: deviceId,
-            containerSize: frameSize,
-            selectedVariantId:
-                null, // Let the system choose the best available frame
-            screenshotPath: assignedScreenshot?.storageUrl,
-            placeholder: frameContent,
-          );
-        }
-
-        return snapshot.data ?? frameContent;
-      },
+    // Always use layout-aware frame rendering since we now guarantee a layout
+    return _buildLayoutAwareFrame(
+      frameSize: frameSize,
+      frameContent: frameContent,
     );
   }
 
@@ -285,20 +236,8 @@ class ScreenContainer extends StatelessWidget {
     required Size frameSize,
     required Widget frameContent,
   }) {
-    // Get the layout configuration
-    final layout = LayoutsData.getLayoutById(layoutId!);
-    if (layout == null) {
-      // Fallback to regular frame if layout not found
-      return FrameRenderer.buildFrameContainer(
-        deviceId: deviceId,
-        containerSize: frameSize,
-        selectedVariantId: frameVariant,
-        screenshotPath: assignedScreenshot?.storageUrl,
-        placeholder: frameContent,
-      );
-    }
-
-    final config = layout.config;
+    // Get the layout configuration (will always return a valid layout)
+    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
     // Calculate device frame position and size based on layout
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, frameSize);
@@ -307,7 +246,7 @@ class ScreenContainer extends StatelessWidget {
     return Stack(
       children: [
         // Background content
-       // Positioned.fill(child: frameContent),
+        // Positioned.fill(child: frameContent),
 
         // Device frame with screenshot - now using real/generic frames
         Positioned(

@@ -1015,11 +1015,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
     if (state.selectedScreenIndex == null) return;
 
     try {
-      // Get the layout configuration
-      final layout = LayoutsData.getLayoutById(layoutId);
-      if (layout == null) {
-        throw Exception('Layout with ID "$layoutId" not found');
-      }
+      // Get the layout configuration (will always return a valid layout)
+      final layout = LayoutsData.getLayoutOrDefault(layoutId);
 
       // Get the current screen
       final currentScreen = state.screens[state.selectedScreenIndex!];
@@ -1052,11 +1049,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
   /// Note: This method applies layout to ALL screens, but the main behavior should be applyLayoutToCurrentScreen
   void applyLayoutToAllScreens(String layoutId) {
     try {
-      // Get the layout configuration
-      final layout = LayoutsData.getLayoutById(layoutId);
-      if (layout == null) {
-        throw Exception('Layout with ID "$layoutId" not found');
-      }
+      // Get the layout configuration (will always return a valid layout)
+      final layout = LayoutsData.getLayoutOrDefault(layoutId);
 
       // Apply layout to each screen using the Layout Application Service
       final updatedScreens = <ScreenConfig>[];
@@ -1086,8 +1080,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   /// Get the layout ID for the current screen
-  String? getCurrentScreenLayoutId() {
-    if (state.selectedScreenIndex == null) return null;
+  String getCurrentScreenLayoutId() {
+    if (state.selectedScreenIndex == null)
+      return LayoutsData.getDefaultLayoutId();
     return state.screens[state.selectedScreenIndex!].layoutId;
   }
 }

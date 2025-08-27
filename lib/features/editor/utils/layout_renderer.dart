@@ -5,10 +5,9 @@ import '../models/layout_models.dart';
 
 /// Utility class for rendering layouts and calculating positions
 class LayoutRenderer {
-  /// Get the layout configuration for a given layout ID
-  static LayoutConfig? getLayoutConfig(String layoutId) {
-    final layout = LayoutsData.getLayoutById(layoutId);
-    return layout?.config;
+  /// Get the layout configuration for a given layout ID (always returns a valid config)
+  static LayoutConfig getLayoutConfig(String layoutId) {
+    return LayoutsData.getLayoutConfigOrDefault(layoutId);
   }
 
   /// Calculate device frame position based on layout configuration
@@ -163,4 +162,3 @@ class LayoutRenderer {
     }).toList();
   }
 }
-

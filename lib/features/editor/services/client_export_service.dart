@@ -713,20 +713,12 @@ class ClientExportService {
     ScreenConfig screenConfig,
     EditorState editorState,
   ) async {
-    // Get the layout configuration for this screen
-    final layoutId = screenConfig.layoutId ?? editorState.selectedLayoutId;
+    // Get the layout configuration for this screen (always returns a valid layout)
+    final layoutId = screenConfig.layoutId;
     final frameVariant = editorState.selectedFrameVariant;
 
-    // Import layout utilities
-    final layout = LayoutsData.getLayoutById(layoutId);
-    if (layout == null) {
-      // Fallback to regular frame rendering if layout not found
-      await _drawDeviceFrameWithScreenshot(
-          canvas, screenshot, deviceId, exportSize);
-      return;
-    }
-
-    final config = layout.config;
+    // Get layout configuration (will always return a valid layout)
+    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
 
     // Calculate device frame position and size based on layout
     final devicePosition =
@@ -772,17 +764,11 @@ class ClientExportService {
     ScreenConfig screenConfig,
     EditorState editorState,
   ) async {
-    // Get the layout configuration for this screen
-    final layoutId = screenConfig.layoutId ?? editorState.selectedLayoutId;
+    // Get the layout configuration for this screen (always returns a valid layout)
+    final layoutId = screenConfig.layoutId;
 
-    final layout = LayoutsData.getLayoutById(layoutId);
-    if (layout == null) {
-      // Fallback to regular text rendering if layout not found
-      await _drawTextOverlays(canvas, textConfig, exportSize);
-      return;
-    }
-
-    final config = layout.config;
+    // Get layout configuration (will always return a valid layout)
+    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
 
     // Calculate device position and size once for both title and subtitle
     final devicePosition =
