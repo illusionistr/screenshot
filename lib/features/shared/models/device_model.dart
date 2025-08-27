@@ -145,7 +145,7 @@ class DeviceModel {
 
   double get aspectRatio => screenWidth / screenHeight;
   
-  bool get isTablet => screenWidth > 1000 || name.toLowerCase().contains('ipad');
+  bool get isTablet => name.toLowerCase().contains('ipad') || (screenWidth > 1600 && screenHeight > 2000);
   
   bool get isPhone => !isTablet;
 }

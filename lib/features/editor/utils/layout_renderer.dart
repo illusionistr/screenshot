@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/layouts_data.dart';
 import '../models/layout_models.dart';
+import '../services/platform_detection_service.dart';
 
 /// Utility class for rendering layouts and calculating positions
 class LayoutRenderer {
@@ -103,19 +104,41 @@ class LayoutRenderer {
     }
   }
 
-  /// Calculate device frame size based on layout configuration
+  /// Calculate device frame size based on layout configuration and actual device dimensions
   static Size calculateDeviceSize(
     LayoutConfig layout,
-    Size containerSize,
-  ) {
-    // Base device size (adjust as needed)
+    Size containerSize, {
+    String? deviceId,
+    bool isLandscape = false,
+  }) {
+    // If deviceId is provided, use actual device proportions for visual differentiation
+    if (deviceId != null) {
+      final actualDeviceAspectRatio = PlatformDetectionService.getActualDeviceAspectRatio(
+        deviceId,
+        isLandscape: isLandscape,
+      );
+      
+      // Base device width as a percentage of container width
+      final baseWidth = containerSize.width * 0.4;
+      final baseHeight = baseWidth / actualDeviceAspectRatio; // Use actual aspect ratio
+      
+      // Apply scale from layout
+      final scaledWidth = baseWidth * layout.deviceScale;
+      final scaledHeight = baseHeight * layout.deviceScale;
+      
+      print('DEBUG LayoutRenderer: deviceId=$deviceId, aspectRatio=${actualDeviceAspectRatio.toStringAsFixed(3)}, baseSize=${baseWidth.toStringAsFixed(1)}x${baseHeight.toStringAsFixed(1)}, scaledSize=${scaledWidth.toStringAsFixed(1)}x${scaledHeight.toStringAsFixed(1)}, scale=${layout.deviceScale}');
+      
+      return Size(scaledWidth, scaledHeight);
+    }
+    
+    // Fallback to original hardcoded phone aspect ratio if no deviceId provided
     final baseWidth = containerSize.width * 0.4;
     final baseHeight = baseWidth * 2; // Phone aspect ratio
-
+    
     // Apply scale from layout
     final scaledWidth = baseWidth * layout.deviceScale;
     final scaledHeight = baseHeight * layout.deviceScale;
-
+    
     return Size(scaledWidth, scaledHeight);
   }
 

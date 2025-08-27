@@ -182,7 +182,7 @@ class ClientExportService {
 
     // 3. Draw text overlays using layout-aware positioning
     await _drawLayoutAwareTextOverlays(
-        canvas, screenConfig.textConfig, exportSize, screenConfig, editorState);
+        canvas, screenConfig.textConfig, deviceId, exportSize, screenConfig, editorState);
 
     // Convert to image
     final picture = recorder.endRecording();
@@ -723,7 +723,12 @@ class ClientExportService {
     // Calculate device frame position and size based on layout
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, exportSize);
-    final deviceSize = LayoutRenderer.calculateDeviceSize(config, exportSize);
+    final deviceSize = LayoutRenderer.calculateDeviceSize(
+      config,
+      exportSize,
+      deviceId: deviceId,
+      isLandscape: false, // TODO: Add isLandscape parameter to export methods
+    );
 
     // Apply rotation transformation
     canvas.save();
@@ -760,6 +765,7 @@ class ClientExportService {
   static Future<void> _drawLayoutAwareTextOverlays(
     Canvas canvas,
     ScreenTextConfig textConfig,
+    String deviceId,
     Size exportSize,
     ScreenConfig screenConfig,
     EditorState editorState,
@@ -773,7 +779,12 @@ class ClientExportService {
     // Calculate device position and size once for both title and subtitle
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, exportSize);
-    final deviceSize = LayoutRenderer.calculateDeviceSize(config, exportSize);
+    final deviceSize = LayoutRenderer.calculateDeviceSize(
+      config,
+      exportSize,
+      deviceId: deviceId,
+      isLandscape: false, // TODO: Add isLandscape parameter to export methods
+    );
 
     // Draw title text based on layout position
     final titleElement = textConfig.getElement(TextFieldType.title);

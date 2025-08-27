@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import '../../shared/models/device_model.dart';
 import '../../shared/data/devices_data.dart';
 import '../constants/platform_dimensions.dart';
@@ -12,6 +13,7 @@ class PlatformDetectionService {
     return PlatformDimensions.getDeviceTypeFromDevice(device, isLandscape: isLandscape);
   }
 
+  // DEPRECATED: Use getPlatformContainerDimensions() for export compliance or getActualDeviceDimensions() for visual differentiation
   static PlatformDimensions getDimensionsForDevice(String deviceId, {bool isLandscape = false}) {
     final device = DevicesData.getDeviceById(deviceId);
     if (device == null) {
@@ -19,6 +21,50 @@ class PlatformDetectionService {
     }
 
     return PlatformDimensions.getDimensionsForDevice(device, isLandscape: isLandscape);
+  }
+
+  /// Returns platform-compliant container dimensions for App Store/Google Play requirements
+  /// Use this for export operations and main editor containers that need to meet platform standards
+  static PlatformDimensions getPlatformContainerDimensions(String deviceId, {bool isLandscape = false}) {
+    final device = DevicesData.getDeviceById(deviceId);
+    if (device == null) {
+      return PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!;
+    }
+
+    return PlatformDimensions.getDimensionsForDevice(device, isLandscape: isLandscape);
+  }
+
+  /// Returns actual device screen dimensions for visual differentiation in UI
+  /// Use this for device frames and thumbnails to show correct aspect ratios
+  static Size getActualDeviceDimensions(String deviceId, {bool isLandscape = false}) {
+    final device = DevicesData.getDeviceById(deviceId);
+    if (device == null) {
+      // Fallback to iPhone portrait dimensions
+      return const Size(1170, 2532);
+    }
+
+    final width = device.screenWidth.toDouble();
+    final height = device.screenHeight.toDouble();
+    
+    return isLandscape ? Size(height, width) : Size(width, height);
+  }
+
+  /// Returns the actual device aspect ratio for visual differentiation
+  /// Use this for calculating frame dimensions that show correct proportions
+  static double getActualDeviceAspectRatio(String deviceId, {bool isLandscape = false}) {
+    final device = DevicesData.getDeviceById(deviceId);
+    if (device == null) {
+      print('DEBUG PlatformDetectionService: Device not found for id=$deviceId, using fallback iPhone ratio');
+      // Fallback to iPhone aspect ratio
+      return isLandscape ? 2532 / 1170 : 1170 / 2532;
+    }
+
+    final aspectRatio = device.screenWidth / device.screenHeight;
+    final finalRatio = isLandscape ? 1 / aspectRatio : aspectRatio;
+    
+    print('DEBUG PlatformDetectionService: deviceId=$deviceId, name="${device.name}", screenDimensions=${device.screenWidth}x${device.screenHeight}, aspectRatio=${finalRatio.toStringAsFixed(3)}, isLandscape=$isLandscape');
+    
+    return finalRatio;
   }
 
   static bool isTablet(String deviceId) {
