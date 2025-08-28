@@ -5,8 +5,49 @@ import '../../shared/models/frame_variant_model.dart';
 import '../../shared/services/device_service.dart';
 import '../../shared/services/frame_asset_service.dart';
 
+
 class FrameRenderer {
   FrameRenderer._();
+
+
+  /// Create a smart fitting widget for screenshots
+  static Widget _buildSmartFittingWidget({
+    required String screenshotUrl,
+    required DeviceModel device,
+    required Widget? placeholder,
+    required double screenWidth,
+    required double screenHeight,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Image.network(
+          screenshotUrl,
+          fit: BoxFit.contain, // Always use contain to preserve content
+          errorBuilder: (context, error, stackTrace) {
+            return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+          },
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (frame == null) {
+              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+            }
+            
+            // Wrap in a container with smart background
+            return Container(
+              width: screenWidth,
+              height: screenHeight,
+              color: const Color(0xFFF8F9FA), // Light gray background for unfilled areas
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(screenWidth * (device.isTablet ? 0.05 : 0.03)),
+                  child: child,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   static Widget renderGenericFrame({
     required Widget child,
@@ -110,15 +151,19 @@ class FrameRenderer {
               borderRadius:
                   BorderRadius.circular(8.0), // Adjust based on device
               child: screenshotPath != null
-                  ? Image.network(
-                      screenshotPath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return placeholder ??
-                            _buildDefaultScreenshotPlaceholder(device);
-                      },
+                  ? _buildSmartFittingWidget(
+                      screenshotUrl: screenshotPath,
+                      device: device,
+                      placeholder: placeholder,
+                      screenWidth: device.screenWidth * scaleX,
+                      screenHeight: device.screenHeight * scaleY,
                     )
-                  : placeholder ?? _buildDefaultScreenshotPlaceholder(device),
+                  : Container(
+                      width: device.screenWidth * scaleX,
+                      height: device.screenHeight * scaleY,
+                      color: const Color(0xFFF8F9FA),
+                      child: placeholder ?? _buildDefaultScreenshotPlaceholder(device),
+                    ),
             ),
           ),
         // Device frame on top (foreground layer)
@@ -195,12 +240,28 @@ class FrameRenderer {
     if (screenshotWidget != null) {
       content = screenshotWidget;
     } else if (screenshotPath != null) {
-      content = Image.network(
-        screenshotPath,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-        },
+      content = Container(
+        color: const Color(0xFFF8F9FA),
+        child: Center(
+          child: Image.network(
+            screenshotPath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+            },
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+              if (frame == null) {
+                return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+              }
+              
+              // Add proportional padding to preserve screenshot margins
+              return Padding(
+                padding: EdgeInsets.all(containerSize.width * (device.isTablet ? 0.05 : 0.03)),
+                child: child,
+              );
+            },
+          ),
+        ),
       );
     } else {
       content = placeholder ?? _buildDefaultScreenshotPlaceholder(device);
@@ -240,12 +301,28 @@ class FrameRenderer {
     if (screenshotWidget != null) {
       content = screenshotWidget;
     } else if (screenshotPath != null) {
-      content = Image.network(
-        screenshotPath,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-        },
+      content = Container(
+        color: const Color(0xFFF8F9FA),
+        child: Center(
+          child: Image.network(
+            screenshotPath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+            },
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+              if (frame == null) {
+                return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+              }
+              
+              // Add proportional padding to preserve screenshot margins
+              return Padding(
+                padding: EdgeInsets.all(containerSize.width * (device.isTablet ? 0.05 : 0.03)),
+                child: child,
+              );
+            },
+          ),
+        ),
       );
     } else {
       content = placeholder ?? _buildDefaultScreenshotPlaceholder(device);

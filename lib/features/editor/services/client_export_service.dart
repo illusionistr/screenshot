@@ -306,28 +306,6 @@ class ClientExportService {
     }
   }
 
-  /// Draw device frame with screenshot positioned correctly based on device specifications
-  static Future<void> _drawDeviceFrameWithScreenshot(Canvas canvas,
-      ScreenshotModel screenshot, String deviceId, Size exportSize) async {
-    final device = DeviceService.getDeviceById(deviceId);
-    final frameVariant = await DeviceService.getDefaultFrameVariant(deviceId);
-
-    if (device == null) {
-      await _drawGenericFrameWithScreenshot(canvas, screenshot, exportSize);
-      return;
-    }
-
-    // Try to use real device frame if available
-    if (frameVariant != null &&
-        !frameVariant.isGeneric &&
-        frameVariant.assetPath != null) {
-      await _drawRealDeviceFrame(
-          canvas, screenshot, device, frameVariant.assetPath!, exportSize);
-    } else {
-      // Fallback to generic frame that matches FrameRenderer.renderGenericFrame
-      await _drawGenericFrameWithScreenshot(canvas, screenshot, exportSize);
-    }
-  }
 
   /// Draw real device frame using PNG asset with proper screenshot positioning
   static Future<void> _drawRealDeviceFrame(
@@ -371,7 +349,7 @@ class ClientExportService {
         canvas.drawImageRect(frameImage, frameSrcRect, frameRect,
             Paint()..filterQuality = ui.FilterQuality.high);
 
-        // Now draw the screenshot in the correct position
+        // Now draw the screenshot in the correct position using smart fitting
         final screenshotImage =
             await _loadImageFromNetwork(screenshot.storageUrl);
         if (screenshotImage != null) {
@@ -383,19 +361,60 @@ class ClientExportService {
           final screenWidth = device.screenWidth * scaleFactorX;
           final screenHeight = device.screenHeight * scaleFactorY;
 
-          final screenRect =
-              Rect.fromLTWH(screenLeft, screenTop, screenWidth, screenHeight);
+          // Apply smart fitting with proportional padding
+          final paddingPercent = device.isTablet ? 0.05 : 0.03;
+          final paddingX = screenWidth * paddingPercent;
+          final paddingY = screenHeight * paddingPercent;
+          
+          final effectiveScreenRect = Rect.fromLTWH(
+            screenLeft + paddingX,
+            screenTop + paddingY,
+            screenWidth - (paddingX * 2),
+            screenHeight - (paddingY * 2),
+          );
+
+          // Draw background color for unfilled areas
+          final backgroundPaint = Paint()
+            ..color = const Color(0xFFF8F9FA)
+            ..style = PaintingStyle.fill;
+          
+          canvas.save();
+          canvas.clipRRect(
+              RRect.fromRectAndRadius(Rect.fromLTWH(screenLeft, screenTop, screenWidth, screenHeight), const Radius.circular(8.0)));
+          
+          // Fill background
+          canvas.drawRect(Rect.fromLTWH(screenLeft, screenTop, screenWidth, screenHeight), backgroundPaint);
+
+          // Calculate aspect ratios for smart fitting
+          final imageAspectRatio = screenshotImage.width / screenshotImage.height;
+          final effectiveScreenAspectRatio = effectiveScreenRect.width / effectiveScreenRect.height;
+          
+          // Use contain fitting to preserve content
+          double drawWidth, drawHeight;
+          double drawX, drawY;
+          
+          if (imageAspectRatio > effectiveScreenAspectRatio) {
+            // Image is wider, fit to width
+            drawWidth = effectiveScreenRect.width;
+            drawHeight = effectiveScreenRect.width / imageAspectRatio;
+            drawX = effectiveScreenRect.left;
+            drawY = effectiveScreenRect.top + (effectiveScreenRect.height - drawHeight) / 2;
+          } else {
+            // Image is taller, fit to height
+            drawHeight = effectiveScreenRect.height;
+            drawWidth = effectiveScreenRect.height * imageAspectRatio;
+            drawX = effectiveScreenRect.left + (effectiveScreenRect.width - drawWidth) / 2;
+            drawY = effectiveScreenRect.top;
+          }
+
           final screenshotSrcRect = Rect.fromLTWH(
               0,
               0,
               screenshotImage.width.toDouble(),
               screenshotImage.height.toDouble());
+          final screenshotDstRect = Rect.fromLTWH(drawX, drawY, drawWidth, drawHeight);
 
-          // Clip to screen area with rounded corners
-          canvas.save();
-          canvas.clipRRect(
-              RRect.fromRectAndRadius(screenRect, const Radius.circular(8.0)));
-          canvas.drawImageRect(screenshotImage, screenshotSrcRect, screenRect,
+          canvas.drawImageRect(screenshotImage, screenshotSrcRect, screenshotDstRect,
               Paint()..filterQuality = ui.FilterQuality.high);
           canvas.restore();
         }
@@ -474,27 +493,48 @@ class ClientExportService {
         canvas.clipRRect(RRect.fromRectAndRadius(
             contentRect, const Radius.circular(innerRadius)));
 
-        // Scale screenshot to fit content area while maintaining aspect ratio
+        // Draw background for unfilled areas first
+        final backgroundPaint = Paint()
+          ..color = const Color(0xFFF8F9FA)
+          ..style = PaintingStyle.fill;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(contentRect, const Radius.circular(innerRadius)),
+          backgroundPaint,
+        );
+
+        // Apply smart fitting with proportional padding
+        final paddingPercent = 0.05; // 5% padding for generic frames
+        final paddingX = contentWidth * paddingPercent;
+        final paddingY = contentHeight * paddingPercent;
+        
+        final effectiveContentRect = Rect.fromLTWH(
+          contentLeft + paddingX,
+          contentTop + paddingY,
+          contentWidth - (paddingX * 2),
+          contentHeight - (paddingY * 2),
+        );
+
+        // Scale screenshot to fit effective content area while maintaining aspect ratio
         final imageWidth = screenshotImage.width.toDouble();
         final imageHeight = screenshotImage.height.toDouble();
-        final contentAspectRatio = contentWidth / contentHeight;
+        final effectiveContentAspectRatio = effectiveContentRect.width / effectiveContentRect.height;
         final imageAspectRatio = imageWidth / imageHeight;
 
         double drawWidth, drawHeight;
         double drawX, drawY;
 
-        if (imageAspectRatio > contentAspectRatio) {
+        if (imageAspectRatio > effectiveContentAspectRatio) {
           // Image is wider, fit to width
-          drawWidth = contentWidth;
-          drawHeight = contentWidth / imageAspectRatio;
-          drawX = contentLeft;
-          drawY = contentTop + (contentHeight - drawHeight) / 2;
+          drawWidth = effectiveContentRect.width;
+          drawHeight = effectiveContentRect.width / imageAspectRatio;
+          drawX = effectiveContentRect.left;
+          drawY = effectiveContentRect.top + (effectiveContentRect.height - drawHeight) / 2;
         } else {
           // Image is taller, fit to height
-          drawHeight = contentHeight;
-          drawWidth = contentHeight * imageAspectRatio;
-          drawX = contentLeft + (contentWidth - drawWidth) / 2;
-          drawY = contentTop;
+          drawHeight = effectiveContentRect.height;
+          drawWidth = effectiveContentRect.height * imageAspectRatio;
+          drawX = effectiveContentRect.left + (effectiveContentRect.width - drawWidth) / 2;
+          drawY = effectiveContentRect.top;
         }
 
         final srcRect = Rect.fromLTWH(0, 0, imageWidth, imageHeight);
@@ -541,47 +581,6 @@ class ClientExportService {
     textPainter.dispose();
   }
 
-  /// Draw text overlays at export resolution
-  static Future<void> _drawTextOverlays(
-      Canvas canvas, ScreenTextConfig textConfig, Size exportSize) async {
-    for (final element in textConfig.visibleElements) {
-      final position = _getTextPosition(element, exportSize);
-
-      // Scale font size for export resolution (assuming preview is ~800px height, export is ~2796px)
-      final scaleFactor = exportSize.height / 800;
-      final exportFontSize = element.fontSize * scaleFactor;
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: element.content,
-          style: TextStyle(
-            fontFamily: element.fontFamily,
-            fontSize: exportFontSize.clamp(
-                16.0, 200.0), // Reasonable bounds for export
-            fontWeight: element.fontWeight,
-            color: element.color,
-            height: 1.2,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-        textAlign: element.textAlign,
-        maxLines: element.type == TextFieldType.title ? 3 : 2,
-      );
-
-      textPainter.layout(maxWidth: position.width);
-
-      // Calculate position based on text alignment
-      double textX = position.left;
-      if (element.textAlign == TextAlign.center) {
-        textX = position.left + (position.width - textPainter.width) / 2;
-      } else if (element.textAlign == TextAlign.right) {
-        textX = position.left + position.width - textPainter.width;
-      }
-
-      textPainter.paint(canvas, Offset(textX, position.top));
-      textPainter.dispose();
-    }
-  }
 
   /// Load image from Flutter asset bundle
   static Future<ui.Image?> _loadImageFromAsset(String assetPath) async {
