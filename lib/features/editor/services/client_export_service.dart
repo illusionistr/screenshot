@@ -8,8 +8,10 @@ import 'package:flutter/services.dart';
 import '../../projects/models/project_model.dart';
 import '../../shared/data/devices_data.dart';
 import '../../shared/models/device_model.dart';
+import '../../shared/models/frame_variant_model.dart';
 import '../../shared/models/screenshot_model.dart';
 import '../../shared/services/device_service.dart';
+import '../../shared/services/frame_style_service.dart';
 import '../constants/layouts_data.dart';
 import '../constants/platform_dimensions.dart';
 import '../models/background_models.dart';
@@ -307,8 +309,35 @@ class ClientExportService {
   }
 
 
+  /// Draw device frame with variant model (replaces _drawRealDeviceFrame)
+  static Future<void> _drawLayoutAwareDeviceFrameWithVariant(
+    Canvas canvas,
+    ScreenshotModel screenshot,
+    String deviceId,
+    Size exportSize,
+    FrameVariantModel? frameVariantModel,
+  ) async {
+    final device = DeviceService.getDeviceById(deviceId);
+    if (device == null) return;
+
+    // Use real frame if available, otherwise fallback to generic
+    if (frameVariantModel != null && 
+        !frameVariantModel.isGeneric && 
+        frameVariantModel.assetPath != null) {
+      await _drawRealDeviceFrameWithAssetPath(
+        canvas,
+        screenshot,
+        device,
+        frameVariantModel.assetPath!,
+        exportSize,
+      );
+    } else {
+      await _drawGenericFrameWithScreenshot(canvas, screenshot, exportSize, deviceId: deviceId);
+    }
+  }
+
   /// Draw real device frame using PNG asset with proper screenshot positioning
-  static Future<void> _drawRealDeviceFrame(
+  static Future<void> _drawRealDeviceFrameWithAssetPath(
       Canvas canvas,
       ScreenshotModel screenshot,
       DeviceModel device,
@@ -425,13 +454,13 @@ class ClientExportService {
       // Failed to load device frame asset
     }
 
-    // Fallback to generic frame if asset loading fails
+    // Fallback to generic frame with unified styling if asset loading fails
     await _drawGenericFrameWithScreenshot(canvas, screenshot, exportSize);
   }
 
-  /// Draw generic frame that matches the FrameRenderer.renderGenericFrame design
+  /// Draw generic frame using unified frame styling system
   static Future<void> _drawGenericFrameWithScreenshot(
-      Canvas canvas, ScreenshotModel screenshot, Size exportSize) async {
+      Canvas canvas, ScreenshotModel screenshot, Size exportSize, {String? deviceId}) async {
     // Generic frame uses 50% width and 60% height with centered positioning
     // This matches FrameRenderer.renderGenericFrame exactly
     final frameWidth = exportSize.width * 0.5;
@@ -440,19 +469,23 @@ class ClientExportService {
     final frameTop = exportSize.height *
         0.15; // 15% from top for title space + 60% frame + remainder for balance
 
-    // Draw frame background
-    const borderRadius = 20.0;
-    const borderWidth = 2.0;
-    final frameRect =
-        Rect.fromLTWH(frameLeft, frameTop, frameWidth, frameHeight);
+    final frameRect = Rect.fromLTWH(frameLeft, frameTop, frameWidth, frameHeight);
+
+    // Get unified frame styling
+    final frameStyle = deviceId != null 
+        ? FrameStyleService.getDefaultStyleForDevice(deviceId)
+        : FrameStyleService.getDefaultStyleForDevice('iphone-15-pro'); // Default fallback
 
     // Draw shadow first
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      ..color = frameStyle.canvasShadow.color
+      ..maskFilter = frameStyle.canvasShadow.maskFilter;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-          frameRect.translate(0, 2), const Radius.circular(borderRadius)),
+          frameRect.translate(
+              frameStyle.canvasShadow.offset.dx, 
+              frameStyle.canvasShadow.offset.dy), 
+          Radius.circular(frameStyle.borderRadius)),
       shadowPaint,
     );
 
@@ -461,26 +494,26 @@ class ClientExportService {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(frameRect, const Radius.circular(borderRadius)),
+      RRect.fromRectAndRadius(frameRect, Radius.circular(frameStyle.borderRadius)),
       backgroundPaint,
     );
 
     // Draw border
     final borderPaint = Paint()
-      ..color = Colors.black
+      ..color = frameStyle.borderColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = borderWidth;
+      ..strokeWidth = frameStyle.borderWidth;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(frameRect, const Radius.circular(borderRadius)),
+      RRect.fromRectAndRadius(frameRect, Radius.circular(frameStyle.borderRadius)),
       borderPaint,
     );
 
     // Content area (inside border)
-    const innerRadius = 18.0; // Slightly smaller radius for content
-    final contentLeft = frameLeft + borderWidth;
-    final contentTop = frameTop + borderWidth;
-    final contentWidth = frameWidth - (borderWidth * 2);
-    final contentHeight = frameHeight - (borderWidth * 2);
+    final innerRadius = frameStyle.borderRadius - 2.0; // Slightly smaller radius for content
+    final contentLeft = frameLeft + frameStyle.borderWidth;
+    final contentTop = frameTop + frameStyle.borderWidth;
+    final contentWidth = frameWidth - (frameStyle.borderWidth * 2);
+    final contentHeight = frameHeight - (frameStyle.borderWidth * 2);
     final contentRect =
         Rect.fromLTWH(contentLeft, contentTop, contentWidth, contentHeight);
 
@@ -491,14 +524,14 @@ class ClientExportService {
       if (screenshotImage != null) {
         canvas.save();
         canvas.clipRRect(RRect.fromRectAndRadius(
-            contentRect, const Radius.circular(innerRadius)));
+            contentRect, Radius.circular(innerRadius)));
 
         // Draw background for unfilled areas first
         final backgroundPaint = Paint()
           ..color = const Color(0xFFF8F9FA)
           ..style = PaintingStyle.fill;
         canvas.drawRRect(
-          RRect.fromRectAndRadius(contentRect, const Radius.circular(innerRadius)),
+          RRect.fromRectAndRadius(contentRect, Radius.circular(innerRadius)),
           backgroundPaint,
         );
 
@@ -554,7 +587,7 @@ class ClientExportService {
       ..color = Colors.grey.shade200
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
-      RRect.fromRectAndRadius(contentRect, const Radius.circular(innerRadius)),
+      RRect.fromRectAndRadius(contentRect, Radius.circular(innerRadius)),
       placeholderPaint,
     );
 
@@ -718,15 +751,9 @@ class ClientExportService {
     // Get layout configuration (will always return a valid layout)
     final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
 
-    // Calculate device frame position and size based on layout
+    // Calculate device frame position based on layout
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, exportSize);
-    final deviceSize = LayoutRenderer.calculateDeviceSize(
-      config,
-      exportSize,
-      deviceId: deviceId,
-      isLandscape: false, // TODO: Add isLandscape parameter to export methods
-    );
 
     // Apply rotation transformation
     canvas.save();
@@ -735,26 +762,17 @@ class ClientExportService {
         config.deviceRotation * 3.14159 / 180); // Convert degrees to radians
     canvas.translate(-devicePosition.dx, -devicePosition.dy);
 
-    // Draw device frame based on variant
-    if (frameVariant == 'real' ||
-        frameVariant == 'clay' ||
-        frameVariant == 'matte') {
-      // Use the existing frame rendering logic but with calculated position
-      await _drawRealDeviceFrame(
-        canvas,
-        screenshot,
-        DeviceService.getDeviceById(deviceId)!,
-        'assets/frames/${frameVariant}_frame.png', // Adjust path as needed
-        exportSize,
-      );
-    } else {
-      // Draw generic frame with calculated position
-      await _drawGenericFrameWithScreenshot(
-        canvas,
-        screenshot,
-        exportSize,
-      );
-    }
+    // Get frame variant using DeviceService with proper fallback
+    final frameVariantModel = await DeviceService.getFrameVariantWithFallback(
+        deviceId, frameVariant);
+    
+    await _drawLayoutAwareDeviceFrameWithVariant(
+      canvas,
+      screenshot,
+      deviceId,
+      exportSize,
+      frameVariantModel,
+    );
 
     canvas.restore();
   }

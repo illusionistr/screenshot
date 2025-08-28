@@ -4,6 +4,7 @@ import '../../shared/models/device_model.dart';
 import '../../shared/models/frame_variant_model.dart';
 import '../../shared/services/device_service.dart';
 import '../../shared/services/frame_asset_service.dart';
+import '../../shared/services/frame_style_service.dart';
 
 class FrameRenderer {
   FrameRenderer._();
@@ -161,35 +162,27 @@ class FrameRenderer {
   }) {
     // Ensure we have a device - either passed directly or looked up
     DeviceModel? targetDevice = device;
+    String targetDeviceId = deviceId ?? 'iphone-15-pro'; // Default fallback
+    
     if (targetDevice == null && deviceId != null) {
       targetDevice = DeviceService.getDeviceById(deviceId);
     }
-
-    if (targetDevice == null) {
-      return content;
+    if (targetDevice != null) {
+      targetDeviceId = targetDevice.id;
     }
 
-    // Simple, clean frame with border/outline - not invisible
+    // Get unified frame styling
+    final frameStyle = FrameStyleService.getDefaultStyleForDevice(targetDeviceId);
+
+    // Calculate inner radius for content clipping
+    final innerRadius = frameStyle.borderRadius - 2.0;
+
     return Container(
       width: containerSize.width,
       height: containerSize.height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(targetDevice.isTablet ? 24 : 23),
-        color: Colors.red,
-        border: Border.all(
-          color: Colors.black,
-          width: 5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: frameStyle.toBoxDecoration(backgroundColor: Colors.white),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(targetDevice.isTablet ? 19 : 18),
+        borderRadius: BorderRadius.circular(innerRadius.clamp(0.0, double.infinity)),
         child: content,
       ),
     );
