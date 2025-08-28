@@ -37,23 +37,27 @@ class FrameRenderer {
       content = Container(
         width: containerSize.width,
         height: containerSize.height,
-        child: Center(
-          child: Image.network(
-            screenshotPath,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
+        color: const Color(0xFFF8F9FA), // Background color for any gaps
+        child: Image.network(
+          screenshotPath,
+          width: containerSize.width,
+          height: containerSize.height,
+          fit: BoxFit.fill,
+          errorBuilder: (context, error, stackTrace) {
+            return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+          },
+          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+            if (frame == null) {
               return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-            },
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame == null) {
-                return placeholder ??
-                    _buildDefaultScreenshotPlaceholder(device);
-              }
+            }
 
-              // Add proportional padding to preserve screenshot margins
-              return child;
-            },
-          ),
+            // Return the image to fill the entire container
+            return SizedBox(
+              width: containerSize.width,
+              height: containerSize.height,
+              child: child,
+            );
+          },
         ),
       );
     } else {
@@ -87,9 +91,9 @@ class FrameRenderer {
 
     // Fallback to generic frame
     return renderGenericFrame(
-      child: content,
+      content: content,
       containerSize: containerSize,
-      deviceId: deviceId,
+      device: device,
     );
   }
 
@@ -144,9 +148,52 @@ class FrameRenderer {
     return Container(
       width: screenWidth,
       height: screenHeight,
-      color: Colors.blue, // Light gray background for unfilled areas
+      color:
+          const Color(0xFFF8F9FA), // Light gray background for unfilled areas
       child: Center(
         child: screenshotContent,
+      ),
+    );
+  }
+
+  static Widget renderGenericFrame({
+    required Widget content,
+    required Size containerSize,
+    DeviceModel? device,
+    String? deviceId,
+  }) {
+    // Ensure we have a device - either passed directly or looked up
+    DeviceModel? targetDevice = device;
+    if (targetDevice == null && deviceId != null) {
+      targetDevice = DeviceService.getDeviceById(deviceId);
+    }
+
+    if (targetDevice == null) {
+      return content;
+    }
+
+    // Simple, clean frame with border/outline - not invisible
+    return Container(
+      width: containerSize.width,
+      height: containerSize.height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(targetDevice.isTablet ? 24 : 23),
+        color: Colors.red,
+        border: Border.all(
+          color: Colors.black,
+          width: 5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+       // borderRadius: BorderRadius.circular(targetDevice.isTablet ? 19 : 15),
+        child: content,
       ),
     );
   }
@@ -175,42 +222,6 @@ class FrameRenderer {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  static Widget renderGenericFrame({
-    required Widget child,
-    required Size containerSize,
-    required String deviceId,
-  }) {
-    final device = DeviceService.getDeviceById(deviceId);
-    if (device == null) {
-      return child;
-    }
-
-    // Simple, clean frame with border/outline - not invisible
-    return Container(
-      width: containerSize.width,
-      height: containerSize.height,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(device.isTablet ? 24 : 20),
-        color: Colors.transparent,
-        border: Border.all(
-          color: Colors.black,
-          width: 5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(device.isTablet ? 19 : 15),
-        child: child,
       ),
     );
   }

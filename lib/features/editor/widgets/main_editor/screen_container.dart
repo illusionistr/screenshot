@@ -271,7 +271,7 @@ class ScreenContainer extends StatelessWidget {
                 screenshotWidget: assignedScreenshot?.storageUrl != null
                     ? Image.network(
                         assignedScreenshot!.storageUrl,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.fill,
                         errorBuilder: (context, error, stackTrace) {
                           return placeholderContent;
                         },
@@ -294,7 +294,7 @@ class ScreenContainer extends StatelessWidget {
                 if (snapshot.hasError) {
                   // Fallback to generic frame on error
                   return FrameRenderer.renderGenericFrame(
-                    child: placeholderContent,
+                    content: placeholderContent,
                     containerSize: deviceSize,
                     deviceId: deviceId,
                   );
@@ -302,7 +302,7 @@ class ScreenContainer extends StatelessWidget {
 
                 return snapshot.data ??
                     FrameRenderer.renderGenericFrame(
-                      child: placeholderContent,
+                      content: placeholderContent,
                       containerSize: deviceSize,
                       deviceId: deviceId,
                     );
