@@ -8,40 +8,174 @@ import '../../shared/services/frame_asset_service.dart';
 class FrameRenderer {
   FrameRenderer._();
 
-  /// Create a smart fitting widget for screenshots
-  static Widget _buildSmartFittingWidget({
-    required String screenshotUrl,
+  /// Enhanced frame container with asset validation and smart fallback
+  static Future<Widget> buildSmartFrameContainer({
+    required String deviceId,
+    required Size containerSize,
+    String? selectedVariantId,
+    String? screenshotPath,
+    Widget? screenshotWidget,
+    Widget? placeholder,
+  }) async {
+    final device = DeviceService.getDeviceById(deviceId);
+    if (device == null) {
+      return Container(
+        width: containerSize.width,
+        height: containerSize.height,
+        color: const Color(0xFFF8F9FA),
+        child: const Center(
+          child: Text('Device not found'),
+        ),
+      );
+    }
+
+    // Prepare content widget
+    Widget content;
+    if (screenshotWidget != null) {
+      content = screenshotWidget;
+    } else if (screenshotPath != null) {
+      content = Container(
+        width: containerSize.width,
+        height: containerSize.height,
+        child: Center(
+          child: Image.network(
+            screenshotPath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+            },
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+              if (frame == null) {
+                return placeholder ??
+                    _buildDefaultScreenshotPlaceholder(device);
+              }
+
+              // Add proportional padding to preserve screenshot margins
+              return child;
+            },
+          ),
+        ),
+      );
+    } else {
+      content = placeholder ?? _buildDefaultScreenshotPlaceholder(device);
+    }
+
+    // Get the best available frame variant
+    FrameVariantModel? frameVariant;
+    if (selectedVariantId != null && selectedVariantId.isNotEmpty) {
+      frameVariant = await DeviceService.getFrameVariantWithFallback(
+          deviceId, selectedVariantId);
+    }
+    frameVariant ??= await DeviceService.getDefaultFrameVariant(deviceId);
+
+    // Render the appropriate frame
+    if (frameVariant != null &&
+        !frameVariant.isGeneric &&
+        frameVariant.assetPath != null) {
+      // Check if the asset is actually available
+      final isAssetAvailable =
+          await FrameAssetService.isFrameAssetAvailable(frameVariant.assetPath);
+      if (isAssetAvailable) {
+        return _renderRealFrame(
+          assetPath: frameVariant.assetPath!,
+          device: device,
+          containerSize: containerSize,
+          screenshotContent: content,
+        );
+      }
+    }
+
+    // Fallback to generic frame
+    return renderGenericFrame(
+      child: content,
+      containerSize: containerSize,
+      deviceId: deviceId,
+    );
+  }
+
+  static Widget _renderRealFrame({
+    required String assetPath,
     required DeviceModel device,
-    required Widget? placeholder,
+    required Size containerSize,
+    required Widget screenshotContent,
+  }) {
+    // Calculate scale factors from original frame dimensions to container dimensions
+    final scaleX = containerSize.width / device.frameWidth;
+    final scaleY = containerSize.height / device.frameHeight;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Screenshot content positioned as background layer
+        Positioned(
+          // Scale the screen position coordinates by the scale factors
+          left: device.screenPosition.dx * scaleX - 1,
+          top: device.screenPosition.dy * scaleY - 1,
+          // Scale the screen dimensions by the scale factors
+          width: device.screenWidth * scaleX + 2,
+          height: device.screenHeight * scaleY + 2,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.0), // Adjust based on device
+            child: _buildSmartFittingWidget(
+              screenshotContent: screenshotContent,
+              screenWidth: device.screenWidth * scaleX,
+              screenHeight: device.screenHeight * scaleY,
+            ),
+          ),
+        ),
+        // Device frame on top (foreground layer)
+        Image.asset(
+          assetPath,
+          width: containerSize.width,
+          height: containerSize.height,
+          fit: BoxFit.cover,
+        ),
+      ],
+    );
+  }
+
+  /// Create a smart fitting widget for already-loaded screenshot content
+  static Widget _buildSmartFittingWidget({
+    required Widget screenshotContent,
     required double screenWidth,
     required double screenHeight,
   }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Image.network(
-          screenshotUrl,
-          fit: BoxFit.contain, // Always use contain to preserve content
-          errorBuilder: (context, error, stackTrace) {
-            return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-          },
-          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-            if (frame == null) {
-              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-            }
+    // Wrap the already-loaded content in a container with smart background
+    return Container(
+      width: screenWidth,
+      height: screenHeight,
+      color: Colors.blue, // Light gray background for unfilled areas
+      child: Center(
+        child: screenshotContent,
+      ),
+    );
+  }
 
-            // Wrap in a container with smart background
-            return Container(
-              width: screenWidth + 1,
-              height: screenHeight + 1,
-              color: const Color(
-                  0xFFF8F9FA), // Light gray background for unfilled areas
-              child: Center(
-                child: child,
-              ),
-            );
-          },
-        );
-      },
+  static Widget _buildDefaultScreenshotPlaceholder(DeviceModel device) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: const Color(0xFFF8F9FA),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.photo_outlined,
+            size: device.isTablet ? 48 : 32,
+            color: const Color(0xFFADB5BD),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No screenshot\nassigned',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: device.isTablet ? 14 : 12,
+              color: const Color(0xFFADB5BD),
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -78,249 +212,6 @@ class FrameRenderer {
         borderRadius: BorderRadius.circular(device.isTablet ? 19 : 15),
         child: child,
       ),
-    );
-  }
-
-  static Widget _renderRealFrame({
-    required String assetPath,
-    required DeviceModel device,
-    required Size containerSize,
-    String? screenshotPath,
-    Widget? placeholder,
-  }) {
-    // Calculate scale factors from original frame dimensions to container dimensions
-    final scaleX = containerSize.width / device.frameWidth;
-    final scaleY = containerSize.height / device.frameHeight;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Screenshot content positioned as background layer
-        if (screenshotPath != null || placeholder != null)
-          Positioned(
-            // Scale the screen position coordinates by the scale factors
-            left: device.screenPosition.dx * scaleX,
-            top: device.screenPosition.dy * scaleY,
-            // Scale the screen dimensions by the scale factors
-            width: device.screenWidth * scaleX,
-            height: device.screenHeight * scaleY,
-            child: ClipRRect(
-              borderRadius:
-                  BorderRadius.circular(8.0), // Adjust based on device
-              child: screenshotPath != null
-                  ? _buildSmartFittingWidget(
-                      screenshotUrl: screenshotPath,
-                      device: device,
-                      placeholder: placeholder,
-                      screenWidth: device.screenWidth * scaleX,
-                      screenHeight: device.screenHeight * scaleY,
-                    )
-                  : Container(
-                      width: device.screenWidth * scaleX,
-                      height: device.screenHeight * scaleY,
-                      color: const Color(0xFFF8F9FA),
-                      child: placeholder ??
-                          _buildDefaultScreenshotPlaceholder(device),
-                    ),
-            ),
-          ),
-        // Device frame on top (foreground layer)
-        Image.asset(
-          assetPath,
-          width: containerSize.width,
-          height: containerSize.height,
-          fit: BoxFit.cover,
-        ),
-      ],
-    );
-  }
-
-  static Widget _buildDefaultScreenshotPlaceholder(DeviceModel device) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF8F9FA),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.photo_outlined,
-            size: device.isTablet ? 48 : 32,
-            color: const Color(0xFFADB5BD),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No screenshot\nassigned',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: device.isTablet ? 14 : 12,
-              color: const Color(0xFFADB5BD),
-              height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Future<bool> shouldUseGenericFrame(
-      String deviceId, String? variantId) async {
-    if (variantId == null) {
-      return !(await DeviceService.hasRealFrameVariants(deviceId));
-    }
-
-    final frameVariant = DeviceService.getFrameVariant(deviceId, variantId);
-    return frameVariant?.isGeneric ?? true;
-  }
-
-  static Widget buildFrameContainer({
-    required String deviceId,
-    required Size containerSize,
-    String? selectedVariantId,
-    String? screenshotPath,
-    Widget? screenshotWidget,
-    Widget? placeholder,
-  }) {
-    final device = DeviceService.getDeviceById(deviceId);
-    if (device == null) {
-      return Container(
-        width: containerSize.width,
-        height: containerSize.height,
-        color: const Color(0xFFF8F9FA),
-        child: const Center(
-          child: Text('Device not found'),
-        ),
-      );
-    }
-
-    // Prepare content widget
-    Widget content;
-    if (screenshotWidget != null) {
-      content = screenshotWidget;
-    } else if (screenshotPath != null) {
-      content = Container(
-        color: const Color(0xFFF8F9FA),
-        child: Center(
-          child: Image.network(
-            screenshotPath,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-            },
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame == null) {
-                return placeholder ??
-                    _buildDefaultScreenshotPlaceholder(device);
-              }
-
-              // Add proportional padding to preserve screenshot margins
-              return Padding(
-                padding: EdgeInsets.all(
-                    containerSize.width * (device.isTablet ? 0.05 : 0.03)),
-                child: child,
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      content = placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-    }
-
-    // Use generic frame for now - will be enhanced in next phase
-    return renderGenericFrame(
-      child: content,
-      containerSize: containerSize,
-      deviceId: deviceId,
-    );
-  }
-
-  /// Enhanced frame container with asset validation and smart fallback
-  static Future<Widget> buildSmartFrameContainer({
-    required String deviceId,
-    required Size containerSize,
-    String? selectedVariantId,
-    String? screenshotPath,
-    Widget? screenshotWidget,
-    Widget? placeholder,
-  }) async {
-    final device = DeviceService.getDeviceById(deviceId);
-    if (device == null) {
-      return Container(
-        width: containerSize.width,
-        height: containerSize.height,
-        color: const Color(0xFFF8F9FA),
-        child: const Center(
-          child: Text('Device not found'),
-        ),
-      );
-    }
-
-    // Prepare content widget
-    Widget content;
-    if (screenshotWidget != null) {
-      content = screenshotWidget;
-    } else if (screenshotPath != null) {
-      content = Container(
-        color: const Color(0xFFF8F9FA),
-        child: Center(
-          child: Image.network(
-            screenshotPath,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-            },
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-              if (frame == null) {
-                return placeholder ??
-                    _buildDefaultScreenshotPlaceholder(device);
-              }
-
-              // Add proportional padding to preserve screenshot margins
-              return Padding(
-                padding: EdgeInsets.all(
-                    containerSize.width * (device.isTablet ? 0.05 : 0.03)),
-                child: child,
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      content = placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-    }
-
-    // Get the best available frame variant
-    FrameVariantModel? frameVariant;
-    if (selectedVariantId != null && selectedVariantId.isNotEmpty) {
-      frameVariant = await DeviceService.getFrameVariantWithFallback(
-          deviceId, selectedVariantId);
-    }
-    frameVariant ??= await DeviceService.getDefaultFrameVariant(deviceId);
-
-    // Render the appropriate frame
-    if (frameVariant != null &&
-        !frameVariant.isGeneric &&
-        frameVariant.assetPath != null) {
-      // Check if the asset is actually available
-      final isAssetAvailable =
-          await FrameAssetService.isFrameAssetAvailable(frameVariant.assetPath);
-      if (isAssetAvailable) {
-        return _renderRealFrame(
-          assetPath: frameVariant.assetPath!,
-          device: device,
-          containerSize: containerSize,
-          screenshotPath: screenshotPath,
-          placeholder: content,
-        );
-      }
-    }
-
-    // Fallback to generic frame
-    return renderGenericFrame(
-      child: content,
-      containerSize: containerSize,
-      deviceId: deviceId,
     );
   }
 }
