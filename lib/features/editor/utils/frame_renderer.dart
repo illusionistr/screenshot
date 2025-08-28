@@ -14,7 +14,6 @@ class FrameRenderer {
     required Size containerSize,
     String? selectedVariantId,
     String? screenshotPath,
-    Widget? screenshotWidget,
     Widget? placeholder,
   }) async {
     final device = DeviceService.getDeviceById(deviceId);
@@ -31,9 +30,7 @@ class FrameRenderer {
 
     // Prepare content widget
     Widget content;
-    if (screenshotWidget != null) {
-      content = screenshotWidget;
-    } else if (screenshotPath != null) {
+    if (screenshotPath != null) {
       content = Container(
         width: containerSize.width,
         height: containerSize.height,
@@ -192,7 +189,7 @@ class FrameRenderer {
         ],
       ),
       child: ClipRRect(
-       // borderRadius: BorderRadius.circular(targetDevice.isTablet ? 19 : 15),
+        borderRadius: BorderRadius.circular(targetDevice.isTablet ? 19 : 18),
         child: content,
       ),
     );

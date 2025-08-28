@@ -268,15 +268,6 @@ class ScreenContainer extends StatelessWidget {
                 selectedVariantId:
                     frameVariant.isNotEmpty ? frameVariant : null,
                 screenshotPath: assignedScreenshot?.storageUrl,
-                screenshotWidget: assignedScreenshot?.storageUrl != null
-                    ? Image.network(
-                        assignedScreenshot!.storageUrl,
-                        fit: BoxFit.fill,
-                        errorBuilder: (context, error, stackTrace) {
-                          return placeholderContent;
-                        },
-                      )
-                    : null,
                 placeholder: placeholderContent,
               ),
               builder: (context, snapshot) {
