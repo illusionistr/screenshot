@@ -56,8 +56,6 @@ GoRouter appRouter(Ref ref) {
     redirect: (context, state) {
       final authState = ref.read(authStateStreamProvider);
 
-      print('Router redirect - location: ${state.matchedLocation}');
-
       // Handle different auth states
       return authState.when(
         data: (user) {
@@ -65,34 +63,25 @@ GoRouter appRouter(Ref ref) {
           final loggingIn = state.matchedLocation == '/login' ||
               state.matchedLocation == '/signup';
 
-          print(
-              'Router redirect - data: isLoggedIn=$isLoggedIn, loggingIn=$loggingIn');
-
           // If not logged in and trying to access protected routes
           if (!isLoggedIn &&
               (state.matchedLocation.startsWith('/dashboard') ||
                   state.matchedLocation.startsWith('/projects'))) {
-            print('Router redirect - redirecting to login (not logged in)');
             return '/login';
           }
 
           // If logged in and on login/signup pages, go to dashboard
           if (isLoggedIn && loggingIn) {
-            print(
-                'Router redirect - redirecting to dashboard (logged in but on login page)');
             return '/dashboard';
           }
 
-          print('Router redirect - no redirect needed');
           return null;
         },
         loading: () {
-          print('Router redirect - auth loading, no redirect');
           // During loading, don't redirect protected routes to avoid navigation loops
           return null;
         },
         error: (_, __) {
-          print('Router redirect - auth error, redirecting to login');
           // On auth error, redirect to login
           final loggingIn = state.matchedLocation == '/login' ||
               state.matchedLocation == '/signup';

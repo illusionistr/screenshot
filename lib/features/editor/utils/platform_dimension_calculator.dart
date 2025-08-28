@@ -11,9 +11,7 @@ class PlatformDimensionCalculator {
     );
 
     final width = dimensions.getWidthForHeight(containerHeight);
-    
-    print('DEBUG PlatformDimensionCalculator: deviceId=$deviceId, platformDimensions=${dimensions.width}x${dimensions.height}, aspectRatio=${dimensions.aspectRatio.toStringAsFixed(4)}, containerSize=${width.toStringAsFixed(1)}x$containerHeight');
-    
+
     return Size(width, containerHeight);
   }
 

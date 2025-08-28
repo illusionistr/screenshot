@@ -28,7 +28,6 @@ class BackgroundImageGallery extends ConsumerWidget {
         ),
       ),
       error: (error, _) {
-        print(error);
         return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

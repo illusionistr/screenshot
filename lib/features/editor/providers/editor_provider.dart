@@ -579,13 +579,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   void applySelectedElementFormattingToAllScreens() {
-    print('\n=== APPLY TO ALL DEBUG START ===');
-
     if (state.textElementState.selectedType == null ||
         state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
-      print(
-          'Early return: selectedType=${state.textElementState.selectedType}, selectedScreenIndex=${state.selectedScreenIndex}, screensLength=${state.screens.length}');
       return;
     }
 
@@ -594,15 +590,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final sourceTextConfig = currentScreen.textConfig;
     final sourceElement = sourceTextConfig.getElement(selectedType);
 
-    print('Selected type: $selectedType');
-    print('Current screen index: ${state.selectedScreenIndex}');
-    print('Source element exists: ${sourceElement != null}');
-    print('Source element visible: ${sourceElement?.isVisible}');
-    print(
-        'Source text config elements: ${sourceTextConfig.elements.keys.toList()}');
-
     if (sourceElement == null) {
-      print('Early return: sourceElement is null');
       return;
     }
 
@@ -610,41 +598,23 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final isGrouped = sourceTextConfig.hasBothElementsVisible &&
         sourceTextConfig.textGrouping == TextGrouping.together;
 
-    print(
-        'Has both elements visible: ${sourceTextConfig.hasBothElementsVisible}');
-    print('Text grouping: ${sourceTextConfig.textGrouping}');
-    print('Is grouped: $isGrouped');
-
     // Apply formatting to all screens
-    print('\nProcessing ${state.screens.length} screens...');
     final updatedScreens = state.screens.map((screen) {
       final screenIndex = state.screens.indexOf(screen);
-      print('\n--- Processing screen $screenIndex ---');
 
       var updatedTextConfig = screen.textConfig;
-      print(
-          'Original screen $screenIndex elements: ${updatedTextConfig.elements.keys.toList()}');
 
       if (isGrouped) {
-        print('Using GROUPED logic for screen $screenIndex');
         // When grouped, copy the entire text configuration including grouping and both elements
         final sourceTitleElement =
             sourceTextConfig.getElement(TextFieldType.title);
         final sourceSubtitleElement =
             sourceTextConfig.getElement(TextFieldType.subtitle);
 
-        print(
-            'Source title element: exists=${sourceTitleElement != null}, visible=${sourceTitleElement?.isVisible}');
-        print(
-            'Source subtitle element: exists=${sourceSubtitleElement != null}, visible=${sourceSubtitleElement?.isVisible}');
-
         // Update or create title element (only if it's visible in source)
         if (sourceTitleElement != null && sourceTitleElement.isVisible) {
-          print('Processing title element for screen $screenIndex');
           final existingTitle =
               updatedTextConfig.getElement(TextFieldType.title);
-          print(
-              'Existing title on screen $screenIndex: ${existingTitle != null}');
 
           final updatedTitle = existingTitle != null
               ? existingTitle.copyWith(
@@ -665,22 +635,12 @@ class EditorNotifier extends StateNotifier<EditorState> {
                   verticalPosition: sourceTitleElement.verticalPosition,
                   isVisible: sourceTitleElement.isVisible,
                 );
-          print(
-              'Created/updated title element: id=${updatedTitle.id}, content="${updatedTitle.content}", visible=${updatedTitle.isVisible}');
 
           if (existingTitle != null) {
             updatedTextConfig = updatedTextConfig.updateElement(updatedTitle);
-            print('Updated existing title element');
           } else {
             updatedTextConfig = updatedTextConfig.addElement(updatedTitle);
-            print('Added new title element');
           }
-
-          print(
-              'After title update, screen $screenIndex elements: ${updatedTextConfig.elements.keys.toList()}');
-        } else {
-          print(
-              'Skipping title element for screen $screenIndex - not visible in source');
         }
 
         // Update or create subtitle element (only if it's visible in source)
@@ -706,42 +666,23 @@ class EditorNotifier extends StateNotifier<EditorState> {
                   verticalPosition: sourceSubtitleElement.verticalPosition,
                   isVisible: sourceSubtitleElement.isVisible,
                 );
-          print(
-              'Created/updated subtitle element: id=${updatedSubtitle.id}, content="${updatedSubtitle.content}", visible=${updatedSubtitle.isVisible}');
 
           if (existingSubtitle != null) {
             updatedTextConfig =
                 updatedTextConfig.updateElement(updatedSubtitle);
-            print('Updated existing subtitle element');
           } else {
             updatedTextConfig = updatedTextConfig.addElement(updatedSubtitle);
-            print('Added new subtitle element');
           }
-
-          print(
-              'After subtitle update, screen $screenIndex elements: ${updatedTextConfig.elements.keys.toList()}');
-        } else {
-          print(
-              'Skipping subtitle element for screen $screenIndex - not visible in source');
         }
 
         // Apply the grouping setting
-        print(
-            'Applying grouping ${sourceTextConfig.textGrouping} to screen $screenIndex');
         updatedTextConfig =
             updatedTextConfig.updateGrouping(sourceTextConfig.textGrouping);
-        print(
-            'Final screen $screenIndex elements: ${updatedTextConfig.elements.keys.toList()}');
-        print(
-            'Final screen $screenIndex grouping: ${updatedTextConfig.textGrouping}');
 
         return screen.copyWith(textConfig: updatedTextConfig);
       } else {
-        print('Using SINGLE ELEMENT logic for screen $screenIndex');
         // When not grouped, use original logic for single element
         final existingElement = updatedTextConfig.getElement(selectedType);
-        print(
-            'Existing element on screen $screenIndex: ${existingElement != null}');
 
         if (existingElement != null) {
           // Update existing element with new formatting
@@ -754,11 +695,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
             verticalPosition: sourceElement.verticalPosition,
             isVisible: sourceElement.isVisible,
           );
-          print(
-              'Updated existing element: id=${updatedElement.id}, content="${updatedElement.content}", visible=${updatedElement.isVisible}');
           updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
-          print(
-              'After single element update, screen $screenIndex elements: ${updatedTextConfig.elements.keys.toList()}');
           return screen.copyWith(textConfig: updatedTextConfig);
         } else {
           // Create new element with source formatting but default content
@@ -771,31 +708,13 @@ class EditorNotifier extends StateNotifier<EditorState> {
             verticalPosition: sourceElement.verticalPosition,
             isVisible: sourceElement.isVisible,
           );
-          print(
-              'Created new element: id=${newElement.id}, content="${newElement.content}", visible=${newElement.isVisible}');
           updatedTextConfig = updatedTextConfig.addElement(newElement);
-          print(
-              'After new element creation, screen $screenIndex elements: ${updatedTextConfig.elements.keys.toList()}');
           return screen.copyWith(textConfig: updatedTextConfig);
         }
       }
     }).toList();
 
-    print('\n=== UPDATING STATE ===');
-    print('Number of updated screens: ${updatedScreens.length}');
-    for (int i = 0; i < updatedScreens.length; i++) {
-      final screen = updatedScreens[i];
-      print(
-          'Updated screen $i text elements: ${screen.textConfig.elements.keys.toList()}');
-      print('Updated screen $i grouping: ${screen.textConfig.textGrouping}');
-      final visibleElements = screen.textConfig.visibleElements;
-      print(
-          'Updated screen $i visible elements: ${visibleElements.map((e) => '${e.type}-"${e.content}"').toList()}');
-    }
-
     state = state.copyWith(screens: updatedScreens);
-    print('State updated successfully');
-    print('=== APPLY TO ALL DEBUG END ===\n');
   }
 
   int getAffectedScreensCount(TextFieldType type) {
@@ -1040,7 +959,6 @@ class EditorNotifier extends StateNotifier<EditorState> {
       );
     } catch (e) {
       // Log error - in a real app, you might want to show a user-friendly error message
-      print('Error applying layout to current screen: $e');
       // For now, silently fail - the UI will remain unchanged
     }
   }
@@ -1063,7 +981,6 @@ class EditorNotifier extends StateNotifier<EditorState> {
           updatedScreens.add(updatedScreen.copyWith(layoutId: layoutId));
         } catch (e) {
           // If applying to one screen fails, keep the original screen
-          print('Error applying layout to screen ${screen.id}: $e');
           updatedScreens.add(screen);
         }
       }
@@ -1074,7 +991,6 @@ class EditorNotifier extends StateNotifier<EditorState> {
       );
     } catch (e) {
       // Log error - in a real app, you might want to show a user-friendly error message
-      print('Error applying layout to all screens: $e');
       // For now, silently fail - the UI will remain unchanged
     }
   }

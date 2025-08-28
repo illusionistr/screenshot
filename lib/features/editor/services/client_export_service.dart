@@ -339,7 +339,6 @@ class ClientExportService {
     try {
       // Load device frame asset
       final frameImage = await _loadImageFromAsset(assetPath);
-      print('Frame image: $frameImage');
       if (frameImage != null) {
         // Calculate scaling factor to fit frame to export size
         final frameAspectRatio = frameImage.width / frameImage.height;
@@ -404,7 +403,7 @@ class ClientExportService {
         return;
       }
     } catch (e) {
-      print('Failed to load device frame asset: $e');
+      // Failed to load device frame asset
     }
 
     // Fallback to generic frame if asset loading fails
@@ -507,7 +506,7 @@ class ClientExportService {
         return;
       }
     } catch (e) {
-      print('Failed to load screenshot for export: $e');
+      // Failed to load screenshot for export
     }
 
     // Fallback: Draw placeholder when screenshot fails to load
@@ -598,7 +597,7 @@ class ClientExportService {
 
       return frame.image;
     } catch (e) {
-      print('Error loading asset image: $e');
+      // Error loading asset image
       return null;
     }
   }
@@ -698,7 +697,7 @@ class ClientExportService {
         return frame.image;
       }
     } catch (e) {
-      print('Error loading image from network: $e');
+      // Error loading image from network
     }
 
     return null;

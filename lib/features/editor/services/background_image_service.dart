@@ -110,9 +110,6 @@ class BackgroundImageService {
 
       return backgroundImage.copyWith(id: docRef.id);
     } catch (e) {
-      if (kDebugMode) {
-        print('Error uploading background image: $e');
-      }
       rethrow;
     }
   }
@@ -147,9 +144,6 @@ class BackgroundImageService {
       // Delete from Firestore
       await doc.reference.delete();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error deleting background image: $e');
-      }
       rethrow;
     }
   }

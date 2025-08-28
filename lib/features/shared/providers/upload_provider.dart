@@ -298,7 +298,6 @@ class UploadCoordinator extends _$UploadCoordinator {
       );
     } catch (e) {
       // Log error but don't fail the upload
-      print('Warning: Failed to sync screenshot with project: $e');
     }
   }
 }

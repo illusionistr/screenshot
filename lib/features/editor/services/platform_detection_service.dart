@@ -54,16 +54,13 @@ class PlatformDetectionService {
   static double getActualDeviceAspectRatio(String deviceId, {bool isLandscape = false}) {
     final device = DevicesData.getDeviceById(deviceId);
     if (device == null) {
-      print('DEBUG PlatformDetectionService: Device not found for id=$deviceId, using fallback iPhone ratio');
       // Fallback to iPhone aspect ratio
       return isLandscape ? 2532 / 1170 : 1170 / 2532;
     }
 
     final aspectRatio = device.screenWidth / device.screenHeight;
     final finalRatio = isLandscape ? 1 / aspectRatio : aspectRatio;
-    
-    print('DEBUG PlatformDetectionService: deviceId=$deviceId, name="${device.name}", screenDimensions=${device.screenWidth}x${device.screenHeight}, aspectRatio=${finalRatio.toStringAsFixed(3)}, isLandscape=$isLandscape');
-    
+
     return finalRatio;
   }
 

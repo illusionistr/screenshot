@@ -125,9 +125,7 @@ class LayoutRenderer {
       // Apply scale from layout
       final scaledWidth = baseWidth * layout.deviceScale;
       final scaledHeight = baseHeight * layout.deviceScale;
-      
-      print('DEBUG LayoutRenderer: deviceId=$deviceId, aspectRatio=${actualDeviceAspectRatio.toStringAsFixed(3)}, baseSize=${baseWidth.toStringAsFixed(1)}x${baseHeight.toStringAsFixed(1)}, scaledSize=${scaledWidth.toStringAsFixed(1)}x${scaledHeight.toStringAsFixed(1)}, scale=${layout.deviceScale}');
-      
+
       return Size(scaledWidth, scaledHeight);
     }
     

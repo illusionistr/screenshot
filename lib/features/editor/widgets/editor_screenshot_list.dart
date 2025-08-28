@@ -278,15 +278,12 @@ class _ScreenshotThumbnailState extends State<_ScreenshotThumbnail>
         // Keep height fixed and adjust width based on aspect ratio
         containerHeight = 200.0; // Fixed height
         containerWidth = containerHeight * deviceAspectRatio; // Dynamic width
-        
-        print('DEBUG ScreenshotThumbnail: deviceId=${selectedDevice.id}, name="${selectedDevice.name}", aspectRatio=${deviceAspectRatio.toStringAsFixed(3)}, thumbnailSize=${containerWidth.toStringAsFixed(1)}x${containerHeight.toStringAsFixed(1)}');
 
         // Apply reasonable bounds for width (prevent extremely narrow/wide thumbnails)
         containerWidth = containerWidth.clamp(60.0, 400.0);
 
       } catch (e) {
         // Fallback to default dimensions if device not found
-        print('Device not found, falling back to default dimensions');
         containerHeight = 200;
       }
     }

@@ -13,8 +13,6 @@ class FrameRenderer {
     required Size containerSize,
     required String deviceId,
   }) {
-    print(
-        'DEBUG: renderGenericFrame called with containerSize: $containerSize, deviceId: $deviceId');
     final device = DeviceService.getDeviceById(deviceId);
     if (device == null) {
       return child;
@@ -54,7 +52,6 @@ class FrameRenderer {
   }) async {
     final device = DeviceService.getDeviceById(deviceId);
     final frameVariant = await DeviceService.getDefaultFrameVariant(deviceId);
-    print('Frame variant: $frameVariant');
     // If we have a real frame asset, try to use it
     if (frameVariant != null &&
         !frameVariant.isGeneric &&
@@ -93,16 +90,9 @@ class FrameRenderer {
     String? screenshotPath,
     Widget? placeholder,
   }) {
-    print('DEBUG _renderRealFrame: assetPath=$assetPath');
-
     // Calculate scale factors from original frame dimensions to container dimensions
     final scaleX = containerSize.width / device.frameWidth;
     final scaleY = containerSize.height / device.frameHeight;
-
-    print(
-        'DEBUG _renderRealFrame: Original frame=${device.frameWidth}x${device.frameHeight}, Container=${containerSize.width}x${containerSize.height}');
-    print(
-        'DEBUG _renderRealFrame: Scale factors: scaleX=$scaleX, scaleY=$scaleY');
 
     return Stack(
       clipBehavior: Clip.none,
@@ -113,9 +103,6 @@ class FrameRenderer {
           width: containerSize.width,
           height: containerSize.height,
           fit: BoxFit.cover,
-          // errorBuilder: (context, error, stackTrace) {
-          //   print('DEBUG _renderRealFrame: error=$error');
-          //   // Fallback to generic frame if asset fails to load
           //   final content = screenshotPath != null
           //       ? Image.network(
           //           screenshotPath,
@@ -150,7 +137,6 @@ class FrameRenderer {
                       screenshotPath,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
-                        print('DEBUG _renderRealFrame: error=$error');
                         return placeholder ??
                             _buildDefaultScreenshotPlaceholder(device);
                       },
@@ -253,13 +239,8 @@ class FrameRenderer {
     Widget? screenshotWidget,
     Widget? placeholder,
   }) async {
-    print(
-        'DEBUG buildSmartFrameContainer: deviceId=$deviceId, selectedVariantId=$selectedVariantId');
-
     final device = DeviceService.getDeviceById(deviceId);
     if (device == null) {
-      print(
-          'DEBUG buildSmartFrameContainer: Device not found for id=$deviceId');
       return Container(
         width: containerSize.width,
         height: containerSize.height,
@@ -289,30 +270,19 @@ class FrameRenderer {
     // Get the best available frame variant
     FrameVariantModel? frameVariant;
     if (selectedVariantId != null && selectedVariantId.isNotEmpty) {
-      print(
-          'DEBUG buildSmartFrameContainer: Getting frame variant for selectedVariantId=$selectedVariantId');
       frameVariant = await DeviceService.getFrameVariantWithFallback(
           deviceId, selectedVariantId);
     }
     frameVariant ??= await DeviceService.getDefaultFrameVariant(deviceId);
 
-    print(
-        'DEBUG buildSmartFrameContainer: frameVariant=${frameVariant?.id}, isGeneric=${frameVariant?.isGeneric}, assetPath=${frameVariant?.assetPath}');
-
     // Render the appropriate frame
     if (frameVariant != null &&
         !frameVariant.isGeneric &&
         frameVariant.assetPath != null) {
-      print(
-          'DEBUG buildSmartFrameContainer: Checking asset availability for ${frameVariant.assetPath}');
       // Check if the asset is actually available
       final isAssetAvailable =
           await FrameAssetService.isFrameAssetAvailable(frameVariant.assetPath);
-      print(
-          'DEBUG buildSmartFrameContainer: Asset available: $isAssetAvailable');
       if (isAssetAvailable) {
-        print(
-            'DEBUG buildSmartFrameContainer: Rendering real frame with asset ${frameVariant.assetPath}');
         return _renderRealFrame(
           assetPath: frameVariant.assetPath!,
           device: device,
@@ -324,7 +294,6 @@ class FrameRenderer {
     }
 
     // Fallback to generic frame
-    print('DEBUG buildSmartFrameContainer: Falling back to generic frame');
     return renderGenericFrame(
       child: content,
       containerSize: containerSize,

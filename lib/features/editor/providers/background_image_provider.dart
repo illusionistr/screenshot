@@ -107,7 +107,6 @@ class BackgroundImageNotifier extends StateNotifier<AsyncValue<List<BackgroundIm
       await _service.deleteBackgroundImage(imageId);
     } catch (e) {
       // Handle error - could show snackbar or update error state
-      debugPrint('Error deleting background image: $e');
       rethrow;
     }
   }

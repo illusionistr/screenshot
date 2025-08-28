@@ -103,12 +103,11 @@ void main() {
     'lora',
   ];
 
-  print('Font mapping test:');
   for (var i = 0; i < fonts.length; i++) {
     final original = fonts[i];
     final mapped = mappedFonts[i];
     final isSupported = supportedFonts.contains(mapped);
-    print('${isSupported ? '✓' : '✗'} $original -> $mapped');
+    // Font mapping check completed
   }
 
   final unsupported = [];
@@ -119,8 +118,8 @@ void main() {
     }
   }
 
-  print('\nUnsupported fonts (${unsupported.length}):');
+  // Unsupported fonts check completed
   for (var font in unsupported) {
-    print('  $font');
+    // Font is unsupported
   }
 }

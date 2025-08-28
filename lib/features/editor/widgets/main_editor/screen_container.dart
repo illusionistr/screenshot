@@ -59,8 +59,6 @@ class ScreenContainer extends StatelessWidget {
       deviceId,
       isLandscape: isLandscape,
     );
-    
-    print('DEBUG ScreenContainer: deviceId=$deviceId, containerSize=${containerSize.width.toStringAsFixed(1)}x${containerSize.height.toStringAsFixed(1)}');
 
     return Column(
       children: [
@@ -249,8 +247,6 @@ class ScreenContainer extends StatelessWidget {
       deviceId: deviceId,
       isLandscape: isLandscape,
     );
-    
-    print('DEBUG ScreenContainer Layout: deviceId=$deviceId, frameSize=${frameSize.width.toStringAsFixed(1)}x${frameSize.height.toStringAsFixed(1)}, deviceSize=${deviceSize.width.toStringAsFixed(1)}x${deviceSize.height.toStringAsFixed(1)}');
 
     return Stack(
       children: [
