@@ -140,21 +140,21 @@ class ScreenContainer extends StatelessWidget {
       containerSize.height,
     );
 
-    // Create the content that goes inside the frame (background + screenshot)
-    final Widget frameContent = _buildFrameContent();
+    // Create the placeholder content that goes inside the frame
+    final Widget placeholderContent = _buildPlaceholderFrameContent();
 
     // Always use layout-aware frame rendering since we now guarantee a layout
     return _buildLayoutAwareFrame(
       frameSize: frameSize,
-      frameContent: frameContent,
+      placeholderContent: placeholderContent,
     );
   }
 
-  Widget _buildFrameContent() {
+  Widget _buildPlaceholderFrameContent() {
     // Always show background with placeholder - let FrameRenderer handle the screenshot
     return Container(
       decoration: _getBackgroundDecoration(),
-      child: child ?? _buildPlaceholderContent(),
+      child: child ?? _buildContentPlaceholder(),
     );
   }
 
@@ -195,7 +195,7 @@ class ScreenContainer extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholderContent() {
+  Widget _buildContentPlaceholder() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -209,7 +209,7 @@ class ScreenContainer extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            assignedScreenshot != null ? 'Screenshot' : 'No Screenshot fsdfe',
+            assignedScreenshot != null ? 'Screenshot' : 'No Screenshot',
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 14,
@@ -234,7 +234,7 @@ class ScreenContainer extends StatelessWidget {
 
   Widget _buildLayoutAwareFrame({
     required Size frameSize,
-    required Widget frameContent,
+    required Widget placeholderContent,
   }) {
     // Get the layout configuration (will always return a valid layout)
     final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
@@ -242,7 +242,7 @@ class ScreenContainer extends StatelessWidget {
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, frameSize);
     final deviceSize = LayoutRenderer.calculateDeviceSize(
-      config, 
+      config,
       frameSize,
       deviceId: deviceId,
       isLandscape: isLandscape,
@@ -251,7 +251,7 @@ class ScreenContainer extends StatelessWidget {
     return Stack(
       children: [
         // Background content
-        // Positioned.fill(child: frameContent),
+        // Positioned.fill(child: placeholderContent),
 
         // Device frame with screenshot - now using real/generic frames
         Positioned(
@@ -273,11 +273,11 @@ class ScreenContainer extends StatelessWidget {
                         assignedScreenshot!.storageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return frameContent;
+                          return placeholderContent;
                         },
                       )
                     : null,
-                placeholder: frameContent,
+                placeholder: placeholderContent,
               ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -294,7 +294,7 @@ class ScreenContainer extends StatelessWidget {
                 if (snapshot.hasError) {
                   // Fallback to generic frame on error
                   return FrameRenderer.renderGenericFrame(
-                    child: frameContent,
+                    child: placeholderContent,
                     containerSize: deviceSize,
                     deviceId: deviceId,
                   );
@@ -302,7 +302,7 @@ class ScreenContainer extends StatelessWidget {
 
                 return snapshot.data ??
                     FrameRenderer.renderGenericFrame(
-                      child: frameContent,
+                      child: placeholderContent,
                       containerSize: deviceSize,
                       deviceId: deviceId,
                     );
