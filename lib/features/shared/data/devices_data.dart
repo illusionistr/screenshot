@@ -195,7 +195,7 @@ class DevicesData {
       frameHeight: 2400,
       screenWidth: 1000,
       screenHeight: 2200,
-      screenPosition: Offset(100, 100),
+      screenPosition: Offset(90, 160),
       availableFrames: ['obsidian', 'hazel', 'rose'],
       appStoreDisplaySize: '6.2-inch',
     ),

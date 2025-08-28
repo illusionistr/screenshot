@@ -97,30 +97,7 @@ class FrameRenderer {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // Device frame
-        Image.asset(
-          assetPath,
-          width: containerSize.width,
-          height: containerSize.height,
-          fit: BoxFit.cover,
-          //   final content = screenshotPath != null
-          //       ? Image.network(
-          //           screenshotPath,
-          //           fit: BoxFit.cover,
-          //           errorBuilder: (context, error, stackTrace) {
-          //             return placeholder ??
-          //                 _buildDefaultScreenshotPlaceholder(device);
-          //           },
-          //         )
-          //       : placeholder ?? _buildDefaultScreenshotPlaceholder(device);
-          //   return renderGenericFrame(
-          //     child: content,
-          //     containerSize: containerSize,
-          //     deviceId: device.id,
-          //   );
-          // },
-        ),
-        // Screenshot content positioned over device screen area
+        // Screenshot content positioned as background layer
         if (screenshotPath != null || placeholder != null)
           Positioned(
             // Scale the screen position coordinates by the scale factors
@@ -135,7 +112,7 @@ class FrameRenderer {
               child: screenshotPath != null
                   ? Image.network(
                       screenshotPath,
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return placeholder ??
                             _buildDefaultScreenshotPlaceholder(device);
@@ -144,6 +121,13 @@ class FrameRenderer {
                   : placeholder ?? _buildDefaultScreenshotPlaceholder(device),
             ),
           ),
+        // Device frame on top (foreground layer)
+        Image.asset(
+          assetPath,
+          width: containerSize.width,
+          height: containerSize.height,
+          fit: BoxFit.cover,
+        ),
       ],
     );
   }
