@@ -12,8 +12,11 @@ import '../../utils/layout_renderer.dart';
 import '../../utils/platform_dimension_calculator.dart';
 import '../../utils/text_renderer.dart';
 import 'screen_management_buttons.dart';
+import '../../services/export_service.dart';
 
 class ScreenContainer extends StatelessWidget {
+  // Key used for capturing this screen via RepaintBoundary
+  final GlobalKey _repaintKey = GlobalKey();
   final String screenId;
   final String deviceId;
   final bool isSelected;
@@ -32,8 +35,8 @@ class ScreenContainer extends StatelessWidget {
   final bool showDeleteButton;
   final Widget? child;
 
-  const ScreenContainer({
-    super.key,
+  ScreenContainer({
+    Key? key,
     required this.screenId,
     required this.deviceId,
     this.isSelected = false,
@@ -51,7 +54,7 @@ class ScreenContainer extends StatelessWidget {
     this.onDelete,
     this.showDeleteButton = true,
     this.child,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -64,57 +67,60 @@ class ScreenContainer extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: onTap,
-          child: Container(
-            width: containerSize.width,
-            height: containerSize.height,
-            decoration: _getMainContainerDecoration(context),
-            child: Stack(
-              children: [
-                // Frame and screenshot layer
-                Positioned.fill(
-                  child: Container(
-                    child: _buildFrameWithContent(),
-                  ),
-                ),
-
-                // Text overlay layer
-                if (textConfig != null)
+          child: RepaintBoundary(
+            key: _repaintKey,
+            child: Container(
+              width: containerSize.width,
+              height: containerSize.height,
+              decoration: _getMainContainerDecoration(context),
+              child: Stack(
+                children: [
+                  // Frame and screenshot layer
                   Positioned.fill(
                     child: Container(
-                      margin: const EdgeInsets.all(16),
-                      child: _buildTextOverlay(
-                        textConfig!,
-                        Size(
-                          containerSize.width - 32, // Account for margins
-                          containerSize.height - 32,
-                        ),
-                      ),
+                      child: _buildFrameWithContent(),
                     ),
                   ),
 
-                // Selection indicator
-                if (isSelected)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Selected',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
+                  // Text overlay layer
+                  if (textConfig != null)
+                    Positioned.fill(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        child: _buildTextOverlay(
+                          textConfig!,
+                          Size(
+                            containerSize.width - 32, // Account for margins
+                            containerSize.height - 32,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+
+                  // Selection indicator
+                  if (isSelected)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Selected',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -123,6 +129,24 @@ class ScreenContainer extends StatelessWidget {
           onExpand: onExpand,
           onDuplicate: onDuplicate,
           onDelete: onDelete,
+          onExport: () async {
+            try {
+              await ExportService.exportScreenAsPng(
+                repaintBoundaryKey: _repaintKey,
+                deviceId: deviceId,
+                isLandscape: isLandscape,
+                filename: '${project?.appName ?? 'screen'}_$screenId.png',
+              );
+              // Optional: feedback
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Export started')),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Export failed: $e')),
+              );
+            }
+          },
           showDeleteButton: showDeleteButton,
         ),
       ],

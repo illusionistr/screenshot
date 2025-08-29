@@ -5,6 +5,7 @@ class ScreenManagementButtons extends StatelessWidget {
   final VoidCallback? onExpand;
   final VoidCallback? onDuplicate;
   final VoidCallback? onDelete;
+  final VoidCallback? onExport;
   final bool showDeleteButton;
 
   const ScreenManagementButtons({
@@ -13,6 +14,7 @@ class ScreenManagementButtons extends StatelessWidget {
     this.onExpand,
     this.onDuplicate,
     this.onDelete,
+    this.onExport,
     this.showDeleteButton = true,
   });
 
@@ -37,6 +39,11 @@ class ScreenManagementButtons extends StatelessWidget {
             tooltip: 'Long press to drag and reorder',
             onPressed: null, // No click action needed for drag
             color: Colors.grey.shade500,
+          ),
+          _ManagementButton(
+            icon: Icons.download,
+            tooltip: 'Export PNG',
+            onPressed: onExport,
           ),
           _ManagementButton(
             icon: Icons.fullscreen,
