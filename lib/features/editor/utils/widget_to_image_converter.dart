@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -58,7 +59,7 @@ class WidgetToImageConverter {
     // Build the element tree
     final pipelineOwner = PipelineOwner();
     final buildOwner = BuildOwner(focusManager: FocusManager());
-    
+
     final element = repaintBoundary.createElement();
     buildOwner.lockState(() {
       element.mount(null, null);
@@ -67,7 +68,7 @@ class WidgetToImageConverter {
     // Force a frame to ensure everything is laid out
     buildOwner.buildScope(element);
     buildOwner.finalizeTree();
-    
+
     pipelineOwner.rootNode = renderView;
     renderView.prepareInitialFrame();
 
@@ -100,11 +101,11 @@ class WidgetToImageConverter {
     // Capture the image
     final image = await renderRepaintBoundary!.toImage(pixelRatio: pixelRatio);
     final byteData = await image.toByteData(format: format);
-    
+
     // Clean up
     element.unmount();
     image.dispose();
-    
+
     return byteData!.buffer.asUint8List();
   }
 
@@ -112,17 +113,17 @@ class WidgetToImageConverter {
   static Future<Uint8List> convertWidgetToImageSimple({
     required Widget widget,
     required Size targetSize,
-    double pixelRatio = 3.0, // High DPI for export quality
+    double pixelRatio = 3.0, // High DPI for quality
     ui.ImageByteFormat format = ui.ImageByteFormat.png,
   }) async {
     final completer = Completer<Uint8List>();
-    
+
     // Create a temporary overlay entry to render the widget off-screen
     OverlayEntry? overlayEntry;
-    
+
     final repaintBoundary = RepaintBoundary(
       key: GlobalKey(),
-      child: Container(
+      child: SizedBox(
         width: targetSize.width,
         height: targetSize.height,
         child: MediaQuery(
@@ -148,11 +149,12 @@ class WidgetToImageConverter {
 
     // We'll need access to an overlay - this approach requires a BuildContext
     // For now, let's return to the direct Canvas approach but use the widget system
-    
-    throw UnimplementedError('This approach requires BuildContext - use convertWidgetToCanvas instead');
+
+    throw UnimplementedError(
+        'This approach requires BuildContext - use convertWidgetToCanvas instead');
   }
 
-  /// Convert widget to Canvas drawing commands for direct export
+  /// Convert widget to Canvas drawing commands for direct rendering
   static Future<void> renderWidgetToCanvas({
     required Widget widget,
     required Canvas canvas,
@@ -161,7 +163,7 @@ class WidgetToImageConverter {
   }) async {
     // This is a simplified approach that converts common widgets to Canvas operations
     // For complex widgets, we'd need a full widget-to-canvas converter
-    
+
     if (widget is Container) {
       await _renderContainerToCanvas(widget, canvas, targetSize);
     } else if (widget is Stack) {
@@ -172,31 +174,30 @@ class WidgetToImageConverter {
     // Add more widget types as needed
   }
 
-  static Future<void> _renderContainerToCanvas(Container container, Canvas canvas, Size size) async {
+  static Future<void> _renderContainerToCanvas(
+      Container container, Canvas canvas, Size size) async {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    
+
     if (container.decoration != null && container.decoration is BoxDecoration) {
       final decoration = container.decoration as BoxDecoration;
-      
+
       final paint = Paint();
-      
+
       if (decoration.color != null) {
         paint.color = decoration.color!;
         canvas.drawRect(rect, paint);
       }
-      
+
       if (decoration.border != null) {
         final borderPaint = Paint()
           ..color = decoration.border!.top.color
           ..strokeWidth = decoration.border!.top.width
           ..style = PaintingStyle.stroke;
-        
+
         if (decoration.borderRadius != null) {
           final borderRadius = decoration.borderRadius as BorderRadius;
           canvas.drawRRect(
-            RRect.fromRectAndRadius(rect, borderRadius.topLeft), 
-            borderPaint
-          );
+              RRect.fromRectAndRadius(rect, borderRadius.topLeft), borderPaint);
         } else {
           canvas.drawRect(rect, borderPaint);
         }
@@ -204,7 +205,8 @@ class WidgetToImageConverter {
     }
   }
 
-  static Future<void> _renderStackToCanvas(Stack stack, Canvas canvas, Size size) async {
+  static Future<void> _renderStackToCanvas(
+      Stack stack, Canvas canvas, Size size) async {
     // Render children in order
     for (final child in stack.children) {
       await renderWidgetToCanvas(
@@ -215,7 +217,8 @@ class WidgetToImageConverter {
     }
   }
 
-  static Future<void> _renderColumnToCanvas(Column column, Canvas canvas, Size size) async {
+  static Future<void> _renderColumnToCanvas(
+      Column column, Canvas canvas, Size size) async {
     // This would need layout calculations
     // For now, just render children
     for (final child in column.children) {

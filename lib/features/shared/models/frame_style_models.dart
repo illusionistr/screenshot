@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 /// Configuration for frame styling at the project level
@@ -71,7 +72,7 @@ class DeviceFrameOverride {
   }
 }
 
-/// Canvas-specific shadow properties for export rendering
+  /// Canvas-specific shadow properties for high-quality rendering
 class CanvasShadowSpec {
   final Color color;
   final double blurRadius;
@@ -105,7 +106,7 @@ class ComputedFrameStyle {
   final double borderWidth;
   final Color borderColor;
   final List<BoxShadow> boxShadows; // For widgets
-  final CanvasShadowSpec canvasShadow; // For export canvas
+  final CanvasShadowSpec canvasShadow; // For high-quality canvas rendering
 
   const ComputedFrameStyle({
     required this.borderRadius,

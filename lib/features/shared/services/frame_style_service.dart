@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../constants/default_frame_styles.dart';
 import '../models/frame_style_models.dart';
 import 'device_service.dart';
 
-/// Service for managing frame styling across editor and export systems
+/// Service for managing frame styling across editor systems
 class FrameStyleService {
   FrameStyleService._();
 
@@ -15,43 +16,48 @@ class FrameStyleService {
   }) {
     // Use provided project config or default
     final config = projectConfig ?? DefaultFrameStyles.defaultProject;
-    
+
     // Get device information for context
     final device = DeviceService.getDeviceById(deviceId);
     final isTablet = device?.isTablet ?? false;
-    
+
     // Start with base project configuration
     double shadowIntensity = config.shadowIntensity;
     double borderThickness = config.borderThickness;
     double cornerRoundness = config.cornerRoundness;
     Color borderColor = config.borderColor;
-    
+
     // Apply device-specific overrides
-    final deviceOverride = config.deviceOverrides[deviceId] ?? 
-                          DefaultFrameStyles.getDeviceOverride(deviceId);
-    
+    final deviceOverride = config.deviceOverrides[deviceId] ??
+        DefaultFrameStyles.getDeviceOverride(deviceId);
+
     if (deviceOverride != null) {
-      shadowIntensity = deviceOverride.shadowIntensityOverride ?? shadowIntensity;
-      borderThickness = deviceOverride.borderThicknessOverride ?? borderThickness;
-      cornerRoundness = deviceOverride.cornerRoundnessOverride ?? cornerRoundness;
+      shadowIntensity =
+          deviceOverride.shadowIntensityOverride ?? shadowIntensity;
+      borderThickness =
+          deviceOverride.borderThicknessOverride ?? borderThickness;
+      cornerRoundness =
+          deviceOverride.cornerRoundnessOverride ?? cornerRoundness;
       borderColor = deviceOverride.borderColorOverride ?? borderColor;
     }
-    
+
     // Convert normalized values to pixel values based on device type
     final baseBorderRadius = isTablet ? 24.0 : 20.0;
     final maxBorderRadius = isTablet ? 32.0 : 28.0;
-    final borderRadius = baseBorderRadius + (cornerRoundness * (maxBorderRadius - baseBorderRadius));
-    
+    final borderRadius = baseBorderRadius +
+        (cornerRoundness * (maxBorderRadius - baseBorderRadius));
+
     final baseBorderWidth = isTablet ? 3.0 : 2.0;
     final maxBorderWidth = isTablet ? 6.0 : 5.0;
-    final borderWidth = baseBorderWidth + (borderThickness * (maxBorderWidth - baseBorderWidth));
-    
+    final borderWidth = baseBorderWidth +
+        (borderThickness * (maxBorderWidth - baseBorderWidth));
+
     // Create box shadows for Flutter widgets
     final boxShadows = _createBoxShadows(shadowIntensity);
-    
-    // Create canvas shadow spec for export
+
+    // Create canvas shadow spec for high-quality rendering
     final canvasShadow = _createCanvasShadow(shadowIntensity);
-    
+
     return ComputedFrameStyle(
       borderRadius: borderRadius,
       borderWidth: borderWidth,
@@ -71,18 +77,22 @@ class FrameStyleService {
     return [
       BoxShadow(
         color: Colors.black.withValues(alpha: intensity),
-        blurRadius: 8.0 + (intensity * 4.0), // 8-12 blur radius based on intensity
-        offset: Offset(0, 2.0 + (intensity * 2.0)), // 2-4 offset based on intensity
+        blurRadius:
+            8.0 + (intensity * 4.0), // 8-12 blur radius based on intensity
+        offset:
+            Offset(0, 2.0 + (intensity * 2.0)), // 2-4 offset based on intensity
       ),
     ];
   }
 
-  /// Create canvas shadow spec for export rendering
+  /// Create canvas shadow spec for high-quality rendering
   static CanvasShadowSpec _createCanvasShadow(double intensity) {
     return CanvasShadowSpec(
       color: Colors.black.withValues(alpha: intensity),
-      blurRadius: 8.0 + (intensity * 4.0), // 8-12 blur radius based on intensity
-      offset: Offset(0, 2.0 + (intensity * 2.0)), // 2-4 offset based on intensity
+      blurRadius:
+          8.0 + (intensity * 4.0), // 8-12 blur radius based on intensity
+      offset:
+          Offset(0, 2.0 + (intensity * 2.0)), // 2-4 offset based on intensity
     );
   }
 
@@ -96,9 +106,10 @@ class FrameStyleService {
     Map<String, DeviceFrameOverride> deviceOverrides = const {},
   }) {
     // Merge with default device overrides
-    final mergedOverrides = Map<String, DeviceFrameOverride>.from(DefaultFrameStyles.deviceOverrides);
+    final mergedOverrides = Map<String, DeviceFrameOverride>.from(
+        DefaultFrameStyles.deviceOverrides);
     mergedOverrides.addAll(deviceOverrides);
-    
+
     return ProjectFrameStyleConfig(
       projectId: projectId,
       borderColor: borderColor,
@@ -115,13 +126,16 @@ class FrameStyleService {
     double? borderThickness,
     double? cornerRoundness,
   }) {
-    if (shadowIntensity != null && (shadowIntensity < 0.0 || shadowIntensity > 1.0)) {
+    if (shadowIntensity != null &&
+        (shadowIntensity < 0.0 || shadowIntensity > 1.0)) {
       return false;
     }
-    if (borderThickness != null && (borderThickness < 0.0 || borderThickness > 1.0)) {
+    if (borderThickness != null &&
+        (borderThickness < 0.0 || borderThickness > 1.0)) {
       return false;
     }
-    if (cornerRoundness != null && (cornerRoundness < 0.0 || cornerRoundness > 1.0)) {
+    if (cornerRoundness != null &&
+        (cornerRoundness < 0.0 || cornerRoundness > 1.0)) {
       return false;
     }
     return true;
@@ -131,7 +145,7 @@ class FrameStyleService {
   static Map<String, double> getRecommendedParameters(String deviceId) {
     final device = DeviceService.getDeviceById(deviceId);
     final isTablet = device?.isTablet ?? false;
-    
+
     if (isTablet) {
       return {
         'shadowIntensity': 0.15,

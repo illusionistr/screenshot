@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../shared/models/device_model.dart';
+
 import '../../shared/data/devices_data.dart';
+import '../../shared/models/device_model.dart';
 import '../constants/platform_dimensions.dart';
 
 class PlatformDetectionService {
@@ -13,7 +14,7 @@ class PlatformDetectionService {
     return PlatformDimensions.getDeviceTypeFromDevice(device, isLandscape: isLandscape);
   }
 
-  // DEPRECATED: Use getPlatformContainerDimensions() for export compliance or getActualDeviceDimensions() for visual differentiation
+  // DEPRECATED: Use getPlatformContainerDimensions() for platform compliance or getActualDeviceDimensions() for visual differentiation
   static PlatformDimensions getDimensionsForDevice(String deviceId, {bool isLandscape = false}) {
     final device = DevicesData.getDeviceById(deviceId);
     if (device == null) {
@@ -24,7 +25,7 @@ class PlatformDetectionService {
   }
 
   /// Returns platform-compliant container dimensions for App Store/Google Play requirements
-  /// Use this for export operations and main editor containers that need to meet platform standards
+  /// Use this for main editor containers that need to meet platform standards
   static PlatformDimensions getPlatformContainerDimensions(String deviceId, {bool isLandscape = false}) {
     final device = DevicesData.getDeviceById(deviceId);
     if (device == null) {

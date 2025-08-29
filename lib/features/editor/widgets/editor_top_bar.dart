@@ -6,11 +6,11 @@ import '../../../core/constants/app_constants.dart';
 import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../providers/editor_provider.dart';
-import 'export/export_button.dart';
+// Export functionality removed - will be reimplemented
 
 class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
   const EditorTopBar({super.key, required this.project});
-  
+
   final ProjectModel project;
 
   @override
@@ -43,10 +43,10 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
           projectsState.when(
             data: (projects) {
               // Ensure current project is in the list (in case of data sync issues)
-              final availableProjects = projects.any((p) => p.id == project.id) 
-                  ? projects 
+              final availableProjects = projects.any((p) => p.id == project.id)
+                  ? projects
                   : [...projects, project];
-              
+
               return _DropdownButton(
                 value: project.id,
                 items: availableProjects.map((p) => p.id).toList(),
@@ -58,7 +58,8 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
                 },
                 formatter: (projectId) {
                   try {
-                    final selectedProject = availableProjects.firstWhere((p) => p.id == projectId);
+                    final selectedProject =
+                        availableProjects.firstWhere((p) => p.id == projectId);
                     return selectedProject.appName;
                   } catch (e) {
                     return projectId;
@@ -130,7 +131,8 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
                 ? editorState.availableDevices.map((d) => d.id).toList()
                 : [''],
             onChanged: editorNotifier.updateSelectedDevice,
-            formatter: (deviceId) => formatDeviceDisplay(deviceId, editorState.availableDevices),
+            formatter: (deviceId) =>
+                formatDeviceDisplay(deviceId, editorState.availableDevices),
           ),
 
           const SizedBox(width: 24),
@@ -147,9 +149,20 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
 
           const SizedBox(width: 12),
 
-          ExportButton(
-            editorState: editorState,
-            project: project,
+          // Export button removed - will be reimplemented
+          ElevatedButton.icon(
+            onPressed: null, // Disabled until reimplemented
+            icon: const Icon(Icons.download, size: 16),
+            label: const Text('Export'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade400,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
           ),
 
           const SizedBox(width: 16),
@@ -191,13 +204,14 @@ String formatLanguageDisplay(String languageCode) {
     'ja': 'Japanese (ja)',
     'ko': 'Korean (ko)',
   };
-  
-  return languageNames[languageCode] ?? '${languageCode.toUpperCase()} ($languageCode)';
+
+  return languageNames[languageCode] ??
+      '${languageCode.toUpperCase()} ($languageCode)';
 }
 
 String formatDeviceDisplay(String deviceId, List<dynamic> availableDevices) {
   if (deviceId.isEmpty) return 'No devices';
-  
+
   try {
     final device = availableDevices.firstWhere((d) => d.id == deviceId);
     return device.name;
@@ -242,7 +256,7 @@ class _DropdownButton extends StatelessWidget {
                     ),
                   ))
               .toList(),
-          onChanged: onChanged != null 
+          onChanged: onChanged != null
               ? (newValue) {
                   if (newValue != null) {
                     onChanged!(newValue);
@@ -258,7 +272,6 @@ class _DropdownButton extends StatelessWidget {
       ),
     );
   }
-  
 }
 
 class _TopBarButton extends StatelessWidget {
@@ -302,4 +315,3 @@ class _TopBarButton extends StatelessWidget {
     );
   }
 }
-
