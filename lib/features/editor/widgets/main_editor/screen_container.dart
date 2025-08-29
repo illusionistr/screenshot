@@ -14,9 +14,7 @@ import '../../utils/text_renderer.dart';
 import 'screen_management_buttons.dart';
 import '../../services/export_service.dart';
 
-class ScreenContainer extends StatelessWidget {
-  // Key used for capturing this screen via RepaintBoundary
-  final GlobalKey _repaintKey = GlobalKey();
+class ScreenContainer extends StatefulWidget {
   final String screenId;
   final String deviceId;
   final bool isSelected;
@@ -57,16 +55,54 @@ class ScreenContainer extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<ScreenContainer> createState() => _ScreenContainerState();
+}
+
+class _ScreenContainerState extends State<ScreenContainer> {
+  final GlobalKey _repaintKey = GlobalKey();
+  bool _exporting = false;
+
+  Future<void> _handleExport() async {
+    try {
+      setState(() => _exporting = true);
+      // Wait for the frame where selection/UI overlays are hidden
+      await WidgetsBinding.instance.endOfFrame;
+      await Future.delayed(const Duration(milliseconds: 16));
+
+      await ExportService.exportScreenAsPng(
+        repaintBoundaryKey: _repaintKey,
+        deviceId: widget.deviceId,
+        isLandscape: widget.isLandscape,
+        filename: '${widget.project?.appName ?? 'screen'}_${widget.screenId}.png',
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export started')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final containerSize = PlatformDimensionCalculator.calculateContainerSize(
-      deviceId,
-      isLandscape: isLandscape,
+      widget.deviceId,
+      isLandscape: widget.isLandscape,
     );
 
     return Column(
       children: [
         GestureDetector(
-          onTap: onTap,
+          onTap: widget.onTap,
           child: RepaintBoundary(
             key: _repaintKey,
             child: Container(
@@ -83,12 +119,12 @@ class ScreenContainer extends StatelessWidget {
                   ),
 
                   // Text overlay layer
-                  if (textConfig != null)
+                  if (widget.textConfig != null)
                     Positioned.fill(
                       child: Container(
                         margin: const EdgeInsets.all(16),
                         child: _buildTextOverlay(
-                          textConfig!,
+                          widget.textConfig!,
                           Size(
                             containerSize.width - 32, // Account for margins
                             containerSize.height - 32,
@@ -97,8 +133,8 @@ class ScreenContainer extends StatelessWidget {
                       ),
                     ),
 
-                  // Selection indicator
-                  if (isSelected)
+                  // Selection indicator (hidden during export)
+                  if (widget.isSelected && !_exporting)
                     Positioned(
                       top: 8,
                       right: 8,
@@ -125,29 +161,12 @@ class ScreenContainer extends StatelessWidget {
           ),
         ),
         ScreenManagementButtons(
-          onReorder: onReorder,
-          onExpand: onExpand,
-          onDuplicate: onDuplicate,
-          onDelete: onDelete,
-          onExport: () async {
-            try {
-              await ExportService.exportScreenAsPng(
-                repaintBoundaryKey: _repaintKey,
-                deviceId: deviceId,
-                isLandscape: isLandscape,
-                filename: '${project?.appName ?? 'screen'}_$screenId.png',
-              );
-              // Optional: feedback
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Export started')),
-              );
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Export failed: $e')),
-              );
-            }
-          },
-          showDeleteButton: showDeleteButton,
+          onReorder: widget.onReorder,
+          onExpand: widget.onExpand,
+          onDuplicate: widget.onDuplicate,
+          onDelete: widget.onDelete,
+          onExport: _handleExport,
+          showDeleteButton: widget.showDeleteButton,
         ),
       ],
     );
@@ -155,8 +174,8 @@ class ScreenContainer extends StatelessWidget {
 
   Widget _buildFrameWithContent() {
     final containerSize = PlatformDimensionCalculator.calculateContainerSize(
-      deviceId,
-      isLandscape: isLandscape,
+      widget.deviceId,
+      isLandscape: widget.isLandscape,
     );
 
     final frameSize = Size(
@@ -178,7 +197,7 @@ class ScreenContainer extends StatelessWidget {
     // Always show background with placeholder - let FrameRenderer handle the screenshot
     return Container(
       decoration: _getBackgroundDecoration(),
-      child: child ?? _buildContentPlaceholder(),
+      child: widget.child ?? _buildContentPlaceholder(),
     );
   }
 
@@ -186,9 +205,10 @@ class ScreenContainer extends StatelessWidget {
     // Base decoration with border and border radius
     final baseDecoration = BoxDecoration(
       border: Border.all(
-        color:
-            isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
-        width: isSelected ? 2 : 1,
+        color: (!_exporting && widget.isSelected)
+            ? Theme.of(context).primaryColor
+            : Colors.grey.shade300,
+        width: (!_exporting && widget.isSelected) ? 2 : 1,
       ),
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(8),
@@ -196,13 +216,13 @@ class ScreenContainer extends StatelessWidget {
       ),
     );
 
-    if (background == null) {
+    if (widget.background == null) {
       return baseDecoration.copyWith(color: Colors.grey.shade50);
     }
 
     // Use BackgroundRenderer to get the proper decoration and combine with border
     final backgroundDecoration =
-        BackgroundRenderer.renderBackground(background!);
+        BackgroundRenderer.renderBackground(widget.background!);
 
     return baseDecoration.copyWith(
       color: backgroundDecoration.color,
@@ -225,7 +245,7 @@ class ScreenContainer extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            assignedScreenshot != null
+            widget.assignedScreenshot != null
                 ? Icons.image_outlined
                 : Icons.smartphone,
             size: 48,
@@ -233,7 +253,7 @@ class ScreenContainer extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            assignedScreenshot != null ? 'Screenshot' : 'No Screenshot',
+            widget.assignedScreenshot != null ? 'Screenshot' : 'No Screenshot',
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 14,
@@ -242,7 +262,7 @@ class ScreenContainer extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            assignedScreenshot != null
+            widget.assignedScreenshot != null
                 ? 'Tap to select different screenshot'
                 : 'Select screen then pick a screenshot',
             textAlign: TextAlign.center,
@@ -261,15 +281,15 @@ class ScreenContainer extends StatelessWidget {
     required Widget placeholderContent,
   }) {
     // Get the layout configuration (will always return a valid layout)
-    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
+    final config = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
     // Calculate device frame position and size based on layout
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, frameSize);
     final deviceSize = LayoutRenderer.calculateDeviceSize(
       config,
       frameSize,
-      deviceId: deviceId,
-      isLandscape: isLandscape,
+      deviceId: widget.deviceId,
+      isLandscape: widget.isLandscape,
     );
 
     return Stack(
@@ -287,11 +307,11 @@ class ScreenContainer extends StatelessWidget {
                 180, // Convert degrees to radians
             child: FutureBuilder<Widget>(
               future: FrameRenderer.buildSmartFrameContainer(
-                deviceId: deviceId,
+                deviceId: widget.deviceId,
                 containerSize: deviceSize,
                 selectedVariantId:
-                    frameVariant.isNotEmpty ? frameVariant : null,
-                screenshotPath: assignedScreenshot?.storageUrl,
+                    widget.frameVariant.isNotEmpty ? widget.frameVariant : null,
+                screenshotPath: widget.assignedScreenshot?.storageUrl,
                 placeholder: placeholderContent,
               ),
               builder: (context, snapshot) {
@@ -311,7 +331,7 @@ class ScreenContainer extends StatelessWidget {
                   return FrameRenderer.renderGenericFrame(
                     content: placeholderContent,
                     containerSize: deviceSize,
-                    deviceId: deviceId,
+                    deviceId: widget.deviceId,
                   );
                 }
 
@@ -319,7 +339,7 @@ class ScreenContainer extends StatelessWidget {
                     FrameRenderer.renderGenericFrame(
                       content: placeholderContent,
                       containerSize: deviceSize,
-                      deviceId: deviceId,
+                      deviceId: widget.deviceId,
                     );
               },
             ),
@@ -360,21 +380,21 @@ class ScreenContainer extends StatelessWidget {
 
   Widget _buildTextOverlay(
       text_models.ScreenTextConfig textConfig, Size containerSize) {
-    // Use interactive text overlay if project is available
-    if (project != null) {
-      return TextRenderer.renderInteractiveTextOverlay(
+    // During export, render non-interactive overlay to avoid selection UI
+    if (_exporting || widget.project == null) {
+      return TextRenderer.renderTextOverlay(
         textConfig: textConfig,
         containerSize: containerSize,
-        project: project!,
-        scaleFactor: 0.7, // Scale down for preview
+        scaleFactor: 0.7,
       );
     }
 
-    // Fall back to static text overlay
-    return TextRenderer.renderTextOverlay(
+    // Interactive overlay for editing
+    return TextRenderer.renderInteractiveTextOverlay(
       textConfig: textConfig,
       containerSize: containerSize,
-      scaleFactor: 0.7, // Scale down for preview
+      project: widget.project!,
+      scaleFactor: 0.7,
     );
   }
 }
