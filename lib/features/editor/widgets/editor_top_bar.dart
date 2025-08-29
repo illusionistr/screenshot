@@ -7,6 +7,7 @@ import '../../projects/models/project_model.dart';
 import '../../projects/providers/project_provider.dart';
 import '../providers/editor_provider.dart';
 // Export functionality removed - will be reimplemented
+import 'export/export_screens_modal.dart';
 
 class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
   const EditorTopBar({super.key, required this.project});
@@ -149,13 +150,19 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
 
           const SizedBox(width: 12),
 
-          // Export button removed - will be reimplemented
+          // Export button
           ElevatedButton.icon(
-            onPressed: null, // Disabled until reimplemented
+            onPressed: () {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => ExportScreensModal(project: project),
+              );
+            },
             icon: const Icon(Icons.download, size: 16),
             label: const Text('Export'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade400,
+              backgroundColor: AppConstants.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
