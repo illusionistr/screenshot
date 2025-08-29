@@ -27,7 +27,7 @@ class _ExportScreensModalState extends ConsumerState<ExportScreensModal> {
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorProviderFamily(widget.project));
+    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
     final screenshotsAsync = ref.watch(project_providers.projectScreenshotsProvider(widget.project.id));
 
     final devices = editorState.availableDevices.map((d) => d.id).toList();

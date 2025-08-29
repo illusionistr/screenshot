@@ -38,7 +38,7 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorProviderFamily(widget.project));
+    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
     final filteredScreenshots = _getFilteredScreenshots(editorState);
 
     return Container(
@@ -160,7 +160,7 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
   }
 
   Widget _buildScreenshotList(List<ScreenshotModel> screenshots) {
-    final editorState = ref.watch(editorProviderFamily(widget.project));
+    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
     return _buildScrollableList(screenshots, editorState);
   }
 

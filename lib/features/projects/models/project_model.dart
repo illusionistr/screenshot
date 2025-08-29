@@ -3,6 +3,7 @@ import '../../shared/models/device_model.dart';
 import '../../shared/models/screenshot_model.dart';
 import '../../shared/data/devices_data.dart';
 import '../../editor/models/text_models.dart';
+import 'project_screen_config.dart';
 
 class ProjectModel {
   final String id;
@@ -12,6 +13,10 @@ class ProjectModel {
   final List<String> deviceIds; // List of device IDs using new device model
   final List<String> supportedLanguages; // List of language codes
   final Map<String, Map<String, List<ScreenshotModel>>> screenshots; // Language → Device → Screenshots
+  // New per-screen persistent configuration (background, text, layout, assigned screenshot)
+  final Map<String, ProjectScreenConfig> screenConfigs; // Screen ID → Screen Config
+  final List<String> screenOrder; // Ordering of screen IDs
+  // (Legacy) standalone text configs kept for now until fully removed from code
   final Map<String, ScreenTextConfig> screenTextConfigs; // Screen ID → Text Configuration
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -27,6 +32,8 @@ class ProjectModel {
     required this.deviceIds,
     required this.supportedLanguages,
     required this.screenshots,
+    this.screenConfigs = const {},
+    this.screenOrder = const [],
     this.screenTextConfigs = const {},
     required this.createdAt,
     required this.updatedAt,
@@ -39,6 +46,8 @@ class ProjectModel {
     List<String>? deviceIds,
     List<String>? supportedLanguages,
     Map<String, Map<String, List<ScreenshotModel>>>? screenshots,
+    Map<String, ProjectScreenConfig>? screenConfigs,
+    List<String>? screenOrder,
     Map<String, ScreenTextConfig>? screenTextConfigs,
     DateTime? updatedAt,
     Map<String, List<String>>? legacyDevices,
@@ -51,6 +60,8 @@ class ProjectModel {
       deviceIds: deviceIds ?? this.deviceIds,
       supportedLanguages: supportedLanguages ?? this.supportedLanguages,
       screenshots: screenshots ?? this.screenshots,
+      screenConfigs: screenConfigs ?? this.screenConfigs,
+      screenOrder: screenOrder ?? this.screenOrder,
       screenTextConfigs: screenTextConfigs ?? this.screenTextConfigs,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -96,7 +107,18 @@ class ProjectModel {
       }
     }
     
-    // Parse screen text configurations
+    // Parse new per-screen configs
+    Map<String, ProjectScreenConfig> screenConfigs = {};
+    if (data.containsKey('screenConfigs')) {
+      final raw = Map<String, dynamic>.from(data['screenConfigs'] as Map? ?? {});
+      for (final e in raw.entries) {
+        final screenId = e.key;
+        final cfg = Map<String, dynamic>.from(e.value as Map);
+        screenConfigs[screenId] = ProjectScreenConfig.fromJson(screenId, cfg);
+      }
+    }
+
+    // (Optional legacy) Parse screen text configurations
     Map<String, ScreenTextConfig> screenTextConfigs = {};
     if (data.containsKey('screenTextConfigs')) {
       final rawConfigs = Map<String, dynamic>.from(data['screenTextConfigs'] as Map? ?? {});
@@ -115,6 +137,8 @@ class ProjectModel {
       deviceIds: deviceIds,
       supportedLanguages: List<String>.from(data['supportedLanguages'] as List? ?? ['en']),
       screenshots: screenshots,
+      screenConfigs: screenConfigs,
+      screenOrder: List<String>.from(data['screenOrder'] as List? ?? const []),
       screenTextConfigs: screenTextConfigs,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
@@ -169,7 +193,13 @@ class ProjectModel {
       }
     }
     
-    // Convert screen text configurations to Firestore format
+    // Convert new per-screen configs
+    Map<String, dynamic> screensData = {};
+    for (final entry in screenConfigs.entries) {
+      screensData[entry.key] = entry.value.toJson();
+    }
+
+    // (Optional legacy) Convert standalone text configurations
     Map<String, dynamic> textConfigsData = {};
     for (final entry in screenTextConfigs.entries) {
       final screenId = entry.key;
@@ -184,6 +214,8 @@ class ProjectModel {
       'deviceIds': deviceIds,
       'supportedLanguages': supportedLanguages,
       'screenshots': screenshotsData,
+      'screenConfigs': screensData,
+      'screenOrder': screenOrder,
       'screenTextConfigs': textConfigsData,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),

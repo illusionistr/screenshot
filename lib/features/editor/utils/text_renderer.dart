@@ -653,9 +653,9 @@ class _InteractiveTextWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorProviderFamily(widget.project));
+    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
     final editorNotifier =
-        ref.read(editorProviderFamily(widget.project).notifier);
+        ref.read(editorByProjectIdProvider(widget.project.id).notifier);
 
     // Check if this element is currently selected
     _isSelected = editorState.textElementState.isSelected(widget.element.type);

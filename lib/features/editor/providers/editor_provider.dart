@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:async';
+
 import '../../projects/models/project_model.dart';
+import '../../projects/models/project_screen_config.dart';
 import '../../projects/providers/project_provider.dart';
+import '../../projects/services/project_service.dart';
+import '../../../providers/app_providers.dart';
+import '../../shared/data/devices_data.dart';
 import '../../shared/models/screenshot_model.dart';
 import '../constants/layouts_data.dart';
 import '../constants/platform_dimensions.dart';
@@ -18,6 +24,68 @@ class EditorNotifier extends StateNotifier<EditorState> {
       : super(_createInitialState(project));
 
   final Ref? ref;
+
+  ProjectService? get _projectService =>
+      ref == null ? null : ref!.read(projectServiceProvider);
+
+  // Debounce per-screen persistence to avoid flooding Firestore during typing
+  final Map<String, Timer> _persistTimers = {};
+
+  void _persistScreen(int index) {
+    try {
+      final project = state.project;
+      if (project == null || _projectService == null) return;
+      if (index < 0 || index >= state.screens.length) return;
+      final screen = state.screens[index];
+      // Debounce by screen ID
+      _persistTimers[screen.id]?.cancel();
+      _persistTimers[screen.id] = Timer(const Duration(milliseconds: 350), () {
+        final cfg = ProjectScreenConfig.fromScreenConfig(screen);
+        _projectService!.updateScreenConfig(
+          projectId: project.id,
+          screenId: screen.id,
+          config: cfg,
+        );
+        _persistScreenOrder();
+      });
+    } catch (_) {}
+  }
+
+  void _persistNewScreen(ScreenConfig screen) {
+    try {
+      final project = state.project;
+      if (project == null || _projectService == null) return;
+      final cfg = ProjectScreenConfig.fromScreenConfig(screen);
+      _projectService!.updateScreenConfig(
+        projectId: project.id,
+        screenId: screen.id,
+        config: cfg,
+      );
+      _persistScreenOrder();
+    } catch (_) {}
+  }
+
+  void _persistDeleteScreen(int deletedIndex) {
+    try {
+      final project = state.project;
+      if (project == null || _projectService == null) return;
+      // Determine removed screen id using previous state inference isn't trivial here;
+      // rely on order persistence only (removal handled by overwrite in future step),
+      // or implement a more robust tracking if needed.
+      _persistScreenOrder();
+    } catch (_) {}
+  }
+
+  void _persistScreenOrder() {
+    try {
+      final project = state.project;
+      if (project == null || _projectService == null) return;
+      final order = state.screens.map((s) => s.id).toList();
+      _projectService!.updateScreenOrder(projectId: project.id, order: order);
+    } catch (_) {}
+  }
+
+  bool _bootstrapped = false;
 
   static EditorState _createInitialState(ProjectModel? project) {
     // Mock screenshots for now - will be replaced with real screenshots later
@@ -84,6 +152,21 @@ class EditorNotifier extends StateNotifier<EditorState> {
         ? PlatformDetectionService.getDimensionsForDevice(selectedDevice)
         : PlatformDimensions.appStoreDimensions[DeviceType.iphonePortrait]!;
 
+    // If project already has persistent screen configs, hydrate from them
+    List<ScreenConfig> screensFromProject = [];
+    if (project.screenConfigs.isNotEmpty) {
+      final order = project.screenOrder.isNotEmpty
+          ? project.screenOrder
+          : project.screenConfigs.keys.toList();
+      screensFromProject = [
+        for (final id in order)
+          if (project.screenConfigs.containsKey(id))
+            ProjectScreenConfig.toScreenConfig(project.screenConfigs[id]!)
+      ];
+    } else {
+      screensFromProject = initialScreens;
+    }
+
     return EditorState(
       project: project,
       availableLanguages: availableLanguages,
@@ -92,7 +175,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
           availableLanguages.isNotEmpty ? availableLanguages.first : 'en',
       selectedDevice: selectedDevice,
       screenshots: mockScreenshots,
-      screens: initialScreens,
+      screens: screensFromProject,
       selectedScreenIndex: 0,
       currentDimensions: currentDimensions,
     );
@@ -363,6 +446,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
     final newScreens = [...state.screens, newScreen];
     state = state.copyWith(screens: newScreens);
+
+    // Persist new screen and order
+    _persistNewScreen(newScreen);
   }
 
   void duplicateScreen(int index) {
@@ -384,12 +470,18 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final newScreens = [...state.screens];
     newScreens.insert(index + 1, newScreen);
     state = state.copyWith(screens: newScreens);
+
+    // Persist duplicated screen and order
+    _persistNewScreen(newScreen);
   }
 
   void deleteScreen(int index) {
     if (index < 0 || index >= state.screens.length || state.screens.length <= 1)
       return;
 
+    final removedId = (index >= 0 && index < state.screens.length)
+        ? state.screens[index].id
+        : null;
     final newScreens = [...state.screens];
     newScreens.removeAt(index);
 
@@ -409,6 +501,19 @@ class EditorNotifier extends StateNotifier<EditorState> {
       screens: newScreens,
       selectedScreenIndex: newSelectedIndex,
     );
+
+    // Persist removal and order
+    try {
+      final project = state.project;
+      if (project != null && _projectService != null && removedId != null) {
+        final order = state.screens.map((s) => s.id).toList();
+        _projectService!.removeScreen(
+          projectId: project.id,
+          screenId: removedId,
+          newOrder: order,
+        );
+      }
+    } catch (_) {}
   }
 
   void reorderScreens(int oldIndex, int newIndex) {
@@ -443,6 +548,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
       screens: newScreens,
       selectedScreenIndex: newSelectedIndex,
     );
+
+    // Persist new order
+    _persistScreenOrder();
   }
 
   void selectScreen(int index) {
@@ -457,6 +565,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final newScreens = [...state.screens];
     newScreens[index] = newConfig;
     state = state.copyWith(screens: newScreens);
+
+    // Persist this screen
+    _persistScreen(index);
   }
 
   void updateScreenTextConfig(ScreenTextConfig textConfig) {
@@ -889,8 +1000,22 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   void updateProject(ProjectModel project) {
-    final availableDevices = project.devices;
+    // Derive available devices; if none on the project, fallback to common phones
+    var availableDevices = project.devices;
+    if (availableDevices.isEmpty) {
+      availableDevices = DevicesData.getPhones();
+    }
     final availableLanguages = project.supportedLanguages;
+    
+    // Compute selected device value first
+    final nextSelectedDevice = availableDevices.isNotEmpty
+        ? (availableDevices.any((d) => d.id == state.selectedDevice)
+            ? state.selectedDevice
+            : availableDevices.first.id)
+        : '';
+    final nextDimensions = nextSelectedDevice.isNotEmpty
+        ? PlatformDetectionService.getDimensionsForDevice(nextSelectedDevice)
+        : state.currentDimensions;
 
     state = state.copyWith(
       project: project,
@@ -901,19 +1026,25 @@ class EditorNotifier extends StateNotifier<EditorState> {
               ? state.selectedLanguage
               : availableLanguages.first)
           : 'en',
-      selectedDevice: availableDevices.isNotEmpty
-          ? (availableDevices.any((d) => d.id == state.selectedDevice)
-              ? state.selectedDevice
-              : availableDevices.first.id)
-          : '',
+      selectedDevice: nextSelectedDevice,
+      currentDimensions: nextDimensions,
     );
   }
 
   /// Real-time synchronization: Update state when project screenshots change
   void syncWithLatestProject(ProjectModel latestProject) {
-    if (state.project?.id == latestProject.id) {
-      // Only update if this is the same project
+    // On first arrival or when same project id, merge latest project data
+    if (state.project == null || state.project?.id == latestProject.id) {
       updateProject(latestProject);
+
+      // One-time bootstrap of screen persistence if project has none
+      if (!_bootstrapped && latestProject.screenConfigs.isEmpty && state.screens.isNotEmpty) {
+        for (final screen in state.screens) {
+          _persistNewScreen(screen);
+        }
+        _persistScreenOrder();
+      }
+      _bootstrapped = true;
     }
   }
 
@@ -957,6 +1088,11 @@ class EditorNotifier extends StateNotifier<EditorState> {
         screens: updatedScreens,
         selectedLayoutId: layoutId,
       );
+
+      // Persist current screen layout
+      if (state.selectedScreenIndex != null) {
+        _persistScreen(state.selectedScreenIndex!);
+      }
     } catch (e) {
       // Log error - in a real app, you might want to show a user-friendly error message
       // For now, silently fail - the UI will remain unchanged
@@ -1009,26 +1145,19 @@ final editorProvider =
 });
 
 // Project-specific editor provider with real-time synchronization
-final editorProviderFamily =
-    StateNotifierProvider.family<EditorNotifier, EditorState, ProjectModel?>(
-        (ref, project) {
-  final notifier = EditorNotifier(project, ref);
+// Stable-by-id family to avoid provider recreation on every ProjectModel instance refresh
+final editorByProjectIdProvider = StateNotifierProvider.family<EditorNotifier, EditorState, String>((ref, projectId) {
+  final notifier = EditorNotifier(null, ref);
 
-  // Set up real-time synchronization if project is provided
-  if (project != null) {
-    // Listen to projects stream for updates
-    final projectsStream = ref.watch(projectsStreamProvider);
-    projectsStream.whenData((projects) {
-      // Find the updated project
-      try {
-        final updatedProject = projects.firstWhere((p) => p.id == project.id);
-        // Sync editor state with latest project data
-        notifier.syncWithLatestProject(updatedProject);
-      } catch (e) {
-        // Project not found in stream - could be deleted
+  // Listen to project stream and push updates into the existing notifier
+  ref.listen(projectsStreamProvider, (prev, next) {
+    next.whenData((projects) {
+      final latest = projects.where((p) => p.id == projectId).firstOrNull;
+      if (latest != null) {
+        notifier.syncWithLatestProject(latest);
       }
     });
-  }
+  }, fireImmediately: true);
 
   return notifier;
 });

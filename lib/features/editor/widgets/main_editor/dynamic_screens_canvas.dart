@@ -18,11 +18,22 @@ class DynamicScreensCanvas extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorState = ref.watch(
-        project != null ? editorProviderFamily(project) : editorProvider);
-    final editorNotifier = ref.read(project != null
-        ? editorProviderFamily(project).notifier
-        : editorProvider.notifier);
+    final editorProv = project != null ? editorByProjectIdProvider(project!.id) : editorProvider;
+    final editorNotifier = ref.read(editorProv.notifier);
+
+    // Watch only stable, low-churn slices to avoid full rebuilds while typing
+    final screenIds = ref.watch(
+      editorProv.select((s) => s.screens.map((e) => e.id).toList()),
+    );
+    final selectedScreenIndex = ref.watch(
+      editorProv.select((s) => s.selectedScreenIndex),
+    );
+    final selectedDevice = ref.watch(
+      editorProv.select((s) => s.selectedDevice),
+    );
+    final frameVariant = ref.watch(
+      editorProv.select((s) => s.selectedFrameVariant),
+    );
 
     // Watch the project screenshots to get ScreenshotModel objects
     final screenshotsAsync = project != null
@@ -64,41 +75,45 @@ class DynamicScreensCanvas extends ConsumerWidget {
                 editorNotifier.reorderScreens(oldIndex, newIndex);
               },
               children: [
-                for (int i = 0; i < editorState.screens.length; i++)
-                  ScreenContainer(
-                    key: ValueKey(editorState.screens[i].id),
-                    screenId: editorState.screens[i].id,
-                    deviceId: editorState.selectedDevice,
-                    isSelected: editorState.selectedScreenIndex == i,
-                    isLandscape: editorState.screens[i].isLandscape,
-                    background: editorState.screens[i].background,
-                    textConfig: editorState.screens[i].textConfig,
-                    assignedScreenshot:
-                        editorState.screens[i].assignedScreenshotId != null
-                            ? getScreenshotById(
-                                editorState.screens[i].assignedScreenshotId!)
-                            : null,
-                    layoutId: editorState.screens[i].layoutId,
-                    frameVariant: editorState.selectedFrameVariant,
-                    project: project,
-                    onTap: () => editorNotifier.selectScreen(i),
-                    onReorder: null, // Remove individual reorder callback
-                    onExpand: () => _expandScreen(context,
-                        editorState.screens[i], editorState.selectedDevice),
-                    onDuplicate: () => editorNotifier.duplicateScreen(i),
-                    onDelete: editorState.screens.length > 1
-                        ? () => _confirmDelete(context, editorNotifier, i)
-                        : null,
-                    showDeleteButton: editorState.screens.length > 1,
-                  ),
+                for (int i = 0; i < screenIds.length; i++)
+                  Consumer(builder: (context, ref, _) {
+                    final screen = ref.watch(
+                      editorProv.select((s) => s.screens[i]),
+                    );
+                    final isSelected = selectedScreenIndex == i;
+                    final assigned = screen.assignedScreenshotId != null
+                        ? getScreenshotById(screen.assignedScreenshotId!)
+                        : null;
+                    return ScreenContainer(
+                      key: ValueKey(screen.id),
+                      screenId: screen.id,
+                      deviceId: selectedDevice,
+                      isSelected: isSelected,
+                      isLandscape: screen.isLandscape,
+                      background: screen.background,
+                      textConfig: screen.textConfig,
+                      assignedScreenshot: assigned,
+                      layoutId: screen.layoutId,
+                      frameVariant: frameVariant,
+                      project: project,
+                      onTap: () => editorNotifier.selectScreen(i),
+                      onReorder: null,
+                      onExpand: () => _expandScreen(context, screen, selectedDevice),
+                      onDuplicate: () => editorNotifier.duplicateScreen(i),
+                      onDelete: screenIds.length > 1
+                          ? () => _confirmDelete(context, editorNotifier, i)
+                          : null,
+                      showDeleteButton: screenIds.length > 1,
+                    );
+                  }),
               ],
             ),
             const SizedBox(width: 16),
             AddScreenButton(
-              deviceId: editorState.selectedDevice,
-              currentScreenCount: editorState.screens.length,
+              deviceId: selectedDevice,
+              currentScreenCount: screenIds.length,
               maxScreens: 10,
-              onPressed: editorState.screens.length < 10
+              onPressed: screenIds.length < 10
                   ? () => editorNotifier.addScreen()
                   : null,
             ),

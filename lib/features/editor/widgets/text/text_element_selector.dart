@@ -25,8 +25,9 @@ class TextElementSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorState = ref.watch(editorProviderFamily(project));
-    final editorNotifier = ref.read(editorProviderFamily(project).notifier);
+    final editorProv = editorByProjectIdProvider(project.id);
+    final editorState = ref.watch(editorProv);
+    final editorNotifier = ref.read(editorProv.notifier);
 
     final currentScreenTextConfig = editorNotifier.getCurrentScreenTextConfig();
     final selectedType = editorState.textElementState.selectedType;

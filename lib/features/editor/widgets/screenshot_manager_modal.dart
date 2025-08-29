@@ -37,7 +37,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
   void initState() {
     super.initState();
     // Initialize with first available device and language
-    final editorState = ref.read(editorProviderFamily(widget.project));
+    final editorState = ref.read(editorByProjectIdProvider(widget.project.id));
     selectedDeviceId = editorState.availableDevices.isNotEmpty 
         ? editorState.availableDevices.first.id 
         : null;
@@ -48,7 +48,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorProviderFamily(widget.project));
+    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
     final uploadProgress = ref.watch(uploadProgressNotifierProvider);
     final uploadQueue = ref.watch(uploadQueueNotifierProvider);
     final uploadCoordinator = ref.watch(uploadCoordinatorProvider);
@@ -622,7 +622,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
 
   String _getSelectedDeviceName() {
     if (selectedDeviceId == null) return '';
-    final editorState = ref.read(editorProviderFamily(widget.project));
+    final editorState = ref.read(editorByProjectIdProvider(widget.project.id));
     try {
       return editorState.availableDevices
           .firstWhere((d) => d.id == selectedDeviceId)

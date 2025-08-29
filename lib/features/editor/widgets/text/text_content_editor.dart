@@ -41,14 +41,15 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorProviderFamily(widget.project));
-    final editorNotifier = ref.read(editorProviderFamily(widget.project).notifier);
-    
-    final selectedType = editorState.textElementState.selectedType;
+    final editorProv = editorByProjectIdProvider(widget.project.id);
+    final editorNotifier = ref.read(editorProv.notifier);
+    // Watch only the selected type to avoid rebuilds on each keystroke
+    final selectedType = ref.watch(editorProv.select((s) => s.textElementState.selectedType));
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
 
     // Update controller text when selection changes
-    _updateControllerFromState(editorState, editorNotifier);
+    // Update controller only when selection changes
+    _updateControllerFromState(ref.read(editorProv), editorNotifier);
 
     if (selectedType == null || currentElement == null) {
       return Container(
