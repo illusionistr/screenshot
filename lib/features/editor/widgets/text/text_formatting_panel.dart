@@ -5,6 +5,7 @@ import '../../../projects/models/project_model.dart';
 import '../../models/editor_state.dart';
 import '../../models/text_models.dart';
 import '../../providers/editor_provider.dart';
+import '../../utils/text_renderer.dart';
 import '../background/color_picker_dialog.dart';
 
 class TextFormattingPanel extends ConsumerWidget {
@@ -26,7 +27,7 @@ class TextFormattingPanel extends ConsumerWidget {
 
     if (selectedType == null || currentElement == null) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: const Color(0xFFF8F9FA),
           borderRadius: BorderRadius.circular(8),
@@ -58,141 +59,169 @@ class TextFormattingPanel extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
 
-        // Font Family Section
-        _FormattingSection(
-          title: 'Font Family',
-          child: _CustomDropdown(
-            value: currentElement.fontFamily,
-            items: const [
-              // System Fonts (Always Available)
-              'Arial',
-              'Helvetica Neue',
-              'Calibri',
-              'Georgia',
-              'Times New Roman',
-              'Garamond',
+        // Font Family, Font Size, and Color Picker Sections
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Font Family Section - Fixed width
+            SizedBox(
+              width: 180, // Reduced width for font family
+              child: _FormattingSection(
+                title: 'Font Family',
+                child: _CustomDropdown(
+                  value: currentElement.fontFamily,
+                  items: const [
+                    // System Fonts (Always Available)
+                    'Arial',
+                    'Helvetica Neue',
+                    'Calibri',
+                    'Georgia',
+                    'Times New Roman',
+                    'Garamond',
 
-              // Popular Google Fonts - Sans Serif
-              'Inter',
-              'Roboto',
-              'Open Sans',
-              'Lato',
-              'Montserrat',
-              'Poppins',
-              'Nunito',
-              'Source Sans Pro',
-              'Ubuntu',
-              'Karla',
-              'Quicksand',
-              'Comfortaa',
-              'Mukti',
+                    // Popular Google Fonts - Sans Serif
+                    'Inter',
+                    'Roboto',
+                    'Open Sans',
+                    'Lato',
+                    'Montserrat',
+                    'Poppins',
+                    'Nunito',
+                    'Source Sans Pro',
+                    'Ubuntu',
+                    'Karla',
+                    'Quicksand',
+                    'Comfortaa',
+                    'Mukti',
 
-              // Display & Brand Fonts
-              'Oswald',
-              'Bebas Neue',
-              'Playfair Display',
-              'Cinzel',
-              'Abril Fatface',
-              'Dancing Script',
-              'Pacifico',
-              'Amatic SC',
-              'Great Vibes',
-              'Satisfy',
+                    // Display & Brand Fonts
+                    'Oswald',
+                    'Bebas Neue',
+                    'Playfair Display',
+                    'Cinzel',
+                    'Abril Fatface',
+                    'Dancing Script',
+                    'Pacifico',
+                    'Amatic SC',
+                    'Great Vibes',
+                    'Satisfy',
 
-              // Professional & Serif Fonts
-              'Merriweather',
-              'Libre Baskerville',
-              'Crimson Text',
-              'Lora',
-              'Vollkorn',
-              'Source Serif Pro',
-              'PT Serif',
-              'Noto Serif',
+                    // Professional & Serif Fonts
+                    'Merriweather',
+                    'Libre Baskerville',
+                    'Crimson Text',
+                    'Lora',
+                    'Vollkorn',
+                    'Source Serif Pro',
+                    'PT Serif',
+                    'Noto Serif',
 
-              // Modern & Geometric Fonts
-              'Futura PT',
-              'Gothic A1',
-              'Rajdhani',
-              'Orbitron',
-              'Audiowide',
-              'Syncopate',
-              'Monoton',
+                    // Modern & Geometric Fonts
+                    'Futura PT',
+                    'Gothic A1',
+                    'Rajdhani',
+                    'Orbitron',
+                    'Audiowide',
+                    'Syncopate',
+                    'Monoton',
 
-              // Rounded & Friendly Fonts
-              'Rounded Mplus 1c',
-              'M PLUS Rounded 1c',
-              'Noto Sans JP',
-              'Fredoka One',
-              'Chewy',
-              'Baloo 2',
-              'Happy Monkey',
-              'Comic Neue',
+                    // Rounded & Friendly Fonts
+                    'Rounded Mplus 1c',
+                    'M PLUS Rounded 1c',
+                    'Noto Sans JP',
+                    'Fredoka One',
+                    'Chewy',
+                    'Baloo 2',
+                    'Happy Monkey',
+                    'Comic Neue',
 
-              // Clean & Minimal Fonts
-              'DM Sans',
-              'Manrope',
-              'Epilogue',
-              'Jost',
-              'Red Hat Display',
-              'Space Grotesk',
-              'Syne',
-              'Chivo',
+                    // Clean & Minimal Fonts
+                    'DM Sans',
+                    'Manrope',
+                    'Epilogue',
+                    'Jost',
+                    'Red Hat Display',
+                    'Space Grotesk',
+                    'Syne',
+                    'Chivo',
 
-              // Retro & Vintage Fonts
-              'Press Start 2P',
-              'VT323',
-              'Special Elite',
-              'Courier Prime',
-              'Cutive Mono',
-              'Nova Mono',
-              'Fira Code',
-              'JetBrains Mono',
+                    // Retro & Vintage Fonts
+                    'Press Start 2P',
+                    'VT323',
+                    'Special Elite',
+                    'Courier Prime',
+                    'Cutive Mono',
+                    'Nova Mono',
+                    'Fira Code',
+                    'JetBrains Mono',
 
-              // Handwriting & Script Fonts
-              'Indie Flower',
-              'Patrick Hand',
-              'Caveat',
-              'Shadows Into Light',
-              'Sacramento',
-              'Marck Script',
-              'Parisienne',
-              'Tangerine',
-            ],
-            onChanged: (value) {
-              editorNotifier.updateTextFormatting(
-                type: selectedType,
-                fontFamily: value,
-              );
-            },
-          ),
-        ),
+                    // Handwriting & Script Fonts
+                    'Indie Flower',
+                    'Patrick Hand',
+                    'Caveat',
+                    'Shadows Into Light',
+                    'Sacramento',
+                    'Marck Script',
+                    'Parisienne',
+                    'Tangerine',
+                  ],
+                  previewWithFont: true,
+                  onChanged: (value) {
+                    editorNotifier.updateTextFormatting(
+                      type: selectedType,
+                      fontFamily: value,
+                    );
+                  },
+                ),
+              ),
+            ),
 
-        const SizedBox(height: 16),
+            const SizedBox(width: 16),
 
-        // Font Size Section
-        _FormattingSection(
-          title: 'Font Size',
-          child: _CustomDropdown(
-            value: '${currentElement.fontSize.toInt()}',
-            items: const [
-              '12',
-              '14',
-              '16',
-              '18',
-              '20',
-              '24',
-              '28',
-              '32',
-              '36',
-              '40'
-            ],
-            onChanged: (value) {
-              editorNotifier.updateTextFormatting(
-                type: selectedType,
-                fontSize: double.parse(value),
-              );
-            },
-          ),
+            // Font Size Section - Takes remaining space
+            Expanded(
+              child: _FormattingSection(
+                title: 'Font Size',
+                child: _CustomDropdown(
+                  value: '${currentElement.fontSize.toInt()}',
+                  items: const [
+                    '12',
+                    '14',
+                    '16',
+                    '18',
+                    '20',
+                    '24',
+                    '28',
+                    '32',
+                    '36',
+                    '40'
+                  ],
+                  onChanged: (value) {
+                    editorNotifier.updateTextFormatting(
+                      type: selectedType,
+                      fontSize: double.parse(value),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Color Picker Section - Fixed width
+            SizedBox(
+              width: 60, // Reduced width for color picker
+              child: _ColorPickerSection(
+                currentColor: currentElement.color,
+                onColorChanged: (color) {
+                  editorNotifier.updateTextFormatting(
+                    type: selectedType,
+                    color: color,
+                  );
+                },
+              ),
+            ),
+          ],
         ),
 
         const SizedBox(height: 16),
@@ -223,91 +252,94 @@ class TextFormattingPanel extends ConsumerWidget {
         const SizedBox(height: 16),
 
         // Vertical Position Section
-        _FormattingSection(
-          title: 'Vertical Alignment',
-          child: Row(
-            children: VerticalPosition.values.map((position) {
-              // Get the current screen text config to check grouping
-              final currentScreenTextConfig =
-                  editorNotifier.getCurrentScreenTextConfig();
-              final isGrouped =
-                  currentScreenTextConfig?.hasBothElementsVisible == true &&
-                      currentScreenTextConfig?.textGrouping ==
-                          TextGrouping.together;
+        // Vertical and Horizontal Alignment Sections - Side by Side
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Vertical Alignment Section
+            Expanded(
+              child: _FormattingSection(
+                title: 'Vertical Alignment',
+                child: Row(
+                  children: VerticalPosition.values.map((position) {
+                    // Get the current screen text config to check grouping
+                    final currentScreenTextConfig =
+                        editorNotifier.getCurrentScreenTextConfig();
+                    final isGrouped =
+                        currentScreenTextConfig?.hasBothElementsVisible ==
+                                true &&
+                            currentScreenTextConfig?.textGrouping ==
+                                TextGrouping.together;
 
-              // Use primary element for positioning display if grouped
-              final positioningElement = isGrouped
-                  ? currentScreenTextConfig?.primaryElement ?? currentElement
-                  : currentElement;
+                    // Use primary element for positioning display if grouped
+                    final positioningElement = isGrouped
+                        ? currentScreenTextConfig?.primaryElement ??
+                            currentElement
+                        : currentElement;
 
-              final isSelected = (positioningElement.verticalPosition ??
-                      _getDefaultVerticalPosition(positioningElement.type)) ==
-                  position;
+                    final isSelected = (positioningElement.verticalPosition ??
+                            _getDefaultVerticalPosition(
+                                positioningElement.type)) ==
+                        position;
 
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _PositionButton(
-                  displayName: _getVerticalPositionDisplayName(position),
-                  isSelected: isSelected,
-                  onPressed: () {
-                    if (isGrouped) {
-                      // When grouped, always update the primary element for positioning
-                      final primaryElement =
-                          currentScreenTextConfig?.primaryElement;
-                      if (primaryElement != null) {
-                        final updatedElement = primaryElement.copyWith(
-                          verticalPosition: position,
-                        );
-                        editorNotifier.updateTextElement(updatedElement);
-                      }
-                    } else {
-                      // When not grouped, update the current element
-                      final updatedElement = currentElement.copyWith(
-                        verticalPosition: position,
-                      );
-                      editorNotifier.updateTextElement(updatedElement);
-                    }
-                  },
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: _PositionButton(
+                        displayName: _getVerticalPositionDisplayName(position),
+                        isSelected: isSelected,
+                        onPressed: () {
+                          if (isGrouped) {
+                            // When grouped, always update the primary element for positioning
+                            final primaryElement =
+                                currentScreenTextConfig?.primaryElement;
+                            if (primaryElement != null) {
+                              final updatedElement = primaryElement.copyWith(
+                                verticalPosition: position,
+                              );
+                              editorNotifier.updateTextElement(updatedElement);
+                            }
+                          } else {
+                            // When not grouped, update the current element
+                            final updatedElement = currentElement.copyWith(
+                              verticalPosition: position,
+                            );
+                            editorNotifier.updateTextElement(updatedElement);
+                          }
+                        },
+                      ),
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Text Alignment Section
-        _FormattingSection(
-          title: 'Horizontal Alignment',
-          child: Row(
-            children: [
-              ...EditorTextAlign.values.map((align) => Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: _IconButton(
-                      icon: align.icon,
-                      isSelected: currentElement.textAlign == align.textAlign,
-                      onPressed: () {
-                        editorNotifier.updateTextFormatting(
-                          type: selectedType,
-                          textAlign: align.textAlign,
-                        );
-                      },
-                    ),
-                  )),
-              const SizedBox(width: 16),
-
-              // Color picker
-              _ColorPickerSection(
-                currentColor: currentElement.color,
-                onColorChanged: (color) {
-                  editorNotifier.updateTextFormatting(
-                    type: selectedType,
-                    color: color,
-                  );
-                },
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Horizontal Alignment Section
+            Expanded(
+              child: _FormattingSection(
+                title: 'Horizontal Alignment',
+                child: Row(
+                  children: [
+                    ...EditorTextAlign.values.map((align) => Padding(
+                          padding: const EdgeInsets.only(right: 2),
+                          child: _IconButton(
+                            icon: align.icon,
+                            isSelected:
+                                currentElement.textAlign == align.textAlign,
+                            onPressed: () {
+                              editorNotifier.updateTextFormatting(
+                                type: selectedType,
+                                textAlign: align.textAlign,
+                              );
+                            },
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -358,7 +390,7 @@ class _FormattingSection extends StatelessWidget {
             color: Color(0xFF6C757D),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         child,
       ],
     );
@@ -370,16 +402,20 @@ class _CustomDropdown extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.previewWithFont = false,
+    this.previewFontSize = 14,
   });
 
   final String value;
   final List<String> items;
   final ValueChanged<String> onChanged;
+  final bool previewWithFont;
+  final double previewFontSize;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(6),
@@ -394,7 +430,14 @@ class _CustomDropdown extends StatelessWidget {
                     value: item,
                     child: Text(
                       item,
-                      style: const TextStyle(fontSize: 14),
+                      style: previewWithFont
+                          ? TextRenderer.previewStyleForFontFamily(
+                              item,
+                              fontSize: previewFontSize.toDouble(),
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF212529),
+                            )
+                          : const TextStyle(fontSize: 13),
                     ),
                   ))
               .toList(),
@@ -466,7 +509,7 @@ class _PositionButton extends StatelessWidget {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(4),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFE91E63) : Colors.white,
           borderRadius: BorderRadius.circular(4),
@@ -478,7 +521,7 @@ class _PositionButton extends StatelessWidget {
         child: Text(
           displayName,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
             color: isSelected ? Colors.white : const Color(0xFF6C757D),
           ),
@@ -502,8 +545,8 @@ class _IconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 32,
-      height: 32,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFFE91E63) : Colors.white,
         borderRadius: BorderRadius.circular(4),
@@ -513,7 +556,7 @@ class _IconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         icon: Icon(
           icon,
-          size: 16,
+          size: 14,
           color: isSelected ? Colors.white : const Color(0xFF6C757D),
         ),
         onPressed: onPressed,
@@ -551,7 +594,7 @@ class _ColorPickerSectionState extends State<_ColorPickerSection> {
             color: Color(0xFF6C757D),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         InkWell(
           key: _buttonKey,
           onTap: () {
@@ -566,7 +609,7 @@ class _ColorPickerSectionState extends State<_ColorPickerSection> {
           borderRadius: BorderRadius.circular(4),
           child: Container(
             width: 40,
-            height: 32,
+            height: 50,
             decoration: BoxDecoration(
               color: widget.currentColor,
               borderRadius: BorderRadius.circular(4),

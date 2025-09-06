@@ -538,6 +538,22 @@ class TextRenderer {
     );
   }
 
+  /// Public helper to obtain a TextStyle for a given font family
+  /// Useful for UI previews (e.g., font dropdown items)
+  static TextStyle previewStyleForFontFamily(
+    String fontFamily, {
+    double fontSize = 14,
+    FontWeight fontWeight = FontWeight.w400,
+    Color color = const Color(0xFF212529),
+  }) {
+    return _getGoogleFontStyle(
+      fontFamily,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
+
   /// Validates text content for rendering
   static bool isValidForRendering(TextElement element) {
     return element.isVisible && element.content.trim().isNotEmpty;

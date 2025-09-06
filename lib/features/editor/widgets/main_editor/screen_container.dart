@@ -203,12 +203,22 @@ class _ScreenContainerState extends State<ScreenContainer> {
 
   BoxDecoration _getMainContainerDecoration(BuildContext context) {
     // Base decoration with border and border radius
+    // During export, hide any editor borders entirely so they don't appear
+    // in the final PNG. In the editor UI, keep a subtle grey border and
+    // highlight selection.
+    final bool exporting = _exporting;
+    final bool selected = widget.isSelected && !exporting;
+
     final baseDecoration = BoxDecoration(
       border: Border.all(
-        color: (!_exporting && widget.isSelected)
-            ? Theme.of(context).primaryColor
-            : Colors.grey.shade300,
-        width: (!_exporting && widget.isSelected) ? 2 : 1,
+        color: exporting
+            ? Colors.transparent
+            : (selected
+                ? Theme.of(context).primaryColor
+                : Colors.grey.shade300),
+        width: exporting
+            ? 0
+            : (selected ? 2 : 1),
       ),
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(8),

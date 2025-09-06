@@ -238,7 +238,7 @@ class FrameVariantsData {
     FrameVariantModel(
       id: 'mint',
       name: 'Mint',
-      assetPath: 'frames/pixel-8-pro/mint.png',
+      assetPath: 'frames/pixel-8-pro/bay.png', // Using bay.png as mint variant
       deviceId: 'pixel-8-pro',
     ),
 

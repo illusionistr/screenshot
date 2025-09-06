@@ -100,7 +100,7 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
             children: [
               TextField(
                 controller: _controller,
-                maxLines: selectedType == TextFieldType.title ? 3 : 2,
+                maxLines: 2,//selectedType == TextFieldType.title ? 2 : 1,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
