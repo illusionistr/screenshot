@@ -17,7 +17,7 @@ class LayoutsData {
         subtitlePosition: TextPosition.above,
         deviceRotation: 0.0,
         deviceScale: 1.4,
-        deviceOffset: Offset(0, 0.0), // Slightly below center
+        deviceOffset: Offset(0, 0.02), // Slightly below center
         textPadding: EdgeInsets.fromLTRB(40, 60, 40, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
