@@ -337,6 +337,11 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }).toList();
 
     state = state.copyWith(screens: updatedScreens);
+
+    // Persist changes for all screens
+    for (int i = 0; i < updatedScreens.length; i++) {
+      _persistScreen(i);
+    }
   }
 
   // Enhanced gradient methods with real-time preview
@@ -826,6 +831,11 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }).toList();
 
     state = state.copyWith(screens: updatedScreens);
+
+    // Persist changes for all screens
+    for (int i = 0; i < updatedScreens.length; i++) {
+      _persistScreen(i);
+    }
   }
 
   int getAffectedScreensCount(TextFieldType type) {
@@ -1037,6 +1047,37 @@ class EditorNotifier extends StateNotifier<EditorState> {
     if (state.project == null || state.project?.id == latestProject.id) {
       updateProject(latestProject);
 
+      // Hydrate editor screens from persisted project configuration
+      if (latestProject.screenConfigs.isNotEmpty) {
+        try {
+          final order = latestProject.screenOrder.isNotEmpty
+              ? latestProject.screenOrder
+              : latestProject.screenConfigs.keys.toList();
+
+          final screensFromProject = <ScreenConfig>[
+            for (final id in order)
+              if (latestProject.screenConfigs.containsKey(id))
+                ProjectScreenConfig.toScreenConfig(
+                  latestProject.screenConfigs[id]!,
+                )
+          ];
+
+          if (screensFromProject.isNotEmpty) {
+            int? nextSelected = state.selectedScreenIndex;
+            if (nextSelected == null || nextSelected >= screensFromProject.length) {
+              nextSelected = 0;
+            }
+
+            state = state.copyWith(
+              screens: screensFromProject,
+              selectedScreenIndex: nextSelected,
+            );
+          }
+        } catch (_) {
+          // If hydration fails for any reason, keep existing UI state
+        }
+      }
+
       // One-time bootstrap of screen persistence if project has none
       if (!_bootstrapped && latestProject.screenConfigs.isEmpty && state.screens.isNotEmpty) {
         for (final screen in state.screens) {
@@ -1125,6 +1166,11 @@ class EditorNotifier extends StateNotifier<EditorState> {
         screens: updatedScreens,
         selectedLayoutId: layoutId,
       );
+
+      // Persist layout changes for all screens
+      for (int i = 0; i < updatedScreens.length; i++) {
+        _persistScreen(i);
+      }
     } catch (e) {
       // Log error - in a real app, you might want to show a user-friendly error message
       // For now, silently fail - the UI will remain unchanged
