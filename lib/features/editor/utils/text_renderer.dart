@@ -285,6 +285,8 @@ class TextRenderer {
     }
 
     // Calculate horizontal position based on text alignment
+    // Use symmetric insets for centered content so the widget
+    // is actually centered instead of offsetting its left edge.
     double? left, right;
     switch (horizontalPos) {
       case TextAlign.left:
@@ -292,16 +294,16 @@ class TextRenderer {
         right = null;
         break;
       case TextAlign.center:
-        left = containerSize.width * 0.5; // Center horizontally
-        right = null;
+        left = containerSize.width * 0.05; // symmetric 5% margins
+        right = containerSize.width * 0.05;
         break;
       case TextAlign.right:
         left = null;
         right = containerSize.width * 0.05; // 5% from right
         break;
       default:
-        left = containerSize.width * 0.5; // Default to center
-        right = null;
+        left = containerSize.width * 0.05; // default to centered region
+        right = containerSize.width * 0.05;
         break;
     }
 
