@@ -11,6 +11,7 @@ class ProjectScreenConfig {
   final ScreenTextConfig textConfig;
   final String layoutId;
   final String? assignedScreenshotId;
+  final Map<String, dynamic> customSettings; // per-screen overrides (e.g., transforms)
 
   const ProjectScreenConfig({
     required this.id,
@@ -19,6 +20,7 @@ class ProjectScreenConfig {
     this.textConfig = const ScreenTextConfig(),
     this.layoutId = 'centered_above',
     this.assignedScreenshotId,
+    this.customSettings = const {},
   });
 
   ProjectScreenConfig copyWith({
@@ -29,6 +31,7 @@ class ProjectScreenConfig {
     String? layoutId,
     String? assignedScreenshotId,
     bool clearAssignedScreenshotId = false,
+    Map<String, dynamic>? customSettings,
   }) {
     return ProjectScreenConfig(
       id: id ?? this.id,
@@ -38,6 +41,7 @@ class ProjectScreenConfig {
       layoutId: layoutId ?? this.layoutId,
       assignedScreenshotId:
           clearAssignedScreenshotId ? null : (assignedScreenshotId ?? this.assignedScreenshotId),
+      customSettings: customSettings ?? this.customSettings,
     );
   }
 
@@ -48,6 +52,7 @@ class ProjectScreenConfig {
       'textConfig': textConfig.toJson(),
       'layoutId': layoutId,
       'assignedScreenshotId': assignedScreenshotId,
+      'customSettings': customSettings,
     };
   }
 
@@ -63,6 +68,7 @@ class ProjectScreenConfig {
           : const ScreenTextConfig(),
       layoutId: json['layoutId'] as String? ?? 'centered_above',
       assignedScreenshotId: json['assignedScreenshotId'] as String?,
+      customSettings: Map<String, dynamic>.from(json['customSettings'] as Map? ?? const {}),
     );
   }
 
@@ -74,6 +80,7 @@ class ProjectScreenConfig {
       textConfig: screen.textConfig,
       layoutId: screen.layoutId,
       assignedScreenshotId: screen.assignedScreenshotId,
+      customSettings: screen.customSettings,
     );
   }
 
@@ -86,6 +93,7 @@ class ProjectScreenConfig {
       layoutId: p.layoutId,
       assignedScreenshotId: p.assignedScreenshotId,
       backgroundColor: Colors.white,
+      customSettings: p.customSettings,
     );
   }
 }

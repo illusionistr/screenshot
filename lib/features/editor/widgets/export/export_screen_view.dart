@@ -11,6 +11,7 @@ import '../../constants/layouts_data.dart';
 import '../../models/background_models.dart';
 import '../../models/layout_models.dart';
 import '../../utils/text_renderer.dart';
+import '../../models/positioning_models.dart';
 
 /// Non-interactive export-only view that mirrors ScreenContainer visuals
 class ExportScreenView extends StatelessWidget {
@@ -22,6 +23,7 @@ class ExportScreenView extends StatelessWidget {
   final String layoutId;
   final String frameVariant;
   final ProjectModel? project;
+  final Map<String, dynamic>? customSettings;
 
   const ExportScreenView({
     super.key,
@@ -33,6 +35,7 @@ class ExportScreenView extends StatelessWidget {
     required this.layoutId,
     this.frameVariant = 'real',
     this.project,
+    this.customSettings,
   });
 
   @override
@@ -41,7 +44,8 @@ class ExportScreenView extends StatelessWidget {
       deviceId,
       isLandscape: isLandscape,
     );
-    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
+    final baseConfig = LayoutsData.getLayoutConfigOrDefault(layoutId);
+    final config = _applyTransformOverrides(baseConfig, customSettings);
 
     return Container(
       width: containerSize.width,
@@ -124,7 +128,8 @@ class ExportScreenView extends StatelessWidget {
     required Size frameSize,
     required Widget placeholderContent,
   }) {
-    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
+    final baseConfig = LayoutsData.getLayoutConfigOrDefault(layoutId);
+    final config = _applyTransformOverrides(baseConfig, customSettings);
     final devicePosition = LayoutRenderer.calculateDevicePosition(config, frameSize);
     final deviceSize = LayoutRenderer.calculateDeviceSize(
       config,
@@ -176,5 +181,26 @@ class ExportScreenView extends StatelessWidget {
       ],
     );
   }
+}
+
+LayoutConfig _applyTransformOverrides(
+    LayoutConfig config, Map<String, dynamic>? settings) {
+  if (settings == null) return config;
+
+  ElementTransform? parse(dynamic v) {
+    if (v is Map<String, dynamic>) return ElementTransform.fromJson(v);
+    if (v is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(v));
+    return null;
+  }
+
+  final dev = parse(settings['deviceTransform']);
+  final title = parse(settings['titleTransform']);
+  final sub = parse(settings['subtitleTransform']);
+  if (dev == null && title == null && sub == null) return config;
+  return config.copyWith(
+    deviceTransform: dev ?? config.deviceTransform,
+    titleTransform: title ?? config.titleTransform,
+    subtitleTransform: sub ?? config.subtitleTransform,
+  );
 }
 

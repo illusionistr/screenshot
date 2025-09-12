@@ -38,6 +38,7 @@ class LayoutTabContent extends ConsumerWidget {
           onFrameVariantChanged: (variant) {
             editorNotifier.updateSelectedFrameVariant(variant);
           },
+          projectId: project.id,
         ),
 
         const SizedBox(height: 24),

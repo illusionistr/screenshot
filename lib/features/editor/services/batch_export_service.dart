@@ -23,6 +23,7 @@ class ExportJob {
   final ScreenshotModel? screenshot;
   final dynamic background; // ScreenBackground, typed in widget
   final dynamic textConfig; // ScreenTextConfig, typed in widget
+  final Map<String, dynamic>? customSettings; // per-screen overrides
 
   ExportJob({
     required this.deviceId,
@@ -34,6 +35,7 @@ class ExportJob {
     required this.screenshot,
     required this.background,
     required this.textConfig,
+    this.customSettings,
   });
 }
 
@@ -128,6 +130,7 @@ class BatchExportService {
                 assignedScreenshot: job.screenshot,
                 layoutId: job.layoutId,
                 frameVariant: job.frameVariant,
+                customSettings: job.customSettings,
               ),
             ),
           ),

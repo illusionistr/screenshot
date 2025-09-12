@@ -13,6 +13,7 @@ import '../../utils/platform_dimension_calculator.dart';
 import '../../utils/text_renderer.dart';
 import 'screen_management_buttons.dart';
 import '../../services/export_service.dart';
+import '../../models/positioning_models.dart';
 
 class ScreenContainer extends StatefulWidget {
   final String screenId;
@@ -25,6 +26,7 @@ class ScreenContainer extends StatefulWidget {
   final String layoutId;
   final String frameVariant;
   final ProjectModel? project;
+  final Map<String, dynamic>? customSettings;
   final VoidCallback? onTap;
   final VoidCallback? onReorder;
   final VoidCallback? onExpand;
@@ -45,6 +47,7 @@ class ScreenContainer extends StatefulWidget {
     required this.layoutId,
     this.frameVariant = 'real',
     this.project,
+    this.customSettings,
     this.onTap,
     this.onReorder,
     this.onExpand,
@@ -290,8 +293,9 @@ class _ScreenContainerState extends State<ScreenContainer> {
     required Size frameSize,
     required Widget placeholderContent,
   }) {
-    // Get the layout configuration (will always return a valid layout)
-    final config = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
+    // Get the base layout configuration and apply transform overrides if any
+    final baseConfig = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
+    final config = _applyTransformOverrides(baseConfig, widget.customSettings);
     // Calculate device frame position and size based on layout
     final devicePosition =
         LayoutRenderer.calculateDevicePosition(config, frameSize);
@@ -390,7 +394,8 @@ class _ScreenContainerState extends State<ScreenContainer> {
 
   Widget _buildTextOverlay(
       text_models.ScreenTextConfig textConfig, Size containerSize) {
-    final config = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
+    final baseConfig = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
+    final config = _applyTransformOverrides(baseConfig, widget.customSettings);
     // During export, render non-interactive overlay to avoid selection UI
     if (_exporting || widget.project == null) {
       return TextRenderer.renderTextOverlay(
@@ -408,6 +413,27 @@ class _ScreenContainerState extends State<ScreenContainer> {
       project: widget.project!,
       scaleFactor: 0.7,
       layout: config,
+    );
+  }
+
+  LayoutConfig _applyTransformOverrides(
+      LayoutConfig config, Map<String, dynamic>? settings) {
+    if (settings == null) return config;
+
+    ElementTransform? parse(dynamic v) {
+      if (v is Map<String, dynamic>) return ElementTransform.fromJson(v);
+      if (v is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(v));
+      return null;
+    }
+
+    final dev = parse(settings['deviceTransform']);
+    final title = parse(settings['titleTransform']);
+    final sub = parse(settings['subtitleTransform']);
+    if (dev == null && title == null && sub == null) return config;
+    return config.copyWith(
+      deviceTransform: dev ?? config.deviceTransform,
+      titleTransform: title ?? config.titleTransform,
+      subtitleTransform: sub ?? config.subtitleTransform,
     );
   }
 }

@@ -120,6 +120,7 @@ class _ExportScreensModalState extends ConsumerState<ExportScreensModal> {
                           screenshot: ss,
                           background: screen.background,
                           textConfig: screen.textConfig,
+                          customSettings: screen.customSettings,
                         ));
                       }
                     }

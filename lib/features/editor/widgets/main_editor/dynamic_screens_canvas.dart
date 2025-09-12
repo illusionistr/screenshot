@@ -94,6 +94,7 @@ class DynamicScreensCanvas extends ConsumerWidget {
                       textConfig: screen.textConfig,
                       assignedScreenshot: assigned,
                       layoutId: screen.layoutId,
+                      customSettings: screen.customSettings,
                       frameVariant: frameVariant,
                       project: project,
                       onTap: () => editorNotifier.selectScreen(i),

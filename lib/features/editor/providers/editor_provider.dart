@@ -15,6 +15,8 @@ import '../constants/platform_dimensions.dart';
 import '../models/background_models.dart';
 import '../models/editor_state.dart';
 import '../models/text_models.dart';
+import '../models/layout_models.dart';
+import '../models/positioning_models.dart';
 import '../services/layout_application_service.dart';
 import '../services/platform_detection_service.dart';
 import '../utils/background_renderer.dart';
@@ -582,6 +584,34 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final currentScreen = state.screens[state.selectedScreenIndex!];
     final updatedScreen = currentScreen.copyWith(textConfig: textConfig);
     updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+  }
+
+  // Transform overrides management (per-screen, persisted via customSettings)
+  void updateDeviceTransformOverrideForCurrentScreen(ElementTransform transform) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+    final idx = state.selectedScreenIndex!;
+    final screen = state.screens[idx];
+    final updatedSettings = Map<String, dynamic>.from(screen.customSettings);
+    updatedSettings['deviceTransform'] = transform.toJson();
+    final updatedScreen = screen.copyWith(customSettings: updatedSettings);
+    updateScreenConfig(idx, updatedScreen);
+  }
+
+  ElementTransform resolveCurrentDeviceTransform() {
+    final layoutId = getCurrentScreenLayoutId();
+    final base = LayoutsData.getLayoutConfigOrDefault(layoutId).deviceTransform;
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return base;
+    }
+    final settings = state.screens[state.selectedScreenIndex!].customSettings;
+    final raw = settings['deviceTransform'];
+    if (raw is Map<String, dynamic>) return ElementTransform.fromJson(raw);
+    if (raw is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(raw));
+    return base;
   }
 
   // Text Element Management Methods
