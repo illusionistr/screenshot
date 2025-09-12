@@ -614,6 +614,54 @@ class EditorNotifier extends StateNotifier<EditorState> {
     return base;
   }
 
+  // Text transform overrides (title/subtitle)
+  void updateTextTransformOverrideForCurrentScreen(
+      TextFieldType type, ElementTransform transform) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final idx = state.selectedScreenIndex!;
+    final screen = state.screens[idx];
+    final isGrouped = screen.textConfig.hasBothElementsVisible &&
+        screen.textConfig.textGrouping == TextGrouping.together;
+
+    final targetKey = (isGrouped || type == TextFieldType.title)
+        ? 'titleTransform'
+        : 'subtitleTransform';
+
+    final updatedSettings = Map<String, dynamic>.from(screen.customSettings);
+    updatedSettings[targetKey] = transform.toJson();
+    final updatedScreen = screen.copyWith(customSettings: updatedSettings);
+    updateScreenConfig(idx, updatedScreen);
+  }
+
+  ElementTransform resolveTextTransformForCurrentScreen(TextFieldType type) {
+    final layoutId = getCurrentScreenLayoutId();
+    final baseLayout = LayoutsData.getLayoutConfigOrDefault(layoutId);
+    final isTitle = type == TextFieldType.title;
+    // Base transform from layout (may be null)
+    final base = isTitle
+        ? (baseLayout.titleTransform ?? const ElementTransform())
+        : (baseLayout.subtitleTransform ?? const ElementTransform());
+
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return base;
+    }
+
+    final screen = state.screens[state.selectedScreenIndex!];
+    final isGrouped = screen.textConfig.hasBothElementsVisible &&
+        screen.textConfig.textGrouping == TextGrouping.together;
+    final settings = screen.customSettings;
+    final key = (isGrouped || isTitle) ? 'titleTransform' : 'subtitleTransform';
+    final raw = settings[key];
+    if (raw is Map<String, dynamic>) return ElementTransform.fromJson(raw);
+    if (raw is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(raw));
+    return base;
+  }
+
   // Text Element Management Methods
   void selectTextElement(TextFieldType type) {
     // Update selection state

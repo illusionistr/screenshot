@@ -7,6 +7,7 @@ import '../../models/text_models.dart';
 import '../../providers/editor_provider.dart';
 import '../../utils/text_renderer.dart';
 import '../background/color_picker_dialog.dart';
+import '../../models/positioning_models.dart';
 
 class TextFormattingPanel extends ConsumerWidget {
   const TextFormattingPanel({
@@ -341,6 +342,11 @@ class TextFormattingPanel extends ConsumerWidget {
             ),
           ],
         ),
+
+        const SizedBox(height: 16),
+
+        // Precise Positioning (anchor + offsets)
+        _TextPositioningControls(project: project),
       ],
     );
   }
@@ -365,6 +371,213 @@ class TextFormattingPanel extends ConsumerWidget {
       case TextFieldType.subtitle:
         return VerticalPosition.bottom;
     }
+  }
+}
+
+class _TextPositioningControls extends ConsumerWidget {
+  final ProjectModel project;
+  const _TextPositioningControls({required this.project});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final editorProv = editorByProjectIdProvider(project.id);
+    final editorState = ref.watch(editorProv);
+    final editorNotifier = ref.read(editorProv.notifier);
+
+    final selectedType = editorState.textElementState.selectedType;
+    if (selectedType == null) return const SizedBox.shrink();
+
+    final t = editorNotifier.resolveTextTransformForCurrentScreen(selectedType);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE1E5E9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Positioning',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF495057)),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _LabeledDropdown<HorizontalAnchor>(
+                  label: 'H Anchor',
+                  value: t.hAnchor,
+                  items: const {
+                    HorizontalAnchor.left: 'Left',
+                    HorizontalAnchor.center: 'Center',
+                    HorizontalAnchor.right: 'Right',
+                  },
+                  onChanged: (v) {
+                    editorNotifier.updateTextTransformOverrideForCurrentScreen(
+                      selectedType,
+                      t.copyWith(hAnchor: v),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _LabeledDropdown<VerticalAnchor>(
+                  label: 'V Anchor',
+                  value: t.vAnchor,
+                  items: const {
+                    VerticalAnchor.top: 'Top',
+                    VerticalAnchor.center: 'Center',
+                    VerticalAnchor.bottom: 'Bottom',
+                  },
+                  onChanged: (v) {
+                    editorNotifier.updateTextTransformOverrideForCurrentScreen(
+                      selectedType,
+                      t.copyWith(vAnchor: v),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _LabeledRow(
+            label: 'H Offset',
+            child: _SliderWithValue(
+              min: -1.0,
+              max: 1.0,
+              value: t.hPercent.clamp(-1.0, 1.0),
+              format: (v) => '${(v * 100).round()}%',
+              onChanged: (v) {
+                editorNotifier.updateTextTransformOverrideForCurrentScreen(
+                  selectedType,
+                  t.copyWith(hPercent: v),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          _LabeledRow(
+            label: 'V Offset',
+            child: _SliderWithValue(
+              min: -1.0,
+              max: 1.0,
+              value: t.vPercent.clamp(-1.0, 1.0),
+              format: (v) => '${(v * 100).round()}%',
+              onChanged: (v) {
+                editorNotifier.updateTextTransformOverrideForCurrentScreen(
+                  selectedType,
+                  t.copyWith(vPercent: v),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LabeledRow extends StatelessWidget {
+  final String label;
+  final Widget child;
+  const _LabeledRow({required this.label, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D))),
+        ),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+class _SliderWithValue extends StatelessWidget {
+  final double min;
+  final double max;
+  final double value;
+  final String Function(double) format;
+  final ValueChanged<double> onChanged;
+  const _SliderWithValue({
+    required this.min,
+    required this.max,
+    required this.value,
+    required this.format,
+    required this.onChanged,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Slider(
+            min: min,
+            max: max,
+            value: value.clamp(min, max),
+            onChanged: onChanged,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 56,
+          child: Text(
+            format(value),
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF495057)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LabeledDropdown<T> extends StatelessWidget {
+  final String label;
+  final T value;
+  final Map<T, String> items;
+  final ValueChanged<T> onChanged;
+  const _LabeledDropdown({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6C757D))),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE1E5E9)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<T>(
+              value: value,
+              isExpanded: true,
+              onChanged: (v) {
+                if (v != null) onChanged(v);
+              },
+              items: items.entries
+                  .map((e) => DropdownMenuItem<T>(value: e.key, child: Text(e.value)))
+                  .toList(),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
