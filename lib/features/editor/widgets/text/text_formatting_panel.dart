@@ -404,6 +404,38 @@ class _TextPositioningControls extends ConsumerWidget {
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF495057)),
           ),
           const SizedBox(height: 12),
+          _LabeledRow(
+            label: 'Scale',
+            child: _SliderWithValue(
+              min: 0.1,
+              max: 3.0,
+              value: t.scale.clamp(0.1, 3.0),
+              format: (v) => '${v.toStringAsFixed(2)}x',
+              onChanged: (v) {
+                editorNotifier.updateTextTransformOverrideForCurrentScreen(
+                  selectedType,
+                  t.copyWith(scale: v),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          _LabeledRow(
+            label: 'Rotation',
+            child: _SliderWithValue(
+              min: 0,
+              max: 360,
+              value: t.rotationDeg % 360,
+              format: (v) => '${v.round()}°',
+              onChanged: (v) {
+                editorNotifier.updateTextTransformOverrideForCurrentScreen(
+                  selectedType,
+                  t.copyWith(rotationDeg: v),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(

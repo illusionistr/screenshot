@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -83,29 +84,37 @@ class TextRenderer {
     LayoutConfig? layout,
   }) {
     final position = _getElementPosition(element, containerSize, layout: layout);
-    final scaledFontSize = element.fontSize * scaleFactor;
+    final t = layout != null
+        ? LayoutRenderer.resolveTextTransform(layout, isTitle: element.type == TextFieldType.title)
+        : null;
+    final effectiveScale = (t?.scale ?? 1.0) * scaleFactor;
+    final scaledFontSize = element.fontSize * effectiveScale;
 
     return Positioned(
       left: position.left,
       top: position.top,
       right: position.right,
       bottom: position.bottom,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: 16 * scaleFactor,
-          vertical: 8 * scaleFactor,
-        ),
-        child: Text(
-          element.content,
-          style: _getGoogleFontStyle(
-            element.fontFamily,
-            fontSize: scaledFontSize.clamp(8.0, 100.0),
-            fontWeight: element.fontWeight,
-            color: element.color,
+      child: Transform.rotate(
+        angle: ((t?.rotationDeg ?? 0.0) * math.pi / 180.0),
+        alignment: Alignment.center,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: 16 * effectiveScale,
+            vertical: 8 * effectiveScale,
           ),
-          textAlign: element.textAlign,
-          maxLines: element.type == TextFieldType.title ? 3 : 2,
-          overflow: TextOverflow.ellipsis,
+          child: Text(
+            element.content,
+            style: _getGoogleFontStyle(
+              element.fontFamily,
+              fontSize: scaledFontSize.clamp(8.0, 100.0),
+              fontWeight: element.fontWeight,
+              color: element.color,
+            ),
+            textAlign: element.textAlign,
+            maxLines: element.type == TextFieldType.title ? 3 : 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );
@@ -120,17 +129,25 @@ class TextRenderer {
     LayoutConfig? layout,
   }) {
     final position = _getElementPosition(element, containerSize, layout: layout);
+    final t = layout != null
+        ? LayoutRenderer.resolveTextTransform(layout, isTitle: element.type == TextFieldType.title)
+        : null;
+    final effectiveScale = (t?.scale ?? 1.0) * scaleFactor;
 
     return Positioned(
       left: position.left,
       top: position.top,
       right: position.right,
       bottom: position.bottom,
-      child: _InteractiveTextWidget(
-        element: element,
-        containerSize: containerSize,
-        project: project,
-        scaleFactor: scaleFactor,
+      child: Transform.rotate(
+        angle: ((t?.rotationDeg ?? 0.0) * math.pi / 180.0),
+        alignment: Alignment.center,
+        child: _InteractiveTextWidget(
+          element: element,
+          containerSize: containerSize,
+          project: project,
+          scaleFactor: effectiveScale,
+        ),
       ),
     );
   }
@@ -232,11 +249,23 @@ class TextRenderer {
       }();
       final left = baseX + (transform.hPercent * containerSize.width);
       final top = baseY + (transform.vPercent * containerSize.height);
+      final effectiveScale = scaleFactor * (transform.scale);
       return Stack(children: [
         Positioned(
           left: left,
           top: top,
-          child: groupedContent,
+          child: Transform.rotate(
+            angle: transform.rotationDeg * math.pi / 180.0,
+            alignment: Alignment.center,
+            child: _buildGroupedInteractiveContent(
+              titleElement: titleElement,
+              subtitleElement: subtitleElement,
+              containerSize: containerSize,
+              project: project,
+              scaleFactor: effectiveScale,
+              horizontalAlignment: horizontalAlignment,
+            ),
+          ),
         )
       ]);
     }
@@ -249,14 +278,28 @@ class TextRenderer {
               _getGroupedAlignment(horizontalAlignment, Alignment.topCenter),
           child: Container(
             margin: EdgeInsets.only(top: containerSize.height * 0.05),
-            child: groupedContent,
+          child: _buildGroupedInteractiveContent(
+            titleElement: titleElement,
+            subtitleElement: subtitleElement,
+            containerSize: containerSize,
+            project: project,
+            scaleFactor: scaleFactor,
+            horizontalAlignment: horizontalAlignment,
           ),
-        );
-      case VerticalPosition.middle:
+        ),
+      );
+    case VerticalPosition.middle:
         return Align(
           alignment:
               _getGroupedAlignment(horizontalAlignment, Alignment.center),
-          child: groupedContent,
+          child: _buildGroupedInteractiveContent(
+            titleElement: titleElement,
+            subtitleElement: subtitleElement,
+            containerSize: containerSize,
+            project: project,
+            scaleFactor: scaleFactor,
+            horizontalAlignment: horizontalAlignment,
+          ),
         );
       case VerticalPosition.bottom:
         return Align(
@@ -264,10 +307,68 @@ class TextRenderer {
               _getGroupedAlignment(horizontalAlignment, Alignment.bottomCenter),
           child: Container(
             margin: EdgeInsets.only(bottom: containerSize.height * 0.05),
-            child: groupedContent,
+            child: _buildGroupedInteractiveContent(
+              titleElement: titleElement,
+              subtitleElement: subtitleElement,
+              containerSize: containerSize,
+              project: project,
+              scaleFactor: scaleFactor,
+              horizontalAlignment: horizontalAlignment,
+            ),
           ),
         );
     }
+  }
+
+  static Widget _buildGroupedInteractiveContent({
+    required TextElement? titleElement,
+    required TextElement? subtitleElement,
+    required Size containerSize,
+    required ProjectModel project,
+    required double scaleFactor,
+    required TextAlign horizontalAlignment,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.3),
+          width: 1 * scaleFactor,
+        ),
+        borderRadius: BorderRadius.circular(4 * scaleFactor),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: _getCrossAxisAlignment(horizontalAlignment),
+        children: [
+          if (titleElement != null)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: 8 * scaleFactor,
+                vertical: 4 * scaleFactor,
+              ),
+              child: _InteractiveTextWidget(
+                element: titleElement,
+                containerSize: containerSize,
+                project: project,
+                scaleFactor: scaleFactor,
+              ),
+            ),
+          if (subtitleElement != null)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: 8 * scaleFactor,
+                vertical: 4 * scaleFactor,
+              ),
+              child: _InteractiveTextWidget(
+                element: subtitleElement,
+                containerSize: containerSize,
+                project: project,
+                scaleFactor: scaleFactor,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   /// Gets the cross axis alignment for the grouped column
