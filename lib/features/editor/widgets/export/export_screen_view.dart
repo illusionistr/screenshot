@@ -41,6 +41,7 @@ class ExportScreenView extends StatelessWidget {
       deviceId,
       isLandscape: isLandscape,
     );
+    final config = LayoutsData.getLayoutConfigOrDefault(layoutId);
 
     return Container(
       width: containerSize.width,
@@ -65,6 +66,7 @@ class ExportScreenView extends StatelessWidget {
                     containerSize.height - 32,
                   ),
                   scaleFactor: 0.7,
+                  layout: config,
                 ),
               ),
             ),
@@ -137,7 +139,7 @@ class ExportScreenView extends StatelessWidget {
           left: devicePosition.dx - deviceSize.width / 2,
           top: devicePosition.dy - deviceSize.height / 2,
           child: Transform.rotate(
-            angle: config.deviceRotation * 3.14159 / 180,
+            angle: LayoutRenderer.getDeviceRotationDegrees(config) * 3.14159 / 180,
             child: FutureBuilder<Widget>(
               future: FrameRenderer.buildSmartFrameContainer(
                 deviceId: deviceId,

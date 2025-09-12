@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../models/text_models.dart';
+import 'positioning_models.dart';
 
 /// Enum for device frame positions within the layout
+// Deprecated: kept for backward compatibility during transition
+// to unified positioning model.
 enum LayoutPosition {
   centered,
   leftTilted,
@@ -12,6 +15,8 @@ enum LayoutPosition {
 }
 
 /// Enum for text positioning relative to the device frame
+// Deprecated: kept for backward compatibility during transition
+// to unified positioning model.
 enum TextPosition {
   above,
   below,
@@ -29,6 +34,7 @@ class LayoutConfig {
   final String id;
   final String name;
   final String description;
+  // Deprecated fields (will be replaced by unified transforms):
   final LayoutPosition devicePosition;
   final TextPosition titlePosition;
   final TextPosition subtitlePosition;
@@ -42,6 +48,10 @@ class LayoutConfig {
   final bool isLandscape;
   final TextGrouping
       defaultTextGrouping; // NEW: Default grouping for this layout
+  // NEW: Unified transforms
+  final ElementTransform deviceTransform;
+  final ElementTransform? titleTransform;
+  final ElementTransform? subtitleTransform;
 
   const LayoutConfig({
     required this.id,
@@ -59,6 +69,9 @@ class LayoutConfig {
     this.supportedFrameVariants = const ['real', 'clay', 'matte', 'no device'],
     this.isLandscape = false,
     this.defaultTextGrouping = TextGrouping.separated, // Default to separated
+    this.deviceTransform = const ElementTransform(),
+    this.titleTransform,
+    this.subtitleTransform,
   });
 
   LayoutConfig copyWith({
@@ -77,6 +90,9 @@ class LayoutConfig {
     List<String>? supportedFrameVariants,
     bool? isLandscape,
     TextGrouping? defaultTextGrouping, // NEW: Include in copyWith
+    ElementTransform? deviceTransform,
+    ElementTransform? titleTransform,
+    ElementTransform? subtitleTransform,
   }) {
     return LayoutConfig(
       id: id ?? this.id,
@@ -96,6 +112,9 @@ class LayoutConfig {
       isLandscape: isLandscape ?? this.isLandscape,
       defaultTextGrouping: defaultTextGrouping ??
           this.defaultTextGrouping, // NEW: Include in copyWith
+      deviceTransform: deviceTransform ?? this.deviceTransform,
+      titleTransform: titleTransform ?? this.titleTransform,
+      subtitleTransform: subtitleTransform ?? this.subtitleTransform,
     );
   }
 }

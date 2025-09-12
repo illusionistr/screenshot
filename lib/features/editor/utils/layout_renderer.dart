@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/layouts_data.dart';
 import '../models/layout_models.dart';
+import '../models/positioning_models.dart';
 import '../services/platform_detection_service.dart';
 
 /// Utility class for rendering layouts and calculating positions
@@ -11,19 +12,40 @@ class LayoutRenderer {
     return LayoutsData.getLayoutConfigOrDefault(layoutId);
   }
 
+  /// Resolve the effective device transform for a layout.
+  /// If unified transform is provided, prefer it; otherwise, build from legacy fields.
+  static ElementTransform resolveDeviceTransform(LayoutConfig layout) {
+    final t = layout.deviceTransform;
+    // If the transform is different from default (i.e., if any legacy fields imply non-default)
+    // we still prefer explicit values when present. If it's exactly default but legacy fields
+    // specify custom values, synthesize from legacy for backward compatibility.
+    final hasExplicitTransform = !(t.scale == 1.0 &&
+        t.rotationDeg == 0.0 &&
+        t.hAnchor == HorizontalAnchor.center &&
+        t.vAnchor == VerticalAnchor.center &&
+        t.hPercent == 0.0 &&
+        t.vPercent == 0.0);
+    if (hasExplicitTransform) {
+      return t;
+    }
+    // Build from legacy fields
+    return ElementTransform(
+      scale: layout.deviceScale,
+      rotationDeg: layout.deviceRotation,
+      hAnchor: HorizontalAnchor.center,
+      vAnchor: VerticalAnchor.center,
+      hPercent: layout.deviceOffset.dx,
+      vPercent: layout.deviceOffset.dy,
+    );
+  }
+
   /// Calculate device frame position based on layout configuration
   static Offset calculateDevicePosition(
     LayoutConfig layout,
     Size containerSize,
   ) {
-    final centerX = containerSize.width / 2;
-    final centerY = containerSize.height / 2;
-
-    // Apply offset from layout configuration
-    final offsetX = layout.deviceOffset.dx * containerSize.width;
-    final offsetY = layout.deviceOffset.dy * containerSize.height;
-
-    return Offset(centerX + offsetX, centerY + offsetY);
+    final t = resolveDeviceTransform(layout);
+    return t.resolveCenter(containerSize);
   }
 
   /// Calculate text position based on layout configuration
@@ -111,6 +133,7 @@ class LayoutRenderer {
     String? deviceId,
     bool isLandscape = false,
   }) {
+    final t = resolveDeviceTransform(layout);
     // If deviceId is provided, use actual device proportions for visual differentiation
     if (deviceId != null) {
       final actualDeviceAspectRatio = PlatformDetectionService.getActualDeviceAspectRatio(
@@ -123,8 +146,8 @@ class LayoutRenderer {
       final baseHeight = baseWidth / actualDeviceAspectRatio; // Use actual aspect ratio
       
       // Apply scale from layout
-      final scaledWidth = baseWidth * layout.deviceScale;
-      final scaledHeight = baseHeight * layout.deviceScale;
+      final scaledWidth = baseWidth * t.scale;
+      final scaledHeight = baseHeight * t.scale;
 
       return Size(scaledWidth, scaledHeight);
     }
@@ -134,10 +157,24 @@ class LayoutRenderer {
     final baseHeight = baseWidth * 2; // Phone aspect ratio
     
     // Apply scale from layout
-    final scaledWidth = baseWidth * layout.deviceScale;
-    final scaledHeight = baseHeight * layout.deviceScale;
+    final scaledWidth = baseWidth * t.scale;
+    final scaledHeight = baseHeight * t.scale;
     
     return Size(scaledWidth, scaledHeight);
+  }
+
+  /// Get rotation degrees for the device from unified transform (fallback to legacy)
+  static double getDeviceRotationDegrees(LayoutConfig layout) {
+    final t = resolveDeviceTransform(layout);
+    return t.rotationDeg;
+  }
+
+  /// Resolve transform for a specific text element type from layout.
+  static ElementTransform? resolveTextTransform(
+    LayoutConfig layout, {
+    required bool isTitle,
+  }) {
+    return isTitle ? layout.titleTransform : layout.subtitleTransform;
   }
 
   /// Get frame variant asset path based on selected variant

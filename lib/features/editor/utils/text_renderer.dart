@@ -5,6 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../projects/models/project_model.dart';
 import '../models/text_models.dart';
 import '../providers/editor_provider.dart';
+import '../models/layout_models.dart';
+import 'layout_renderer.dart';
+import '../models/positioning_models.dart';
 
 class TextRenderer {
   /// Renders all text overlays for a screen
@@ -12,6 +15,7 @@ class TextRenderer {
     required ScreenTextConfig textConfig,
     required Size containerSize,
     double scaleFactor = 1.0,
+    LayoutConfig? layout,
   }) {
     final visibleElements = textConfig.visibleElements;
 
@@ -25,6 +29,7 @@ class TextRenderer {
           element: element,
           containerSize: containerSize,
           scaleFactor: scaleFactor,
+          layout: layout,
         );
       }).toList(),
     );
@@ -36,6 +41,7 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     double scaleFactor = 1.0,
+    LayoutConfig? layout,
   }) {
     final visibleElements = textConfig.visibleElements;
 
@@ -51,6 +57,7 @@ class TextRenderer {
         containerSize: containerSize,
         project: project,
         scaleFactor: scaleFactor,
+        layout: layout,
       );
     }
 
@@ -62,6 +69,7 @@ class TextRenderer {
           containerSize: containerSize,
           project: project,
           scaleFactor: scaleFactor,
+          layout: layout,
         );
       }).toList(),
     );
@@ -72,8 +80,9 @@ class TextRenderer {
     required TextElement element,
     required Size containerSize,
     double scaleFactor = 1.0,
+    LayoutConfig? layout,
   }) {
-    final position = _getElementPosition(element, containerSize);
+    final position = _getElementPosition(element, containerSize, layout: layout);
     final scaledFontSize = element.fontSize * scaleFactor;
 
     return Positioned(
@@ -108,8 +117,9 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     double scaleFactor = 1.0,
+    LayoutConfig? layout,
   }) {
-    final position = _getElementPosition(element, containerSize);
+    final position = _getElementPosition(element, containerSize, layout: layout);
 
     return Positioned(
       left: position.left,
@@ -131,6 +141,7 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     double scaleFactor = 1.0,
+    LayoutConfig? layout,
   }) {
     final titleElement = textConfig.getElement(TextFieldType.title);
     final subtitleElement = textConfig.getElement(TextFieldType.subtitle);
@@ -193,7 +204,44 @@ class TextRenderer {
       ),
     );
 
-    // Position the grouped content based on vertical alignment
+    // If unified transform exists for title (primary anchor), place grouped by transform
+    final transform = layout != null
+        ? LayoutRenderer.resolveTextTransform(layout, isTitle: true)
+        : null;
+    if (transform != null) {
+      // Use top-left placement based on anchor + percent offsets
+      final baseX = () {
+        switch (transform.hAnchor) {
+          case HorizontalAnchor.left:
+            return 0.0;
+          case HorizontalAnchor.center:
+            return containerSize.width / 2;
+          case HorizontalAnchor.right:
+            return containerSize.width;
+        }
+      }();
+      final baseY = () {
+        switch (transform.vAnchor) {
+          case VerticalAnchor.top:
+            return 0.0;
+          case VerticalAnchor.center:
+            return containerSize.height / 2;
+          case VerticalAnchor.bottom:
+            return containerSize.height;
+        }
+      }();
+      final left = baseX + (transform.hPercent * containerSize.width);
+      final top = baseY + (transform.vPercent * containerSize.height);
+      return Stack(children: [
+        Positioned(
+          left: left,
+          top: top,
+          child: groupedContent,
+        )
+      ]);
+    }
+
+    // Fallback to previous behavior with vertical position and alignment
     switch (verticalPos) {
       case VerticalPosition.top:
         return Align(
@@ -261,7 +309,38 @@ class TextRenderer {
 
   /// Gets the position parameters for a text element
   static _ElementPosition _getElementPosition(
-      TextElement element, Size containerSize) {
+      TextElement element, Size containerSize, {LayoutConfig? layout}) {
+    // If a unified transform is provided via layout, prefer it
+    if (layout != null) {
+      final isTitle = element.type == TextFieldType.title;
+      final t = LayoutRenderer.resolveTextTransform(layout, isTitle: isTitle);
+      if (t != null) {
+        // Compute top-left based on anchor + offset percentages
+        final baseX = () {
+          switch (t.hAnchor) {
+            case HorizontalAnchor.left:
+              return 0.0;
+            case HorizontalAnchor.center:
+              return containerSize.width / 2;
+            case HorizontalAnchor.right:
+              return containerSize.width;
+          }
+        }();
+        final baseY = () {
+          switch (t.vAnchor) {
+            case VerticalAnchor.top:
+              return 0.0;
+            case VerticalAnchor.center:
+              return containerSize.height / 2;
+            case VerticalAnchor.bottom:
+              return containerSize.height;
+          }
+        }();
+        final left = baseX + (t.hPercent * containerSize.width);
+        final top = baseY + (t.vPercent * containerSize.height);
+        return const _ElementPosition().copyWith(left: left, top: top);
+      }
+    }
     // Use custom vertical position if set, otherwise fall back to defaults
     final verticalPos =
         element.verticalPosition ?? _getDefaultVerticalPosition(element.type);
@@ -771,4 +850,18 @@ class _ElementPosition {
     this.right,
     this.bottom,
   });
+
+  _ElementPosition copyWith({
+    double? left,
+    double? top,
+    double? right,
+    double? bottom,
+  }) {
+    return _ElementPosition(
+      left: left ?? this.left,
+      top: top ?? this.top,
+      right: right ?? this.right,
+      bottom: bottom ?? this.bottom,
+    );
+  }
 }

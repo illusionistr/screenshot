@@ -312,7 +312,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
           left: devicePosition.dx - deviceSize.width / 2,
           top: devicePosition.dy - deviceSize.height / 2,
           child: Transform.rotate(
-            angle: config.deviceRotation *
+            angle: LayoutRenderer.getDeviceRotationDegrees(config) *
                 3.14159 /
                 180, // Convert degrees to radians
             child: FutureBuilder<Widget>(
@@ -390,12 +390,14 @@ class _ScreenContainerState extends State<ScreenContainer> {
 
   Widget _buildTextOverlay(
       text_models.ScreenTextConfig textConfig, Size containerSize) {
+    final config = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
     // During export, render non-interactive overlay to avoid selection UI
     if (_exporting || widget.project == null) {
       return TextRenderer.renderTextOverlay(
         textConfig: textConfig,
         containerSize: containerSize,
         scaleFactor: 0.7,
+        layout: config,
       );
     }
 
@@ -405,6 +407,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
       containerSize: containerSize,
       project: widget.project!,
       scaleFactor: 0.7,
+      layout: config,
     );
   }
 }
