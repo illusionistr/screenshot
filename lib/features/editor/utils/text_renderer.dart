@@ -98,7 +98,9 @@ class TextRenderer {
       child: Transform.rotate(
         angle: ((t?.rotationDeg ?? 0.0) * math.pi / 180.0),
         alignment: Alignment.center,
-        child: Container(
+        child: _withAnchorTranslation(
+          t,
+          child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: 16 * effectiveScale,
             vertical: 8 * effectiveScale,
@@ -114,6 +116,7 @@ class TextRenderer {
             textAlign: element.textAlign,
             maxLines: element.type == TextFieldType.title ? 3 : 2,
             overflow: TextOverflow.ellipsis,
+          ),
           ),
         ),
       ),
@@ -142,11 +145,14 @@ class TextRenderer {
       child: Transform.rotate(
         angle: ((t?.rotationDeg ?? 0.0) * math.pi / 180.0),
         alignment: Alignment.center,
-        child: _InteractiveTextWidget(
-          element: element,
-          containerSize: containerSize,
-          project: project,
-          scaleFactor: effectiveScale,
+        child: _withAnchorTranslation(
+          t,
+          child: _InteractiveTextWidget(
+            element: element,
+            containerSize: containerSize,
+            project: project,
+            scaleFactor: effectiveScale,
+          ),
         ),
       ),
     );
@@ -257,13 +263,16 @@ class TextRenderer {
           child: Transform.rotate(
             angle: transform.rotationDeg * math.pi / 180.0,
             alignment: Alignment.center,
-            child: _buildGroupedInteractiveContent(
+            child: _withAnchorTranslation(
+              transform,
+              child: _buildGroupedInteractiveContent(
               titleElement: titleElement,
               subtitleElement: subtitleElement,
               containerSize: containerSize,
               project: project,
               scaleFactor: effectiveScale,
               horizontalAlignment: horizontalAlignment,
+              ),
             ),
           ),
         )
@@ -318,6 +327,35 @@ class TextRenderer {
           ),
         );
     }
+  }
+
+  static Widget _withAnchorTranslation(ElementTransform? t, {required Widget child}) {
+    if (t == null) return child;
+    double tx;
+    switch (t.hAnchor) {
+      case HorizontalAnchor.left:
+        tx = 0.0;
+        break;
+      case HorizontalAnchor.center:
+        tx = -0.5;
+        break;
+      case HorizontalAnchor.right:
+        tx = -1.0;
+        break;
+    }
+    double ty;
+    switch (t.vAnchor) {
+      case VerticalAnchor.top:
+        ty = 0.0;
+        break;
+      case VerticalAnchor.center:
+        ty = -0.5;
+        break;
+      case VerticalAnchor.bottom:
+        ty = -1.0;
+        break;
+    }
+    return FractionalTranslation(translation: Offset(tx, ty), child: child);
   }
 
   static Widget _buildGroupedInteractiveContent({
