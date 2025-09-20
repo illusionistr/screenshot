@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Firebase Commands
 - **Deploy Firestore rules**: `firebase deploy --only firestore:rules`
+- **Deploy Storage rules**: `firebase deploy --only storage`
 - **Configure Firebase**: `flutterfire configure` (generates firebase_options.dart)
 
 ## Architecture Overview
@@ -38,8 +39,9 @@ lib/
 │   └── widgets/               # Reusable UI components
 ├── features/                  # Feature modules
 │   ├── auth/                  # Authentication (login/signup/providers)
+│   ├── editor/                # Screenshot editor with frame rendering
 │   ├── projects/              # Project management (CRUD, UI)
-│   └── shared/                # Shared feature components
+│   └── shared/                # Shared feature components and services
 ├── providers/                 # Global Riverpod providers
 │   └── app_providers.dart        # Service providers (Firebase, Auth, etc.)
 ├── firebase_options.dart      # Auto-generated Firebase config
@@ -48,13 +50,15 @@ lib/
 
 ### Key Patterns
 
-**Service Layer**: All business logic is encapsulated in services (AuthService, ProjectService) that interact with Firebase through the FirebaseService abstraction.
+**Service Layer**: All business logic is encapsulated in services (AuthService, ProjectService, UploadService, StorageService, AnalyticsService) that interact with Firebase through the FirebaseService abstraction.
 
 **Riverpod Pattern**: UI state is managed through AsyncNotifier providers with AsyncValue for loading/error states. Providers use code generation for type safety.
 
-**Feature Organization**: Each feature (auth, projects) contains its own models, providers, screens, services, and widgets in isolated directories.
+**Feature Organization**: Each feature (auth, projects, editor) contains its own models, providers, screens, services, and widgets in isolated directories.
 
 **Dependency Injection**: Services are provided through Riverpod providers in `app_providers.dart` and accessed via ref throughout the app.
+
+**Frame System**: Advanced device frame rendering with automatic fallback to generic frames when real frame assets are unavailable. Supports dynamic asset validation and smart frame selection.
 
 ## Firebase Integration
 
@@ -67,12 +71,19 @@ lib/
 - Route guards prevent access to protected routes (/dashboard, /projects/*) when not authenticated
 - AuthProvider manages user state and exposes authentication status to routing system
 
+### Storage Configuration
+- Firebase Storage for screenshot and project asset uploads
+- Custom CORS configuration in `cors.json` for web compatibility
+- Upload service handles file management and storage operations
+
 ## Development Notes
 
 ### Firebase Setup Required
 1. Create Firebase project
 2. Run `flutterfire configure` to generate firebase_options.dart
 3. Deploy Firestore rules: `firebase deploy --only firestore:rules`
+4. Deploy Storage rules: `firebase deploy --only storage`
+5. Configure CORS for Storage: `gsutil cors set cors.json gs://your-bucket-name`
 
 ### Theme Customization
 Modify colors and typography in `lib/core/theme/app_theme.dart` as needed.
@@ -101,3 +112,19 @@ Modify colors and typography in `lib/core/theme/app_theme.dart` as needed.
 - **Actions**: Use simple notifiers that call services and invalidate data
 - **Error Handling**: Use try/catch in UI and show SnackBar for errors
 - **Loading States**: Let stream providers handle loading, actions should be fast
+
+## Frame System Architecture
+
+### Core Features
+- **Asset Validation**: Runtime checking of frame asset availability with automatic fallback
+- **Smart Selection**: Prioritizes real device frames over generic alternatives
+- **Visual Indicators**: Clear UI distinction between real and generic frames
+- **Performance**: Asset availability caching to minimize repeated checks
+
+### Key Services
+- **FrameAssetService**: Handles asset validation and availability checking
+- **DeviceService**: Manages device-specific frame variants and fallback logic
+- **FrameRenderer**: Renders device frames with smart fallback to generic borders
+
+### Asset Organization
+Frame assets follow a consistent structure in `assets/frames/` with device-specific folders using kebab-case naming (e.g., `iphone-15-pro/`, `pixel-8-pro/`). Generic frames provide fallbacks when real frame assets are unavailable.
