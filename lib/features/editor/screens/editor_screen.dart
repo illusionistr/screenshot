@@ -1,119 +1,99 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../providers/editor_provider.dart';
-import '../providers/screen_provider.dart';
-import '../widgets/top_navigation_bar.dart';
-import '../widgets/screen_carousel.dart';
-import '../widgets/settings_panel.dart';
+import '../../../core/widgets/loading_widget.dart';
+import '../../projects/providers/project_provider.dart';
+import '../widgets/editor_control_panel.dart';
+import '../widgets/editor_top_bar.dart';
+import '../widgets/main_editor/dual_scroll_editor.dart';
 
-class EditorScreen extends StatefulWidget {
+class EditorScreen extends ConsumerWidget {
   const EditorScreen({super.key, required this.projectId});
 
   final String projectId;
 
   @override
-  State<EditorScreen> createState() => _EditorScreenState();
-}
-
-class _EditorScreenState extends State<EditorScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadEditor();
-    });
-  }
-
-  void _loadEditor() {
-    final editorProvider = Provider.of<EditorProvider>(context, listen: false);
-    final screenProvider = Provider.of<ScreenProvider>(context, listen: false);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectsState = ref.watch(projectsStreamProvider);
     
-    // Load project first
-    editorProvider.loadProject(widget.projectId).then((_) {
-      // Then load screens for this project
-      screenProvider.loadProjectScreens(widget.projectId);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer2<EditorProvider, ScreenProvider>(
-      builder: (context, editorProvider, screenProvider, child) {
-        if (editorProvider.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        if (editorProvider.error != null) {
+    return projectsState.when(
+      data: (projects) {
+        // Find the project with the matching ID
+        final project = projects.where((p) => p.id == projectId).firstOrNull;
+        
+        if (project == null) {
           return Scaffold(
-            body: Center(
+            appBar: AppBar(
+              title: const Text('Project Not Found'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go('/dashboard'),
+              ),
+            ),
+            body: const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
                   Text(
-                    'Error: ${editorProvider.error}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      editorProvider.clearError();
-                      _loadEditor();
-                    },
-                    child: const Text('Retry'),
+                    'Project not found or you don\'t have access to it.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ],
               ),
             ),
           );
         }
-
-        if (!editorProvider.hasProject) {
-          return const Scaffold(
-            body: Center(
-              child: Text('Project not found'),
-            ),
-          );
-        }
-
-        return Scaffold(
-          body: Column(
+        
+        return _buildEditor(context, ref, project);
+      },
+      loading: () => const Scaffold(
+        body: LoadingWidget(),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Error'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/dashboard'),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Top Navigation Bar
-              const TopNavigationBar(),
-              
-              // Main content area
-              Expanded(
-                child: Row(
-                  children: [
-                    // Left side - Screen Carousel (70%)
-                    Expanded(
-                      flex: 7,
-                      child: Container(
-                        color: Colors.grey[50],
-                        child: const ScreenCarousel(),
-                      ),
-                    ),
-                    
-                    // Right side - Settings Panel (30%)
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        constraints: const BoxConstraints(minWidth: 300),
-                        child: const SettingsPanel(),
-                      ),
-                    ),
-                  ],
-                ),
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading project: $error',
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildEditor(BuildContext context, WidgetRef ref, dynamic project) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: EditorTopBar(project: project),
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left control panel
+          EditorControlPanel(project: project),
+
+          // Main content area
+          Expanded(
+            child: DualScrollEditor(project: project),
+          ),
+        ],
+      ),
     );
   }
 }

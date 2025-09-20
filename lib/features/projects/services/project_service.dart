@@ -1,6 +1,9 @@
 import '../../../core/constants/api_constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../core/services/firebase_service.dart';
 import '../models/project_model.dart';
+import '../models/project_screen_config.dart';
 
 class ProjectService {
   ProjectService({required this.firebaseService});
@@ -19,41 +22,12 @@ class ProjectService {
     return firebaseService
         .streamCollection(
           collectionPath: ApiConstants.projectsCollection,
-          queryBuilder: (q) => q
-              .where('userId', isEqualTo: userId)
-              .orderBy('createdAt', descending: true),
+          queryBuilder: (q) => q.where('userId', isEqualTo: userId).orderBy('createdAt', descending: true),
         )
-        .map((snapshot) =>
-            snapshot.docs.map(ProjectModel.fromFirestore).toList());
+        .map((snapshot) => snapshot.docs.map(ProjectModel.fromFirestore).toList());
   }
 
-  Future<ProjectModel?> getProject(String projectId) async {
-    final data = await firebaseService.getDocument(
-      collectionPath: ApiConstants.projectsCollection,
-      documentId: projectId,
-    );
-    
-    if (data == null) return null;
-    
-    // Create a mock DocumentSnapshot since we only have the data
-    final doc = firebaseService.firestore
-        .collection(ApiConstants.projectsCollection)
-        .doc(projectId);
-    
-    // We need to create a snapshot-like object
-    final snapshot = await doc.get();
-    return ProjectModel.fromFirestore(snapshot);
-  }
-
-  Future<void> updateProject(String projectId, Map<String, dynamic> updates) async {
-    await firebaseService.updateDocument(
-      collectionPath: ApiConstants.projectsCollection,
-      documentId: projectId,
-      data: updates,
-    );
-  }
-
-  Future<void> updateProjectModel(ProjectModel project) async {
+  Future<void> updateProject(ProjectModel project) async {
     await firebaseService.updateDocument(
       collectionPath: ApiConstants.projectsCollection,
       documentId: project.id,
@@ -67,4 +41,49 @@ class ProjectService {
       documentId: projectId,
     );
   }
+
+  // New helpers for per-screen persistence
+  Future<void> updateScreenConfig({
+    required String projectId,
+    required String screenId,
+    required ProjectScreenConfig config,
+  }) async {
+    await firebaseService.updateDocument(
+      collectionPath: ApiConstants.projectsCollection,
+      documentId: projectId,
+      data: {
+        'screenConfigs.$screenId': config.toJson(),
+      },
+    );
+  }
+
+  Future<void> updateScreenOrder({
+    required String projectId,
+    required List<String> order,
+  }) async {
+    await firebaseService.updateDocument(
+      collectionPath: ApiConstants.projectsCollection,
+      documentId: projectId,
+      data: {
+        'screenOrder': order,
+      },
+    );
+  }
+
+  Future<void> removeScreen({
+    required String projectId,
+    required String screenId,
+    required List<String> newOrder,
+  }) async {
+    await firebaseService.updateDocument(
+      collectionPath: ApiConstants.projectsCollection,
+      documentId: projectId,
+      data: {
+        'screenConfigs.$screenId': FieldValue.delete(),
+        'screenOrder': newOrder,
+      },
+    );
+  }
 }
+
+

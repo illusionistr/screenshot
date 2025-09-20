@@ -1,60 +1,22 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../config/dependency_injection.dart';
+import '../../../providers/app_providers.dart';
 import '../models/user_model.dart';
-import '../services/auth_service.dart';
 
-class AuthProvider extends ChangeNotifier {
-  AuthProvider({AuthService? authService}) : _authService = authService ?? serviceLocator<AuthService>() {
-    _authService.authStateChanges().listen(_onAuthStateChanged);
-  }
+part 'auth_provider.g.dart';
 
-  final AuthService _authService;
-
-  AppUser? _currentUser;
-  bool _isLoading = false;
-  String? _error;
-
-  AppUser? get currentUser => _currentUser;
-  bool get isAuthenticated => _currentUser != null;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-
-  Future<void> signUp(String email, String password, {String? displayName}) async {
-    _setLoading(true);
-    try {
-      _clearError();
-      _currentUser = await _authService.signUpWithEmail(email: email, password: password, displayName: displayName);
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> signIn(String email, String password) async {
-    _setLoading(true);
-    try {
-      _clearError();
-      _currentUser = await _authService.signInWithEmail(email: email, password: password);
-    } catch (e) {
-      _setError(e.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> signOut() async {
-    await _authService.signOut();
-  }
-
-  void _onAuthStateChanged(User? firebaseUser) {
+// Main auth state stream provider
+@riverpod
+Stream<AppUser?> authStateStream(Ref ref) {
+  final authService = ref.read(authServiceProvider);
+  
+  return authService.authStateChanges().map((firebaseUser) {
     if (firebaseUser == null) {
-      _currentUser = null;
+      return null;
     } else {
       // Lightweight current user representation; details loaded via sign-in/up
-      _currentUser = AppUser(
+      return AppUser(
         id: firebaseUser.uid,
         email: firebaseUser.email ?? '',
         displayName: firebaseUser.displayName,
@@ -62,22 +24,69 @@ class AuthProvider extends ChangeNotifier {
         exportCount: 0,
       );
     }
-    notifyListeners();
+  });
+}
+
+// Auth notifier for auth actions (sign in, sign up, sign out)
+@riverpod
+class AuthNotifier extends _$AuthNotifier {
+  @override
+  String build() {
+    return 'ready'; // Simple state tracker
   }
 
-  void _setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
+  Future<void> signUp(String email, String password, {String? displayName}) async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signUpWithEmail(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+    } catch (error) {
+      rethrow;
+    }
   }
 
-  void _setError(String message) {
-    _error = message;
-    notifyListeners();
+  Future<void> signIn(String email, String password) async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithEmail(
+        email: email,
+        password: password,
+      );
+    } catch (error) {
+      rethrow;
+    }
   }
 
-  void _clearError() {
-    _error = null;
+  Future<void> signOut() async {
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signOut();
+    } catch (error) {
+      rethrow;
+    }
   }
 }
 
+// Computed providers for convenience
+@riverpod
+bool isAuthenticated(Ref ref) {
+  final authState = ref.watch(authStateStreamProvider);
+  return authState.when(
+    data: (user) => user != null,
+    loading: () => false,
+    error: (_, __) => false,
+  );
+}
 
+@riverpod
+AppUser? currentUser(Ref ref) {
+  final authState = ref.watch(authStateStreamProvider);
+  return authState.when(
+    data: (user) => user,
+    loading: () => null,
+    error: (_, __) => null,
+  );
+}

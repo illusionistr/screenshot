@@ -2,84 +2,102 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
-
-This is "App Screenshot Studio" - a Flutter web application for creating and managing app screenshot projects, similar to Appure. The app uses Firebase for backend services and is currently in Phase 1 development with basic authentication and project management features.
-
 ## Development Commands
 
-### Running the App
-```bash
-flutter run -d chrome
+### Essential Commands
+- **Run the app**: `flutter run -d chrome` (web development)
+- **Analyze code**: `flutter analyze` (lint checking and static analysis)
+- **Run tests**: `flutter test`
+- **Clean build**: `flutter clean && flutter pub get`
+- **Install dependencies**: `flutter pub get`
+- **Generate Riverpod code**: `dart run build_runner build` (generates provider files)
+
+### Firebase Commands
+- **Deploy Firestore rules**: `firebase deploy --only firestore:rules`
+- **Configure Firebase**: `flutterfire configure` (generates firebase_options.dart)
+
+## Architecture Overview
+
+### Core Architecture
+This is a Flutter web application following a **feature-driven architecture** with clean separation of concerns:
+
+- **State Management**: Riverpod with code generation and AsyncNotifier pattern
+- **Dependency Injection**: Riverpod providers (no external DI container needed)
+- **Routing**: GoRouter with authentication guards and route protection
+- **Backend**: Firebase (Auth, Firestore, Storage)
+
+### Directory Structure
+```
+lib/
+├── config/                    # App configuration
+│   └── routes.dart               # GoRouter configuration with auth guards
+├── core/                      # Shared utilities and services
+│   ├── services/              # Core services (Firebase, Storage, Analytics)
+│   ├── theme/                 # App theme configuration
+│   ├── utils/                 # Helpers, validators, extensions
+│   └── widgets/               # Reusable UI components
+├── features/                  # Feature modules
+│   ├── auth/                  # Authentication (login/signup/providers)
+│   ├── projects/              # Project management (CRUD, UI)
+│   └── shared/                # Shared feature components
+├── providers/                 # Global Riverpod providers
+│   └── app_providers.dart        # Service providers (Firebase, Auth, etc.)
+├── firebase_options.dart      # Auto-generated Firebase config
+└── main.dart                  # App entry point with ProviderScope
 ```
 
-### Code Quality
-```bash
-flutter analyze
-flutter test
-```
+### Key Patterns
 
-### Building
-```bash
-flutter build web
-```
+**Service Layer**: All business logic is encapsulated in services (AuthService, ProjectService) that interact with Firebase through the FirebaseService abstraction.
 
-### Firebase Management
-```bash
-# Deploy Firestore rules
-firebase deploy --only firestore:rules
+**Riverpod Pattern**: UI state is managed through AsyncNotifier providers with AsyncValue for loading/error states. Providers use code generation for type safety.
 
-# Configure Firebase (after creating a new Firebase project)
-flutterfire configure
-```
+**Feature Organization**: Each feature (auth, projects) contains its own models, providers, screens, services, and widgets in isolated directories.
 
-## Architecture
+**Dependency Injection**: Services are provided through Riverpod providers in `app_providers.dart` and accessed via ref throughout the app.
 
-### Core Structure
-- **Provider + GetIt**: State management with Provider, dependency injection with GetIt
-- **Go Router**: Declarative routing with authentication guards
-- **Firebase**: Authentication, Firestore for data, Storage for file uploads
-- **Feature-based**: Organized by features (auth, projects, editor) with shared core utilities
+## Firebase Integration
 
-### Key Directories
-- `lib/features/`: Feature modules (auth, projects, editor)
-- `lib/core/`: Shared services, themes, widgets, utilities
-- `lib/config/`: App configuration (DI setup, routing)
-- `assets/`: Device mockups, fonts, images
+### Firestore Structure
+- `users/{userId}`: User profiles with email, displayName, createdAt, exportCount, lastExportAt
+- `projects/{projectId}`: Project data with userId, appName, platforms[], devices{}, timestamps
 
-### Firebase Architecture
-- **Collections**: `users/{userId}`, `projects/{projectId}`
-- **Authentication**: Email/password via Firebase Auth
-- **Generic Service**: `FirebaseService` provides CRUD operations and file uploads
-
-### State Management Pattern
-- `AuthProvider`: Global authentication state
-- `ProjectProvider`: Project management, depends on `AuthProvider`
-- Services registered in `dependency_injection.dart` and accessed via `serviceLocator<T>()`
-
-### Routing
-- Authentication guards redirect unauthenticated users to `/login`
-- Main routes: `/`, `/login`, `/signup`, `/dashboard`, `/projects/create`, `/projects/:id/editor`
-- Router refreshes when `AuthProvider` state changes
-
-## Data Models
-
-### ProjectModel
-- Single platform selection (android/ios)
-- Multiple device selection per platform
-- Firebase integration with `fromFirestore()` and `toFirestore()` methods
-
-## Setup Requirements
-
-1. Flutter SDK with web support enabled
-2. Firebase CLI and FlutterFire CLI installed
-3. Firebase project configured with generated `firebase_options.dart`
-4. Firestore rules deployed (currently open for development)
+### Authentication Flow
+- AuthWrapper checks authentication state and redirects appropriately
+- Route guards prevent access to protected routes (/dashboard, /projects/*) when not authenticated
+- AuthProvider manages user state and exposes authentication status to routing system
 
 ## Development Notes
 
-- App targets web platform primarily
-- Device mockups stored in `assets/` for different platforms
-- Custom font (Darlington) included in assets
-- Firestore rules are currently permissive for development (expire 2025-09-09)
-- Firebase project ID: `screenshot-saas`
+### Firebase Setup Required
+1. Create Firebase project
+2. Run `flutterfire configure` to generate firebase_options.dart
+3. Deploy Firestore rules: `firebase deploy --only firestore:rules`
+
+### Theme Customization
+Modify colors and typography in `lib/core/theme/app_theme.dart` as needed.
+
+### Adding New Features
+1. Create feature directory under `lib/features/`
+2. Follow existing patterns: models, providers, screens, services, widgets
+3. Add new service providers to `app_providers.dart` using `@riverpod` annotation
+4. Add routes in `routes.dart` with appropriate guards
+5. Run `dart run build_runner build` after adding new providers
+
+### Riverpod Usage Patterns
+- Use `@riverpod` for service providers and data providers
+- Use stream providers for reactive data (auth state, projects list)
+- Use `AsyncNotifier` for simple action providers (signIn, createProject, etc.)
+- Use `ConsumerWidget` for widgets that read providers
+- Use `ConsumerStatefulWidget` for stateful widgets with providers
+- Handle async state with `AsyncValue.when()` pattern
+- Use `ref.watch()` for reactive dependencies
+- Use `ref.read()` for one-time operations
+- Use `ref.listen()` for side effects (navigation, snackbars)
+- Use `ref.invalidate()` to refresh data after mutations
+
+### Common Patterns
+- **Stream Data**: Use direct stream providers for real-time data
+- **Actions**: Use simple notifiers that call services and invalidate data
+- **Error Handling**: Use try/catch in UI and show SnackBar for errors
+- **Loading States**: Let stream providers handle loading, actions should be fast

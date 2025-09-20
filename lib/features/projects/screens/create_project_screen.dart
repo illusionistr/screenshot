@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/custom_button.dart';
+import '../../../features/shared/widgets/language_selector.dart';
 import '../../../features/shared/widgets/responsive_layout.dart';
 import '../providers/project_provider.dart';
 import '../widgets/device_selector.dart';
 import '../widgets/platform_selector.dart';
 
-class CreateProjectScreen extends StatefulWidget {
+class CreateProjectScreen extends ConsumerStatefulWidget {
   const CreateProjectScreen({super.key});
 
   @override
-  State<CreateProjectScreen> createState() => _CreateProjectScreenState();
+  ConsumerState<CreateProjectScreen> createState() =>
+      _CreateProjectScreenState();
 }
 
-class _CreateProjectScreenState extends State<CreateProjectScreen> {
+class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
   final _formKey = GlobalKey<FormState>();
   final _appNameCtrl = TextEditingController();
-  String? _platform;
-  List<String> _devices = [];
+  List<String> _platforms = [];
+  List<String> _deviceIds = [];
+  List<String> _supportedLanguages = ['en']; // Default to English
 
   @override
   void dispose() {
@@ -29,73 +32,109 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_platform == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Select a platform')));
+    if (!_formKey.currentState!.validate()) {
       return;
     }
-    if (_devices.isEmpty) {
+
+    if (_platforms.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Select at least one device')));
+          const SnackBar(content: Text('Select at least one platform')));
       return;
     }
-    await context.read<ProjectProvider>().createProject(
-          appName: _appNameCtrl.text.trim(),
-          platform: _platform!,
-          devices: _devices,
+
+    if (_supportedLanguages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select at least one language')));
+      return;
+    }
+
+    try {
+      final projectId = await ref.read(projectsNotifierProvider.notifier).createProject(
+            appName: _appNameCtrl.text.trim(),
+            platforms: _platforms,
+            deviceIds: _deviceIds,
+            supportedLanguages: _supportedLanguages,
+          );
+
+      if (mounted) {
+        // Use pushReplacement to avoid any redirect issues
+        context.pushReplacement('/projects/$projectId/upload');
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating project: $error')),
         );
-    if (mounted) context.go('/dashboard');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<ProjectProvider>().isLoading;
     return Scaffold(
       appBar: AppBar(title: const Text('Create Project')),
       body: ResponsiveLayout(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _appNameCtrl,
-                decoration: const InputDecoration(labelText: 'App name'),
-                validator: (v) =>
-                    Validators.minLength(v, 2, fieldName: 'App name'),
-              ),
-              const SizedBox(height: 16),
-              Text('Platform', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              PlatformSelector(
-                initialPlatform: _platform,
-                onChanged: (value) {
-                  // Use post-frame to avoid setState during build cascades
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    setState(() {
-                      _platform = value;
-                      _devices = [];
-                    });
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              Text('Devices', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              DeviceSelector(
-                selectedPlatform: _platform,
-                initialDevices: _devices,
-                onChanged: (value) => setState(() => _devices = value),
-              ),
-              const SizedBox(height: 24),
-              CustomButton(
-                label: 'Save project',
-                isLoading: isLoading,
-                onPressed: isLoading ? null : _submit,
-              ),
-            ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _appNameCtrl,
+                  decoration: const InputDecoration(labelText: 'App name'),
+                  validator: (v) =>
+                      Validators.minLength(v, 2, fieldName: 'App name'),
+                ),
+                const SizedBox(height: 16),
+                Text('Platforms',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                PlatformSelector(
+                  onChanged: (value) => setState(() => _platforms = value),
+                ),
+                const SizedBox(height: 16),
+                Text('Devices', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                DeviceSelector(
+                  selectedPlatforms: _platforms,
+                  onChanged: (value) => setState(() => _deviceIds = value),
+                ),
+                const SizedBox(height: 16),
+                Text('Languages',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Container(
+                  height: 500,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.2)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: LanguageSelector(
+                    selectedLanguageCodes: _supportedLanguages,
+                    onSelectionChanged: (value) =>
+                        setState(() => _supportedLanguages = value),
+                    multiSelect: true,
+                    title: null,
+                    showRegionHeaders: true,
+                    showSearch: true,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                CustomButton(
+                  label: 'Next',
+                  isLoading: false,
+                  onPressed: () async {
+                    await _submit();
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

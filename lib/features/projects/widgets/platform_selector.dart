@@ -1,67 +1,63 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../shared/models/device_model.dart';
 
 class PlatformSelector extends StatefulWidget {
   const PlatformSelector({
     super.key,
     required this.onChanged,
-    this.initialPlatform,
+    this.initialSelection = const <String>[],
   });
 
-  final ValueChanged<String> onChanged;
-  final String? initialPlatform;
+  final void Function(List<String> selected) onChanged;
+  final List<String> initialSelection;
 
   @override
   State<PlatformSelector> createState() => _PlatformSelectorState();
 }
 
 class _PlatformSelectorState extends State<PlatformSelector> {
-  String? _selected;
+  late List<String> _selected;
 
   @override
   void initState() {
     super.initState();
-    _selected = widget.initialPlatform;
+    _selected = [...widget.initialSelection];
   }
 
-  void _select(String platform) {
-    setState(() => _selected = platform);
-    widget.onChanged(platform);
+  void _toggle(String platform) {
+    setState(() {
+      if (_selected.contains(platform)) {
+        _selected.remove(platform);
+      } else {
+        _selected.add(platform);
+      }
+    });
+    widget.onChanged(_selected);
   }
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: AppConstants.supportedPlatforms.map((p) {
-        final isActive = _selected == p;
+      children: Platform.values.map((platform) {
+        final isActive = _selected.contains(platform.id);
         return Expanded(
           child: InkWell(
-            onTap: () => _select(p),
+            onTap: () => _toggle(platform.id),
             child: Card(
-              color: isActive
-                  ? AppConstants.primaryColor.withValues(alpha: 0.1)
-                  : Colors.white,
+              color: isActive ? AppConstants.primaryColor.withValues(alpha: 0.1) : Colors.white,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Radio<String>(
-                      value: p,
-                      groupValue: _selected,
-                      onChanged: (_) => _select(p),
-                    ),
-                    const SizedBox(width: 8),
                     Icon(
-                      p == 'android' ? Icons.android : Icons.apple,
-                      color: isActive
-                          ? AppConstants.primaryColor
-                          : Colors.grey[700],
+                      platform == Platform.android ? Icons.android : Icons.apple,
+                      color: isActive ? AppConstants.primaryColor : Colors.grey[700],
                     ),
                     const SizedBox(width: 8),
-                    Text(p.toUpperCase()),
+                    Text(platform.displayName.toUpperCase()),
                   ],
                 ),
               ),
@@ -72,3 +68,5 @@ class _PlatformSelectorState extends State<PlatformSelector> {
     );
   }
 }
+
+

@@ -14,6 +14,8 @@ class AuthService {
   FirebaseFirestore get _db => firebaseService.firestore;
 
   Stream<User?> authStateChanges() => _auth.authStateChanges();
+  
+  User? get currentUser => _auth.currentUser;
 
   Future<AppUser> signUpWithEmail({
     required String email,

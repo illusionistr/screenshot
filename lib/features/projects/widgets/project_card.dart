@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/project_model.dart';
 
 class ProjectCard extends StatelessWidget {
-  const ProjectCard({
-    super.key,
-    required this.project,
-    this.onDelete,
-    this.onEdit,
-    this.onQuickEdit,
-  });
+  const ProjectCard({super.key, required this.project, this.onDelete});
 
   final ProjectModel project;
   final VoidCallback? onDelete;
-  final VoidCallback? onEdit; // navigate to Editor screen
-  final VoidCallback? onQuickEdit; // inline edit of project info
 
   @override
   Widget build(BuildContext context) {
@@ -32,33 +25,54 @@ class ProjectCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                if (onQuickEdit != null)
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Edit project info',
-                    onPressed: onQuickEdit,
-                  ),
-                if (onEdit != null)
-                  OutlinedButton.icon(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open editor'),
-                  ),
                 if (onDelete != null)
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Delete',
                     onPressed: onDelete,
                   ),
               ],
             ),
             const SizedBox(height: 8),
-            Text('Platform: ${project.platform.toUpperCase()}'),
+            Text('Platforms: ${project.platforms.join(', ')}'),
             const SizedBox(height: 4),
-            Text('Devices: ${project.devices.join(', ')}'),
+            Text('Devices: ${project.deviceIds.length} selected'),
+            const SizedBox(height: 16),
+            
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      context.go('/projects/${project.id}/upload');
+                    },
+                    icon: const Icon(Icons.cloud_upload, size: 16),
+                    label: const Text('Upload'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      context.go('/projects/${project.id}/editor');
+                    },
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('Open Editor'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+

@@ -1,4 +1,6 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../features/auth/providers/auth_provider.dart';
 import '../features/auth/screens/auth_wrapper.dart';
@@ -7,11 +9,14 @@ import '../features/auth/screens/signup_screen.dart';
 import '../features/editor/screens/editor_screen.dart';
 import '../features/projects/screens/create_project_screen.dart';
 import '../features/projects/screens/dashboard_screen.dart';
+import '../features/projects/screens/upload_screenshots_screen.dart';
 
-GoRouter createAppRouter(AuthProvider authProvider) {
+part 'routes.g.dart';
+
+@riverpod
+GoRouter appRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: authProvider,
     routes: [
       GoRoute(
         path: '/',
@@ -34,6 +39,13 @@ GoRouter createAppRouter(AuthProvider authProvider) {
         builder: (context, state) => const CreateProjectScreen(),
       ),
       GoRoute(
+        path: '/projects/:projectId/upload',
+        builder: (context, state) {
+          final projectId = state.pathParameters['projectId']!;
+          return UploadScreenshotsScreen(projectId: projectId);
+        },
+      ),
+      GoRoute(
         path: '/projects/:projectId/editor',
         builder: (context, state) {
           final projectId = state.pathParameters['projectId']!;
@@ -42,20 +54,43 @@ GoRouter createAppRouter(AuthProvider authProvider) {
       ),
     ],
     redirect: (context, state) {
-      final isLoggedIn = authProvider.isAuthenticated;
-      final loggingIn = state.matchedLocation == '/login' ||
-          state.matchedLocation == '/signup';
+      final authState = ref.read(authStateStreamProvider);
 
-      if (!isLoggedIn && state.matchedLocation.startsWith('/dashboard')) {
-        return '/login';
-      }
-      if (!isLoggedIn && state.matchedLocation.startsWith('/projects')) {
-        return '/login';
-      }
-      if (isLoggedIn && loggingIn) {
-        return '/dashboard';
-      }
-      return null;
+      // Handle different auth states
+      return authState.when(
+        data: (user) {
+          final isLoggedIn = user != null;
+          final loggingIn = state.matchedLocation == '/login' ||
+              state.matchedLocation == '/signup';
+
+          // If not logged in and trying to access protected routes
+          if (!isLoggedIn &&
+              (state.matchedLocation.startsWith('/dashboard') ||
+                  state.matchedLocation.startsWith('/projects'))) {
+            return '/login';
+          }
+
+          // If logged in and on login/signup pages, go to dashboard
+          if (isLoggedIn && loggingIn) {
+            return '/dashboard';
+          }
+
+          return null;
+        },
+        loading: () {
+          // During loading, don't redirect protected routes to avoid navigation loops
+          return null;
+        },
+        error: (_, __) {
+          // On auth error, redirect to login
+          final loggingIn = state.matchedLocation == '/login' ||
+              state.matchedLocation == '/signup';
+          if (!loggingIn) {
+            return '/login';
+          }
+          return null;
+        },
+      );
     },
   );
 }
