@@ -12,6 +12,7 @@ class ProjectModel {
   final List<String> platforms;
   final List<String> deviceIds; // List of device IDs using new device model
   final List<String> supportedLanguages; // List of language codes
+  final String? referenceLanguage; // NEW: Reference language for translations
   final Map<String, Map<String, List<ScreenshotModel>>> screenshots; // Language → Device → Screenshots
   // New per-screen persistent configuration (background, text, layout, assigned screenshot)
   final Map<String, ProjectScreenConfig> screenConfigs; // Screen ID → Screen Config
@@ -31,6 +32,7 @@ class ProjectModel {
     required this.platforms,
     required this.deviceIds,
     required this.supportedLanguages,
+    this.referenceLanguage,
     required this.screenshots,
     this.screenConfigs = const {},
     this.screenOrder = const [],
@@ -45,6 +47,7 @@ class ProjectModel {
     List<String>? platforms,
     List<String>? deviceIds,
     List<String>? supportedLanguages,
+    String? referenceLanguage,
     Map<String, Map<String, List<ScreenshotModel>>>? screenshots,
     Map<String, ProjectScreenConfig>? screenConfigs,
     List<String>? screenOrder,
@@ -59,6 +62,7 @@ class ProjectModel {
       platforms: platforms ?? this.platforms,
       deviceIds: deviceIds ?? this.deviceIds,
       supportedLanguages: supportedLanguages ?? this.supportedLanguages,
+      referenceLanguage: referenceLanguage ?? this.referenceLanguage,
       screenshots: screenshots ?? this.screenshots,
       screenConfigs: screenConfigs ?? this.screenConfigs,
       screenOrder: screenOrder ?? this.screenOrder,
@@ -137,6 +141,7 @@ class ProjectModel {
       platforms: List<String>.from(data['platforms'] as List),
       deviceIds: deviceIds,
       supportedLanguages: List<String>.from(data['supportedLanguages'] as List? ?? ['en']),
+      referenceLanguage: data['referenceLanguage'] as String?,
       screenshots: screenshots,
       screenConfigs: screenConfigs,
       screenOrder: List<String>.from(data['screenOrder'] as List? ?? const []),
@@ -214,6 +219,7 @@ class ProjectModel {
       'platforms': platforms,
       'deviceIds': deviceIds,
       'supportedLanguages': supportedLanguages,
+      'referenceLanguage': referenceLanguage,
       'screenshots': screenshotsData,
       'screenConfigs': screensData,
       'screenOrder': screenOrder,
@@ -307,5 +313,33 @@ class ProjectModel {
 
   bool hasAnyTextElements() {
     return getTotalTextElementsCount() > 0;
+  }
+
+  // Translation helper methods
+  String get effectiveReferenceLanguage {
+    // Use referenceLanguage if set and valid, otherwise fall back to first supported language
+    if (referenceLanguage != null && supportedLanguages.contains(referenceLanguage)) {
+      return referenceLanguage!;
+    }
+    return supportedLanguages.isNotEmpty ? supportedLanguages.first : 'en';
+  }
+
+  bool isValidReferenceLanguage(String languageCode) {
+    return supportedLanguages.contains(languageCode);
+  }
+
+  ProjectModel updateReferenceLanguage(String newReferenceLanguage) {
+    if (!isValidReferenceLanguage(newReferenceLanguage)) {
+      throw ArgumentError('Reference language must be in supportedLanguages list');
+    }
+    return copyWith(
+      referenceLanguage: newReferenceLanguage,
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  List<String> get nonReferenceLanguages {
+    final ref = effectiveReferenceLanguage;
+    return supportedLanguages.where((lang) => lang != ref).toList();
   }
 }

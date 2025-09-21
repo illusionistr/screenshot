@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../core/services/analytics_service.dart';
 import '../core/services/firebase_service.dart';
 import '../core/services/storage_service.dart';
+import '../core/services/translation_service.dart';
 import '../features/auth/services/auth_service.dart';
 import '../features/projects/services/project_service.dart';
 import '../features/shared/services/upload_service.dart';
@@ -33,3 +34,6 @@ AnalyticsService analyticsService(Ref ref) => AnalyticsService();
 UploadService uploadService(Ref ref) => UploadService(
   ref.read(firebaseServiceProvider).storage,
 );
+
+@riverpod
+TranslationService translationService(Ref ref) => TranslationService();

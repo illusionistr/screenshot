@@ -713,7 +713,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final currentElement = currentScreen.textConfig.getElement(type);
 
     if (currentElement != null) {
-      final updatedElement = currentElement.copyWith(content: content);
+      final updatedElement = currentElement.updateContent(content);
       final updatedTextConfig =
           currentScreen.textConfig.updateElement(updatedElement);
       final updatedScreen =

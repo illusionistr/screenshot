@@ -41,7 +41,7 @@ final uploadQueueNotifierProvider =
 );
 
 typedef _$UploadQueueNotifier = AutoDisposeNotifier<List<UploadFile>>;
-String _$uploadCoordinatorHash() => r'7e812b65edc026c10f24412ea97834e18d4e279b';
+String _$uploadCoordinatorHash() => r'c14bd440e63224ff711997746cac328f9172126b';
 
 /// See also [UploadCoordinator].
 @ProviderFor(UploadCoordinator)

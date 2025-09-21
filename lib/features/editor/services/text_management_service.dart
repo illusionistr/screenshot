@@ -17,7 +17,7 @@ class TextManagementService {
     }
 
     // Create a title element from legacy caption data
-    final titleElement = TextElement(
+    final titleElement = TextElement.withContent(
       id: 'migrated_title_${DateTime.now().millisecondsSinceEpoch}',
       type: TextFieldType.title,
       content: caption,
@@ -107,16 +107,18 @@ class TextManagementService {
   /// Creates default text elements for common use cases
   static Map<String, TextElement> createDefaultElements() {
     return {
-      'app_title': TextElement.createDefault(TextFieldType.title).copyWith(
-        content: 'App Title',
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-      ),
-      'feature_subtitle': TextElement.createDefault(TextFieldType.subtitle).copyWith(
-        content: 'Key Feature',
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-      ),
+      'app_title': TextElement.createDefault(TextFieldType.title)
+          .updateContent('App Title')
+          .copyWith(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+      'feature_subtitle': TextElement.createDefault(TextFieldType.subtitle)
+          .updateContent('Key Feature')
+          .copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
     };
   }
 
