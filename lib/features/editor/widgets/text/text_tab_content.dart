@@ -5,6 +5,8 @@ import '../../../projects/models/project_model.dart';
 import '../../../shared/widgets/scrollable_tab_container.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
+import '../translation/reference_language_selector.dart';
+import '../translation/translation_controls_panel.dart';
 import 'text_content_editor.dart';
 import 'text_element_selector.dart';
 import 'text_formatting_panel.dart';
@@ -28,6 +30,24 @@ class TextTabContent extends ConsumerWidget {
 
     return ScrollableTabContainer.unified(
       children: [
+        // Translation Controls Section
+        ReferenceLanguageSelector(project: project),
+        
+        const SizedBox(height: 24),
+        
+        TranslationControlsPanel(project: project),
+        
+        const SizedBox(height: 32),
+        
+        // Divider
+        Container(
+          height: 1,
+          color: const Color(0xFFE1E5E9),
+          margin: const EdgeInsets.symmetric(vertical: 8),
+        ),
+        
+        const SizedBox(height: 16),
+        
         // Text Element Selector
         TextElementSelector(project: project),
 

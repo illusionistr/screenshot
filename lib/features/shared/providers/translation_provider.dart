@@ -196,6 +196,7 @@ class TranslationNotifier extends _$TranslationNotifier {
       );
 
       if (response.success) {
+        print('Translation successful: ${response.translatedText}');
         // Update with successful translation
         final updatedTranslations = Map<String, String>.from(currentElement.translations);
         updatedTranslations[targetLanguage] = response.translatedText;
@@ -212,6 +213,7 @@ class TranslationNotifier extends _$TranslationNotifier {
           completedElements: _countCompletedElements(updatedElementsSuccess, state.pendingLanguages),
         );
       } else {
+        print('Translation failed: ${response.error}');
         // Update with error
         final updatedElementsError = Map<String, ElementTranslationState>.from(state.elementStates);
         updatedElementsError[elementId] = currentElement.copyWith(
@@ -223,6 +225,7 @@ class TranslationNotifier extends _$TranslationNotifier {
         state = state.copyWith(elementStates: updatedElementsError);
       }
     } catch (e) {
+      print('Translation failed: $e'); 
       // Update with exception error
       final updatedElementsException = Map<String, ElementTranslationState>.from(state.elementStates);
       updatedElementsException[elementId] = currentElement.copyWith(

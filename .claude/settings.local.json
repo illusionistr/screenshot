@@ -13,7 +13,8 @@
       "Bash(mkdir:*)",
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Read(/c:\\Users\\sldub\\OneDrive\\Pictures\\Screenshots/**)"
+      "Read(/c:\\Users\\sldub\\OneDrive\\Pictures\\Screenshots/**)",
+      "Bash(flutter clean:*)"
     ],
     "deny": [],
     "ask": [],

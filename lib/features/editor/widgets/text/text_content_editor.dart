@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/translation_service.dart';
 import '../../models/text_models.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
 import '../../../projects/models/project_model.dart';
+import '../translation/element_translation_button.dart';
 
 class TextContentEditor extends ConsumerStatefulWidget {
   const TextContentEditor({
@@ -34,7 +36,13 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
     // Only update controller if selection has changed
     if (selectedType != _lastSelectedType) {
       final currentElement = editorNotifier.getCurrentSelectedTextElement();
-      _controller.text = currentElement?.content ?? '';
+      if (currentElement != null) {
+        // Get content in the reference language
+        final referenceLanguage = widget.project.effectiveReferenceLanguage;
+        _controller.text = currentElement.getTranslation(referenceLanguage);
+      } else {
+        _controller.text = '';
+      }
       _lastSelectedType = selectedType;
     }
   }
@@ -77,16 +85,34 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
       children: [
         Row(
           children: [
-            Text(
-              '${selectedType.displayName} Content',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF495057),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${selectedType.displayName} Content',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF495057),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Language: ${TranslationService.getLanguageDisplayName(widget.project.effectiveReferenceLanguage)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6C757D),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-           
+            ElementTranslationButton(
+              project: widget.project,
+              element: currentElement,
+              elementType: selectedType,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -115,7 +141,9 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
                   color: Color(0xFF495057),
                 ),
                 onChanged: (value) {
-                  editorNotifier.updateTextContent(selectedType, value);
+                  // Update content for the reference language
+                  final referenceLanguage = widget.project.effectiveReferenceLanguage;
+                  editorNotifier.updateTextContentForLanguage(selectedType, referenceLanguage, value);
                 },
               ),
               

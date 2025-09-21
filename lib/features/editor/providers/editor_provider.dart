@@ -722,6 +722,25 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }
   }
 
+  void updateTextContentForLanguage(TextFieldType type, String language, String content) {
+    if (state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final currentElement = currentScreen.textConfig.getElement(type);
+
+    if (currentElement != null) {
+      final updatedElement = currentElement.addTranslation(language, content);
+      final updatedTextConfig =
+          currentScreen.textConfig.updateElement(updatedElement);
+      final updatedScreen =
+          currentScreen.copyWith(textConfig: updatedTextConfig);
+      updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
+    }
+  }
+
   void updateTextFormatting({
     required TextFieldType type,
     String? fontFamily,
