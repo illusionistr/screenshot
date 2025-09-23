@@ -449,6 +449,9 @@ class _TranslationModalState extends ConsumerState<TranslationModal> {
   }
 
   void _startTranslation() async {
+    print('[TranslationModal] _startTranslation called');
+    print('[TranslationModal] Selected languages: $selectedLanguages');
+    
     final editorProv = editorByProjectIdProvider(widget.project.id);
     final editorState = ref.read(editorProv);
     final translationNotifier = ref.read(translationNotifierProvider(widget.project.id).notifier);
@@ -458,18 +461,28 @@ class _TranslationModalState extends ConsumerState<TranslationModal> {
     for (final screen in editorState.screens) {
       allElements.addAll(screen.textConfig.visibleElements);
     }
+    
+    print('[TranslationModal] Total elements found: ${allElements.length}');
+    for (final element in allElements) {
+      print('[TranslationModal] Element: ${element.id} - "${element.content}" (type: ${element.type})');
+    }
 
     // Initialize translation state
+    print('[TranslationModal] Initializing translation state...');
     translationNotifier.initializeFromProject(widget.project);
 
     // Start translation for each selected language
     for (final targetLanguage in selectedLanguages) {
+      print('[TranslationModal] Starting batch translation for language: $targetLanguage');
       await translationNotifier.translateBatch(
         elements: allElements,
         targetLanguage: targetLanguage,
         context: 'App store screenshot content',
       );
+      print('[TranslationModal] Batch translation completed for language: $targetLanguage');
     }
+    
+    print('[TranslationModal] All translations completed');
 
     // Close modal after completion
     if (mounted) {

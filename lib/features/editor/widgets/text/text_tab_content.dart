@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/translation_service.dart';
 import '../../../projects/models/project_model.dart';
 import '../../../shared/widgets/scrollable_tab_container.dart';
 import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
 import '../translation/reference_language_selector.dart';
 import '../translation/translation_controls_panel.dart';
+import '../translation/translation_progress_indicator.dart';
 import 'text_content_editor.dart';
 import 'text_element_selector.dart';
 import 'text_formatting_panel.dart';
@@ -37,7 +39,12 @@ class TextTabContent extends ConsumerWidget {
         
         TranslationControlsPanel(project: project),
         
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
+        
+        // Translation Progress Indicator
+        TranslationProgressIndicator(project: project),
+        
+        const SizedBox(height: 16),
         
         // Divider
         Container(
@@ -150,7 +157,15 @@ class _ApplyToAllButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedType = editorState.textElementState.selectedType;
-    final buttonText = editorNotifier.getApplyToAllButtonText();
+    final currentEditingLanguage = editorState.selectedLanguage;
+    final isEditingReferenceLanguage = currentEditingLanguage == project.effectiveReferenceLanguage;
+    
+    // Create language-aware button text
+    final languageDisplayName = TranslationService.getLanguageDisplayName(currentEditingLanguage);
+    final buttonText = isEditingReferenceLanguage 
+        ? editorNotifier.getApplyToAllButtonText()
+        : 'Apply to All ($languageDisplayName)';
+    
     final affectedCount = selectedType != null
         ? editorNotifier.getAffectedScreensCount(selectedType)
         : 0;
@@ -163,14 +178,21 @@ class _ApplyToAllButton extends StatelessWidget {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () {
-              editorNotifier.applySelectedElementFormattingToAllScreens();
+              // Use language-aware method if editing a non-reference language
+              if (isEditingReferenceLanguage) {
+                editorNotifier.applySelectedElementFormattingToAllScreens();
+              } else {
+                editorNotifier.applySelectedElementFormattingToAllScreensForCurrentLanguage();
+              }
 
-              // Show confirmation
+              // Show language-aware confirmation
+              final message = isEditingReferenceLanguage
+                  ? 'Applied ${selectedType?.displayName.toLowerCase()} formatting to all screens'
+                  : 'Applied ${selectedType?.displayName.toLowerCase()} formatting and $languageDisplayName content to all screens';
+                  
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'Applied ${selectedType?.displayName.toLowerCase()} formatting to all screens',
-                  ),
+                  content: Text(message),
                   backgroundColor: const Color(0xFF28A745),
                   behavior: SnackBarBehavior.floating,
                   margin: const EdgeInsets.all(16),

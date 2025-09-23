@@ -227,12 +227,16 @@ class ElementTranslationButton extends ConsumerWidget {
         ];
       },
       onSelected: (languageCode) {
+        print('[ElementTranslationButton] User selected: $languageCode');
+        print('[ElementTranslationButton] Element ID: ${element.id}, Content: "${element.content}"');
+        print('[ElementTranslationButton] Reference language: ${project.effectiveReferenceLanguage}');
+        
         if (languageCode == 'all') {
+          print('[ElementTranslationButton] Starting translation to all languages: ${project.nonReferenceLanguages}');
           _translateToAllLanguages(ref, project, element);
-          print('Translating to all languages');
         } else {
+          print('[ElementTranslationButton] Starting translation to single language: $languageCode');
           _translateToLanguage(ref, project, element, languageCode);
-          print('Translating to $languageCode');
         }
       },
     );
@@ -252,16 +256,28 @@ class ElementTranslationButton extends ConsumerWidget {
   }
 
   void _translateToLanguage(WidgetRef ref, ProjectModel project, TextElement element, String targetLanguage) {
+    print('[ElementTranslationButton] _translateToLanguage called');
+    print('[ElementTranslationButton] Element ID: ${element.id}');
+    print('[ElementTranslationButton] Target language: $targetLanguage');
+    
     final translationNotifier = ref.read(translationNotifierProvider(project.id).notifier);
     final referenceLanguage = project.effectiveReferenceLanguage;
     final referenceText = element.getTranslation(referenceLanguage);
+    
+    print('[ElementTranslationButton] Reference language: $referenceLanguage');
+    print('[ElementTranslationButton] Reference text: "$referenceText"');
+    print('[ElementTranslationButton] Calling translationNotifier.translateElement...');
 
     translationNotifier.translateElement(
       elementId: element.id,
       text: referenceText,
       targetLanguage: targetLanguage,
       context: 'App store screenshot ${element.type.displayName.toLowerCase()}',
-    );
+    ).then((_) {
+      print('[ElementTranslationButton] translateElement completed for ${element.id} -> $targetLanguage');
+    }).catchError((error) {
+      print('[ElementTranslationButton] translateElement failed for ${element.id} -> $targetLanguage: $error');
+    });
 
     // Show feedback
     ScaffoldMessenger.of(ref.context).showSnackBar(
@@ -281,20 +297,32 @@ class ElementTranslationButton extends ConsumerWidget {
   }
 
   void _translateToAllLanguages(WidgetRef ref, ProjectModel project, TextElement element) {
+    print('[ElementTranslationButton] _translateToAllLanguages called');
+    print('[ElementTranslationButton] Element ID: ${element.id}');
+    
     final translationNotifier = ref.read(translationNotifierProvider(project.id).notifier);
     final targetLanguages = project.nonReferenceLanguages;
+    final referenceLanguage = project.effectiveReferenceLanguage;
+    final referenceText = element.getTranslation(referenceLanguage);
+    
+    print('[ElementTranslationButton] Target languages: $targetLanguages');
+    print('[ElementTranslationButton] Reference language: $referenceLanguage');
+    print('[ElementTranslationButton] Reference text: "$referenceText"');
 
     // Translate to each target language
     for (final targetLanguage in targetLanguages) {
-      final referenceLanguage = project.effectiveReferenceLanguage;
-      final referenceText = element.getTranslation(referenceLanguage);
-
+      print('[ElementTranslationButton] Starting translation for $targetLanguage');
+      
       translationNotifier.translateElement(
         elementId: element.id,
         text: referenceText,
         targetLanguage: targetLanguage,
         context: 'App store screenshot ${element.type.displayName.toLowerCase()}',
-      );
+      ).then((_) {
+        print('[ElementTranslationButton] Translation completed for ${element.id} -> $targetLanguage');
+      }).catchError((error) {
+        print('[ElementTranslationButton] Translation failed for ${element.id} -> $targetLanguage: $error');
+      });
     }
 
     // Show feedback

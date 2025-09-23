@@ -24,6 +24,7 @@ class ExportScreenView extends StatelessWidget {
   final String frameVariant;
   final ProjectModel? project;
   final Map<String, dynamic>? customSettings;
+  final String currentLanguage;
 
   const ExportScreenView({
     super.key,
@@ -36,6 +37,7 @@ class ExportScreenView extends StatelessWidget {
     this.frameVariant = 'real',
     this.project,
     this.customSettings,
+    this.currentLanguage = 'en',
   });
 
   @override
@@ -69,6 +71,7 @@ class ExportScreenView extends StatelessWidget {
                     containerSize.width - 32,
                     containerSize.height - 32,
                   ),
+                  currentLanguage: currentLanguage,
                   scaleFactor: 0.7,
                   layout: config,
                 ),

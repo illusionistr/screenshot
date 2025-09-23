@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../projects/models/project_model.dart';
 import '../../models/text_models.dart';
 import '../../providers/editor_provider.dart';
+import '../translation/translation_status_badge.dart';
 
 enum _GroupingOption {
   separated('separated', 'Separated'),
@@ -51,6 +52,7 @@ class TextElementSelector extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _TextElementOption(
+              project: project,
               type: type,
               hasElement: hasElement,
               isSelected: isSelected,
@@ -89,8 +91,9 @@ class TextElementSelector extends ConsumerWidget {
   }
 }
 
-class _TextElementOption extends StatelessWidget {
+class _TextElementOption extends ConsumerWidget {
   const _TextElementOption({
+    required this.project,
     required this.type,
     required this.hasElement,
     required this.isSelected,
@@ -98,6 +101,7 @@ class _TextElementOption extends StatelessWidget {
     this.onRemove,
   });
 
+  final ProjectModel project;
   final TextFieldType type;
   final bool hasElement;
   final bool isSelected;
@@ -105,7 +109,14 @@ class _TextElementOption extends StatelessWidget {
   final VoidCallback? onRemove;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get the current text element for this type to show translation status
+    final editorProv = editorByProjectIdProvider(project.id);
+    final editorNotifier = ref.read(editorProv.notifier);
+    final currentElement = hasElement 
+        ? editorNotifier.getCurrentScreenTextConfig()?.getElement(type)
+        : null;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -167,7 +178,15 @@ class _TextElementOption extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        if (hasElement)
+                        if (hasElement && currentElement != null) ...[
+                          // Show translation status for active elements
+                          TranslationStatusBadge(
+                            project: project,
+                            element: currentElement,
+                            style: TranslationBadgeStyle.compact,
+                          ),
+                        ] else if (hasElement) ...[
+                          // Fallback for active elements without element data
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -185,8 +204,9 @@ class _TextElementOption extends StatelessWidget {
                                 color: Colors.white,
                               ),
                             ),
-                          )
-                        else
+                          ),
+                        ] else ...[
+                          // Create badge for inactive elements
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -205,6 +225,7 @@ class _TextElementOption extends StatelessWidget {
                               ),
                             ),
                           ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 4),

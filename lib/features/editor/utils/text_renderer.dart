@@ -15,6 +15,7 @@ class TextRenderer {
   static Widget renderTextOverlay({
     required ScreenTextConfig textConfig,
     required Size containerSize,
+    required String currentLanguage,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -29,6 +30,7 @@ class TextRenderer {
         return renderTextElement(
           element: element,
           containerSize: containerSize,
+          currentLanguage: currentLanguage,
           scaleFactor: scaleFactor,
           layout: layout,
         );
@@ -41,6 +43,7 @@ class TextRenderer {
     required ScreenTextConfig textConfig,
     required Size containerSize,
     required ProjectModel project,
+    required String currentLanguage,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -57,6 +60,7 @@ class TextRenderer {
         textConfig: textConfig,
         containerSize: containerSize,
         project: project,
+        currentLanguage: currentLanguage,
         scaleFactor: scaleFactor,
         layout: layout,
       );
@@ -69,6 +73,7 @@ class TextRenderer {
           element: element,
           containerSize: containerSize,
           project: project,
+          currentLanguage: currentLanguage,
           scaleFactor: scaleFactor,
           layout: layout,
         );
@@ -80,6 +85,7 @@ class TextRenderer {
   static Widget renderTextElement({
     required TextElement element,
     required Size containerSize,
+    required String currentLanguage,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -89,6 +95,10 @@ class TextRenderer {
         : null;
     final effectiveScale = (t?.scale ?? 1.0) * scaleFactor;
     final scaledFontSize = element.fontSize * effectiveScale;
+
+    // Get the translated content for the current language
+    final displayContent = element.getTranslation(currentLanguage);
+    print('[TextRenderer] Rendering element ${element.id} in language $currentLanguage: "$displayContent"');
 
     return Positioned(
       left: position.left,
@@ -106,7 +116,7 @@ class TextRenderer {
             vertical: 8 * effectiveScale,
           ),
           child: Text(
-            element.content,
+            displayContent,
             style: _getGoogleFontStyle(
               element.fontFamily,
               fontSize: scaledFontSize.clamp(8.0, 100.0),
@@ -128,6 +138,7 @@ class TextRenderer {
     required TextElement element,
     required Size containerSize,
     required ProjectModel project,
+    required String currentLanguage,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -151,6 +162,7 @@ class TextRenderer {
             element: element,
             containerSize: containerSize,
             project: project,
+            currentLanguage: currentLanguage,
             scaleFactor: effectiveScale,
           ),
         ),
@@ -163,6 +175,7 @@ class TextRenderer {
     required ScreenTextConfig textConfig,
     required Size containerSize,
     required ProjectModel project,
+    required String currentLanguage,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -207,6 +220,7 @@ class TextRenderer {
                 element: titleElement,
                 containerSize: containerSize,
                 project: project,
+                currentLanguage: currentLanguage,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -220,6 +234,7 @@ class TextRenderer {
                 element: subtitleElement,
                 containerSize: containerSize,
                 project: project,
+                currentLanguage: currentLanguage,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -270,6 +285,7 @@ class TextRenderer {
               subtitleElement: subtitleElement,
               containerSize: containerSize,
               project: project,
+              currentLanguage: currentLanguage,
               scaleFactor: effectiveScale,
               horizontalAlignment: horizontalAlignment,
               ),
@@ -292,6 +308,7 @@ class TextRenderer {
             subtitleElement: subtitleElement,
             containerSize: containerSize,
             project: project,
+            currentLanguage: currentLanguage,
             scaleFactor: scaleFactor,
             horizontalAlignment: horizontalAlignment,
           ),
@@ -306,6 +323,7 @@ class TextRenderer {
             subtitleElement: subtitleElement,
             containerSize: containerSize,
             project: project,
+            currentLanguage: currentLanguage,
             scaleFactor: scaleFactor,
             horizontalAlignment: horizontalAlignment,
           ),
@@ -321,6 +339,7 @@ class TextRenderer {
               subtitleElement: subtitleElement,
               containerSize: containerSize,
               project: project,
+              currentLanguage: currentLanguage,
               scaleFactor: scaleFactor,
               horizontalAlignment: horizontalAlignment,
             ),
@@ -363,6 +382,7 @@ class TextRenderer {
     required TextElement? subtitleElement,
     required Size containerSize,
     required ProjectModel project,
+    required String currentLanguage,
     required double scaleFactor,
     required TextAlign horizontalAlignment,
   }) {
@@ -388,6 +408,7 @@ class TextRenderer {
                 element: titleElement,
                 containerSize: containerSize,
                 project: project,
+                currentLanguage: currentLanguage,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -401,6 +422,7 @@ class TextRenderer {
                 element: subtitleElement,
                 containerSize: containerSize,
                 project: project,
+                currentLanguage: currentLanguage,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -869,11 +891,13 @@ class _InteractiveTextWidget extends ConsumerStatefulWidget {
   final Size containerSize;
   final double scaleFactor;
   final ProjectModel project;
+  final String currentLanguage;
 
   const _InteractiveTextWidget({
     required this.element,
     required this.containerSize,
     required this.project,
+    required this.currentLanguage,
     this.scaleFactor = 1.0,
   });
 
@@ -945,8 +969,12 @@ class _InteractiveTextWidgetState
     // Use the existing text rendering logic from TextRenderer
     final scaledFontSize = widget.element.fontSize * widget.scaleFactor;
 
+    // Get the translated content for the current language
+    final displayContent = widget.element.getTranslation(widget.currentLanguage);
+    print('[_InteractiveTextWidget] Rendering element ${widget.element.id} in language ${widget.currentLanguage}: "$displayContent"');
+
     return Text(
-      widget.element.content,
+      displayContent,
       style: _getGoogleFontStyle(
         widget.element.fontFamily,
         fontSize: scaledFontSize.clamp(8.0, 100.0),

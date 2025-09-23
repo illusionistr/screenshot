@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/rtl_service.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../models/text_models.dart';
 import '../../models/editor_state.dart';
@@ -23,6 +24,7 @@ class TextContentEditor extends ConsumerStatefulWidget {
 class _TextContentEditorState extends ConsumerState<TextContentEditor> {
   final TextEditingController _controller = TextEditingController();
   TextFieldType? _lastSelectedType;
+  String? _lastEditingLanguage;
 
   @override
   void dispose() {
@@ -32,18 +34,19 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
 
   void _updateControllerFromState(EditorState editorState, EditorNotifier editorNotifier) {
     final selectedType = editorState.textElementState.selectedType;
-    
-    // Only update controller if selection has changed
-    if (selectedType != _lastSelectedType) {
+    final currentEditingLanguage = editorState.selectedLanguage;
+
+    // Update controller if selection changed OR editing language changed
+    if (selectedType != _lastSelectedType || currentEditingLanguage != _lastEditingLanguage) {
       final currentElement = editorNotifier.getCurrentSelectedTextElement();
       if (currentElement != null) {
-        // Get content in the reference language
-        final referenceLanguage = widget.project.effectiveReferenceLanguage;
-        _controller.text = currentElement.getTranslation(referenceLanguage);
+        // Get content in the current editing language
+        _controller.text = currentElement.getTranslation(currentEditingLanguage);
       } else {
         _controller.text = '';
       }
       _lastSelectedType = selectedType;
+      _lastEditingLanguage = currentEditingLanguage;
     }
   }
 
@@ -51,12 +54,12 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
   Widget build(BuildContext context) {
     final editorProv = editorByProjectIdProvider(widget.project.id);
     final editorNotifier = ref.read(editorProv.notifier);
-    // Watch only the selected type to avoid rebuilds on each keystroke
+    // Watch both selected type and current editing language
     final selectedType = ref.watch(editorProv.select((s) => s.textElementState.selectedType));
+    final currentEditingLanguage = ref.watch(editorProv.select((s) => s.selectedLanguage));
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
 
-    // Update controller text when selection changes
-    // Update controller only when selection changes
+    // Update controller text when selection or language changes
     _updateControllerFromState(ref.read(editorProv), editorNotifier);
 
     if (selectedType == null || currentElement == null) {
@@ -89,17 +92,48 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${selectedType.displayName} Content',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF495057),
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '${selectedType.displayName} Content',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF495057),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Language indicator badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: currentEditingLanguage == widget.project.effectiveReferenceLanguage
+                              ? const Color(0xFF007BFF).withOpacity(0.1)
+                              : const Color(0xFFE91E63).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: currentEditingLanguage == widget.project.effectiveReferenceLanguage
+                                ? const Color(0xFF007BFF).withOpacity(0.3)
+                                : const Color(0xFFE91E63).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          currentEditingLanguage.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: currentEditingLanguage == widget.project.effectiveReferenceLanguage
+                                ? const Color(0xFF007BFF)
+                                : const Color(0xFFE91E63),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
-                    'Language: ${TranslationService.getLanguageDisplayName(widget.project.effectiveReferenceLanguage)}',
+                    'Editing: ${TranslationService.getLanguageDisplayName(currentEditingLanguage)}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF6C757D),
@@ -124,27 +158,30 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
           ),
           child: Column(
             children: [
-              TextField(
-                controller: _controller,
-                maxLines: 2,//selectedType == TextFieldType.title ? 2 : 1,
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(16),
-                  hintText: 'Enter your ${selectedType.displayName.toLowerCase()}...',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF6C757D),
-                    fontSize: 14,
+              Directionality(
+                textDirection: RTLService.getTextDirection(currentEditingLanguage),
+                child: TextField(
+                  controller: _controller,
+                  maxLines: 2,//selectedType == TextFieldType.title ? 2 : 1,
+                  textAlign: RTLService.getStartAlign(currentEditingLanguage),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    hintText: 'Enter your ${selectedType.displayName.toLowerCase()}...',
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF6C757D),
+                      fontSize: 14,
+                    ),
                   ),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF495057),
+                  ),
+                  onChanged: (value) {
+                    // Update content for the current editing language
+                    editorNotifier.updateTextContentForLanguage(selectedType, currentEditingLanguage, value);
+                  },
                 ),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF495057),
-                ),
-                onChanged: (value) {
-                  // Update content for the reference language
-                  final referenceLanguage = widget.project.effectiveReferenceLanguage;
-                  editorNotifier.updateTextContentForLanguage(selectedType, referenceLanguage, value);
-                },
               ),
               
             ],

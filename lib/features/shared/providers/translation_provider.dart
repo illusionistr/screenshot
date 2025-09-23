@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/services/translation_service.dart';
 import '../../../providers/app_providers.dart';
 import '../../editor/models/text_models.dart';
+import '../../editor/providers/editor_provider.dart';
 import '../../projects/models/project_model.dart';
 
 part 'translation_provider.g.dart';
@@ -169,14 +170,26 @@ class TranslationNotifier extends _$TranslationNotifier {
     required String targetLanguage,
     String? context,
   }) async {
+    print('[TranslationNotifier] translateElement called');
+    print('[TranslationNotifier] Element ID: $elementId');
+    print('[TranslationNotifier] Text: "$text"');
+    print('[TranslationNotifier] Target language: $targetLanguage');
+    print('[TranslationNotifier] Context: $context');
+    
     final referenceLanguage = state.selectedReferenceLanguage;
+    print('[TranslationNotifier] Reference language: $referenceLanguage');
+    
     if (referenceLanguage == null) {
+      print('[TranslationNotifier] ERROR: No reference language set');
       throw Exception('No reference language set');
     }
 
     // Update element state to in-progress
     final currentElement = state.elementStates[elementId] ?? 
         ElementTranslationState(elementId: elementId);
+    
+    print('[TranslationNotifier] Current element state: ${currentElement.status}');
+    print('[TranslationNotifier] Updating element state to in-progress');
     
     final updatedElements = Map<String, ElementTranslationState>.from(state.elementStates);
     updatedElements[elementId] = currentElement.copyWith(
@@ -185,8 +198,10 @@ class TranslationNotifier extends _$TranslationNotifier {
     );
 
     state = state.copyWith(elementStates: updatedElements);
+    print('[TranslationNotifier] State updated - element $elementId is now in progress');
 
     try {
+      print('[TranslationNotifier] Calling _translationService.translateText...');
       final response = await _translationService.translateText(
         text: text,
         fromLanguage: referenceLanguage,
@@ -194,12 +209,19 @@ class TranslationNotifier extends _$TranslationNotifier {
         context: context,
         elementId: elementId,
       );
+      
+      print('[TranslationNotifier] Translation service response received');
+      print('[TranslationNotifier] Response success: ${response.success}');
+      print('[TranslationNotifier] Response text: "${response.translatedText}"');
+      print('[TranslationNotifier] Response error: ${response.error}');
 
       if (response.success) {
-        print('Translation successful: ${response.translatedText}');
+        print('[TranslationNotifier] Translation successful: "${response.translatedText}"');
         // Update with successful translation
         final updatedTranslations = Map<String, String>.from(currentElement.translations);
         updatedTranslations[targetLanguage] = response.translatedText;
+        
+        print('[TranslationNotifier] Updated translations for element $elementId: $updatedTranslations');
 
         final updatedElementsSuccess = Map<String, ElementTranslationState>.from(state.elementStates);
         updatedElementsSuccess[elementId] = currentElement.copyWith(
@@ -212,8 +234,25 @@ class TranslationNotifier extends _$TranslationNotifier {
           elementStates: updatedElementsSuccess,
           completedElements: _countCompletedElements(updatedElementsSuccess, state.pendingLanguages),
         );
+        
+        print('[TranslationNotifier] Element $elementId marked as completed');
+        print('[TranslationNotifier] Total completed elements: ${state.completedElements}');
+        
+        // CRITICAL: Apply the translation to the editor state
+        print('[TranslationNotifier] Applying translation to editor state...');
+        try {
+          final editorNotifier = ref.read(editorByProjectIdProvider(state.projectId).notifier);
+          editorNotifier.applyTranslation(
+            elementId: elementId,
+            language: targetLanguage,
+            translatedText: response.translatedText,
+          );
+          print('[TranslationNotifier] Translation applied to editor successfully');
+        } catch (e) {
+          print('[TranslationNotifier] ERROR applying translation to editor: $e');
+        }
       } else {
-        print('Translation failed: ${response.error}');
+        print('[TranslationNotifier] Translation failed: ${response.error}');
         // Update with error
         final updatedElementsError = Map<String, ElementTranslationState>.from(state.elementStates);
         updatedElementsError[elementId] = currentElement.copyWith(
@@ -223,9 +262,11 @@ class TranslationNotifier extends _$TranslationNotifier {
         );
 
         state = state.copyWith(elementStates: updatedElementsError);
+        print('[TranslationNotifier] Element $elementId marked as failed');
       }
     } catch (e) {
-      print('Translation failed: $e'); 
+      print('[TranslationNotifier] Translation failed with exception: $e'); 
+      print('[TranslationNotifier] Exception type: ${e.runtimeType}');
       // Update with exception error
       final updatedElementsException = Map<String, ElementTranslationState>.from(state.elementStates);
       updatedElementsException[elementId] = currentElement.copyWith(
@@ -235,6 +276,7 @@ class TranslationNotifier extends _$TranslationNotifier {
       );
 
       state = state.copyWith(elementStates: updatedElementsException);
+      print('[TranslationNotifier] Element $elementId marked as failed due to exception');
     }
   }
 
@@ -292,6 +334,20 @@ class TranslationNotifier extends _$TranslationNotifier {
             translations: updatedTranslations,
             lastUpdated: DateTime.now(),
           );
+          
+          // Apply translation to editor state
+          print('[TranslationNotifier] Applying batch translation to editor for element: $elementId');
+          try {
+            final editorNotifier = ref.read(editorByProjectIdProvider(state.projectId).notifier);
+            editorNotifier.applyTranslation(
+              elementId: elementId,
+              language: targetLanguage,
+              translatedText: translation.translatedText,
+            );
+            print('[TranslationNotifier] Batch translation applied to editor successfully for element: $elementId');
+          } catch (e) {
+            print('[TranslationNotifier] ERROR applying batch translation to editor for element $elementId: $e');
+          }
         } else {
           updatedElements[elementId] = currentElement.copyWith(
             status: TranslationStatus.failed,

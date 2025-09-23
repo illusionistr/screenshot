@@ -36,4 +36,15 @@ UploadService uploadService(Ref ref) => UploadService(
 );
 
 @riverpod
-TranslationService translationService(Ref ref) => TranslationService();
+TranslationService translationService(Ref ref) {
+  print('[AppProviders] Creating TranslationService instance');
+  final service = TranslationService();
+  print('[AppProviders] TranslationService created, initializing...');
+  // Initialize the service asynchronously
+  service.initialize().then((_) {
+    print('[AppProviders] TranslationService initialization completed');
+  }).catchError((error) {
+    print('[AppProviders] TranslationService initialization failed: $error');
+  });
+  return service;
+}

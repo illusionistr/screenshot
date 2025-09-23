@@ -211,6 +211,71 @@ class EditorNotifier extends StateNotifier<EditorState> {
     state = state.copyWith(selectedLanguage: language);
   }
 
+
+  /// Applies a completed translation to the corresponding text element
+  void applyTranslation({
+    required String elementId,
+    required String language,
+    required String translatedText,
+  }) {
+    print('[EditorNotifier] applyTranslation called');
+    print('[EditorNotifier] Element ID: $elementId');
+    print('[EditorNotifier] Language: $language');
+    print('[EditorNotifier] Translated text: "$translatedText"');
+
+    // Find the screen and element that matches this elementId
+    for (int screenIndex = 0; screenIndex < state.screens.length; screenIndex++) {
+      final screen = state.screens[screenIndex];
+      
+      // Check if this screen has the element
+      final titleElement = screen.textConfig.getElement(TextFieldType.title);
+      final subtitleElement = screen.textConfig.getElement(TextFieldType.subtitle);
+      
+      TextElement? targetElement;
+      TextFieldType? targetType;
+      
+      if (titleElement?.id == elementId) {
+        targetElement = titleElement;
+        targetType = TextFieldType.title;
+      } else if (subtitleElement?.id == elementId) {
+        targetElement = subtitleElement;
+        targetType = TextFieldType.subtitle;
+      }
+      
+      if (targetElement != null && targetType != null) {
+        print('[EditorNotifier] Found element in screen $screenIndex');
+        print('[EditorNotifier] Element type: ${targetType.displayName}');
+        print('[EditorNotifier] Current translations: ${targetElement.translations}');
+        
+        // Update the element with the new translation
+        final updatedElement = targetElement.addTranslation(language, translatedText);
+        print('[EditorNotifier] Updated translations: ${updatedElement.translations}');
+        
+        // Update the text config
+        final updatedTextConfig = screen.textConfig.updateElement(updatedElement);
+        
+        // Update the screen
+        final updatedScreen = screen.copyWith(textConfig: updatedTextConfig);
+        
+        // Update the screens list
+        final updatedScreens = List<ScreenConfig>.from(state.screens);
+        updatedScreens[screenIndex] = updatedScreen;
+        
+        // Update the state
+        state = state.copyWith(screens: updatedScreens);
+        
+        print('[EditorNotifier] Translation applied successfully');
+        
+        // Persist the changes
+        _persistScreen(screenIndex);
+        
+        return;
+      }
+    }
+    
+    print('[EditorNotifier] WARNING: Element $elementId not found in any screen');
+  }
+
   void updateSelectedDevice(String device) {
     final newDimensions =
         PlatformDetectionService.getDimensionsForDevice(device);
@@ -939,6 +1004,186 @@ class EditorNotifier extends StateNotifier<EditorState> {
     return state.screens.length;
   }
 
+  /// Language-aware version of apply to all that respects the current editing language
+  void applySelectedElementFormattingToAllScreensForCurrentLanguage() {
+    if (state.textElementState.selectedType == null ||
+        state.selectedScreenIndex == null ||
+        state.selectedScreenIndex! >= state.screens.length) {
+      return;
+    }
+
+    final selectedType = state.textElementState.selectedType!;
+    final currentEditingLanguage = state.selectedLanguage;
+    final currentScreen = state.screens[state.selectedScreenIndex!];
+    final sourceTextConfig = currentScreen.textConfig;
+    final sourceElement = sourceTextConfig.getElement(selectedType);
+
+    if (sourceElement == null) {
+      return;
+    }
+
+    // Check if elements are currently grouped
+    final isGrouped = sourceTextConfig.hasBothElementsVisible &&
+        sourceTextConfig.textGrouping == TextGrouping.together;
+
+    // Apply formatting to all screens while preserving per-language content
+    final updatedScreens = state.screens.map((screen) {
+      var updatedTextConfig = screen.textConfig;
+
+      if (isGrouped) {
+        // When grouped, copy the entire text configuration including grouping and both elements
+        final sourceTitleElement = sourceTextConfig.getElement(TextFieldType.title);
+        final sourceSubtitleElement = sourceTextConfig.getElement(TextFieldType.subtitle);
+
+        // Update or create title element (only if it's visible in source)
+        if (sourceTitleElement != null && sourceTitleElement.isVisible) {
+          final existingTitle = updatedTextConfig.getElement(TextFieldType.title);
+          
+          // Preserve existing translations and only update the current editing language content
+          final existingTranslations = existingTitle?.translations ?? <String, String>{};
+          final sourceContent = sourceTitleElement.getTranslation(currentEditingLanguage);
+          final updatedTranslations = Map<String, String>.from(existingTranslations);
+          updatedTranslations[currentEditingLanguage] = sourceContent;
+
+          final updatedTitle = existingTitle != null
+              ? existingTitle.copyWith(
+                  translations: updatedTranslations,
+                  fontFamily: sourceTitleElement.fontFamily,
+                  fontSize: sourceTitleElement.fontSize,
+                  fontWeight: sourceTitleElement.fontWeight,
+                  textAlign: sourceTitleElement.textAlign,
+                  color: sourceTitleElement.color,
+                  verticalPosition: sourceTitleElement.verticalPosition,
+                  isVisible: sourceTitleElement.isVisible,
+                )
+              : (() {
+                  final newId = '${screen.id}_${TextFieldType.title.id}_${DateTime.now().millisecondsSinceEpoch}';
+                  print('[EditorProvider] Creating new title element with ID: $newId for screen: ${screen.id}');
+                  return TextElement(
+                    id: newId,
+                    type: TextFieldType.title,
+                    translations: updatedTranslations,
+                    fontFamily: sourceTitleElement.fontFamily,
+                    fontSize: sourceTitleElement.fontSize,
+                    fontWeight: sourceTitleElement.fontWeight,
+                    textAlign: sourceTitleElement.textAlign,
+                    color: sourceTitleElement.color,
+                    verticalPosition: sourceTitleElement.verticalPosition,
+                    isVisible: sourceTitleElement.isVisible,
+                  );
+                })();
+
+          if (existingTitle != null) {
+            updatedTextConfig = updatedTextConfig.updateElement(updatedTitle);
+          } else {
+            updatedTextConfig = updatedTextConfig.addElement(updatedTitle);
+          }
+        }
+
+        // Update or create subtitle element (only if it's visible in source)
+        if (sourceSubtitleElement != null && sourceSubtitleElement.isVisible) {
+          final existingSubtitle = updatedTextConfig.getElement(TextFieldType.subtitle);
+          
+          // Preserve existing translations and only update the current editing language content
+          final existingTranslations = existingSubtitle?.translations ?? <String, String>{};
+          final sourceContent = sourceSubtitleElement.getTranslation(currentEditingLanguage);
+          final updatedTranslations = Map<String, String>.from(existingTranslations);
+          updatedTranslations[currentEditingLanguage] = sourceContent;
+
+          final updatedSubtitle = existingSubtitle != null
+              ? existingSubtitle.copyWith(
+                  translations: updatedTranslations,
+                  fontFamily: sourceSubtitleElement.fontFamily,
+                  fontSize: sourceSubtitleElement.fontSize,
+                  fontWeight: sourceSubtitleElement.fontWeight,
+                  textAlign: sourceSubtitleElement.textAlign,
+                  color: sourceSubtitleElement.color,
+                  verticalPosition: sourceSubtitleElement.verticalPosition,
+                  isVisible: sourceSubtitleElement.isVisible,
+                )
+              : (() {
+                  final newId = '${screen.id}_${TextFieldType.subtitle.id}_${DateTime.now().millisecondsSinceEpoch}';
+                  print('[EditorProvider] Creating new subtitle element with ID: $newId for screen: ${screen.id}');
+                  return TextElement(
+                    id: newId,
+                    type: TextFieldType.subtitle,
+                    translations: updatedTranslations,
+                    fontFamily: sourceSubtitleElement.fontFamily,
+                    fontSize: sourceSubtitleElement.fontSize,
+                    fontWeight: sourceSubtitleElement.fontWeight,
+                    textAlign: sourceSubtitleElement.textAlign,
+                    color: sourceSubtitleElement.color,
+                    verticalPosition: sourceSubtitleElement.verticalPosition,
+                    isVisible: sourceSubtitleElement.isVisible,
+                  );
+                })();
+
+          if (existingSubtitle != null) {
+            updatedTextConfig = updatedTextConfig.updateElement(updatedSubtitle);
+          } else {
+            updatedTextConfig = updatedTextConfig.addElement(updatedSubtitle);
+          }
+        }
+
+        // Apply the grouping setting
+        updatedTextConfig = updatedTextConfig.updateGrouping(sourceTextConfig.textGrouping);
+
+        return screen.copyWith(textConfig: updatedTextConfig);
+      } else {
+        // When not grouped, use language-aware logic for single element
+        final existingElement = updatedTextConfig.getElement(selectedType);
+
+        if (existingElement != null) {
+          // Preserve existing translations and only update the current editing language content
+          final existingTranslations = existingElement.translations;
+          final sourceContent = sourceElement.getTranslation(currentEditingLanguage);
+          final updatedTranslations = Map<String, String>.from(existingTranslations);
+          updatedTranslations[currentEditingLanguage] = sourceContent;
+
+          // Update existing element with new formatting and language-specific content
+          final updatedElement = existingElement.copyWith(
+            translations: updatedTranslations,
+            fontFamily: sourceElement.fontFamily,
+            fontSize: sourceElement.fontSize,
+            fontWeight: sourceElement.fontWeight,
+            textAlign: sourceElement.textAlign,
+            color: sourceElement.color,
+            verticalPosition: sourceElement.verticalPosition,
+            isVisible: sourceElement.isVisible,
+          );
+          updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
+          return screen.copyWith(textConfig: updatedTextConfig);
+        } else {
+          // Create new element with source formatting and content in current language
+          final sourceContent = sourceElement.getTranslation(currentEditingLanguage);
+          final newElementId = '${screen.id}_${selectedType.id}_${DateTime.now().millisecondsSinceEpoch}';
+          print('[EditorProvider] Creating new ${selectedType.id} element with ID: $newElementId for screen: ${screen.id}');
+          final newElement = TextElement(
+            id: newElementId,
+            type: selectedType,
+            translations: {currentEditingLanguage: sourceContent},
+            fontFamily: sourceElement.fontFamily,
+            fontSize: sourceElement.fontSize,
+            fontWeight: sourceElement.fontWeight,
+            textAlign: sourceElement.textAlign,
+            color: sourceElement.color,
+            verticalPosition: sourceElement.verticalPosition,
+            isVisible: sourceElement.isVisible,
+          );
+          updatedTextConfig = updatedTextConfig.addElement(newElement);
+          return screen.copyWith(textConfig: updatedTextConfig);
+        }
+      }
+    }).toList();
+
+    state = state.copyWith(screens: updatedScreens);
+
+    // Persist changes for all screens
+    for (int i = 0; i < updatedScreens.length; i++) {
+      _persistScreen(i);
+    }
+  }
+
   void updateTextElement(TextElement updatedElement) {
     if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
@@ -1169,6 +1414,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
               screens: screensFromProject,
               selectedScreenIndex: nextSelected,
             );
+            
+            // Fix any existing element ID collisions after loading screens
+            fixElementIdCollisions();
           }
         } catch (_) {
           // If hydration fails for any reason, keep existing UI state
@@ -1279,6 +1527,53 @@ class EditorNotifier extends StateNotifier<EditorState> {
     if (state.selectedScreenIndex == null)
       return LayoutsData.getDefaultLayoutId();
     return state.screens[state.selectedScreenIndex!].layoutId;
+  }
+
+  /// Fixes element ID collisions across screens by regenerating IDs
+  void fixElementIdCollisions() {
+    print('[EditorProvider] Fixing element ID collisions...');
+    
+    final updatedScreens = <ScreenConfig>[];
+    final seenIds = <String>{};
+    
+    for (final screen in state.screens) {
+      var updatedTextConfig = screen.textConfig;
+      bool hasChanges = false;
+      
+      for (final element in screen.textConfig.allElements) {
+        // Check if this element ID already exists in another screen
+        if (seenIds.contains(element.id)) {
+          // Generate new unique ID for this element
+          final newId = '${screen.id}_${element.type.id}_${DateTime.now().millisecondsSinceEpoch}_${updatedScreens.length}';
+          print('[EditorProvider] Fixing collision: ${element.id} -> $newId (screen: ${screen.id})');
+          
+          final updatedElement = element.copyWith(id: newId);
+          updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
+          hasChanges = true;
+          seenIds.add(newId);
+        } else {
+          seenIds.add(element.id);
+        }
+      }
+      
+      if (hasChanges) {
+        updatedScreens.add(screen.copyWith(textConfig: updatedTextConfig));
+      } else {
+        updatedScreens.add(screen);
+      }
+    }
+    
+    if (updatedScreens.any((screen) => screen != state.screens[updatedScreens.indexOf(screen)])) {
+      state = state.copyWith(screens: updatedScreens);
+      print('[EditorProvider] Element ID collisions fixed, ${seenIds.length} unique IDs now exist');
+      
+      // Persist all screens after fixing IDs
+      for (int i = 0; i < updatedScreens.length; i++) {
+        _persistScreen(i);
+      }
+    } else {
+      print('[EditorProvider] No ID collisions found');
+    }
   }
 }
 

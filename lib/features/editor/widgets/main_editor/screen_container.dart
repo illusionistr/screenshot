@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../projects/models/project_model.dart';
 import '../../../shared/models/screenshot_model.dart';
@@ -6,6 +7,7 @@ import '../../constants/layouts_data.dart';
 import '../../models/background_models.dart';
 import '../../models/layout_models.dart';
 import '../../models/text_models.dart' as text_models;
+import '../../providers/editor_provider.dart';
 import '../../utils/background_renderer.dart';
 import '../../utils/frame_renderer.dart';
 import '../../utils/layout_renderer.dart';
@@ -15,7 +17,7 @@ import 'screen_management_buttons.dart';
 import '../../services/export_service.dart';
 import '../../models/positioning_models.dart';
 
-class ScreenContainer extends StatefulWidget {
+class ScreenContainer extends ConsumerStatefulWidget {
   final String screenId;
   final String deviceId;
   final bool isSelected;
@@ -58,10 +60,10 @@ class ScreenContainer extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ScreenContainer> createState() => _ScreenContainerState();
+  ConsumerState<ScreenContainer> createState() => _ScreenContainerState();
 }
 
-class _ScreenContainerState extends State<ScreenContainer> {
+class _ScreenContainerState extends ConsumerState<ScreenContainer> {
   final GlobalKey _repaintKey = GlobalKey();
   bool _exporting = false;
 
@@ -396,11 +398,22 @@ class _ScreenContainerState extends State<ScreenContainer> {
       text_models.ScreenTextConfig textConfig, Size containerSize) {
     final baseConfig = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
     final config = _applyTransformOverrides(baseConfig, widget.customSettings);
+    
+    // Get the current editing language from the editor state
+    String currentLanguage = 'en'; // fallback
+    if (widget.project != null) {
+      final editorState = ref.watch(editorByProjectIdProvider(widget.project!.id));
+      currentLanguage = editorState.selectedLanguage;
+    }
+    
+    print('[ScreenContainer] Building text overlay for language: $currentLanguage');
+    
     // During export, render non-interactive overlay to avoid selection UI
     if (_exporting || widget.project == null) {
       return TextRenderer.renderTextOverlay(
         textConfig: textConfig,
         containerSize: containerSize,
+        currentLanguage: currentLanguage,
         scaleFactor: 0.7,
         layout: config,
       );
@@ -411,6 +424,7 @@ class _ScreenContainerState extends State<ScreenContainer> {
       textConfig: textConfig,
       containerSize: containerSize,
       project: widget.project!,
+      currentLanguage: currentLanguage,
       scaleFactor: 0.7,
       layout: config,
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/rtl_service.dart';
 import '../../../projects/models/project_model.dart';
 import '../../models/editor_state.dart';
 import '../../models/text_models.dart';
@@ -25,6 +26,7 @@ class TextFormattingPanel extends ConsumerWidget {
 
     final selectedType = editorState.textElementState.selectedType;
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
+    final currentEditingLanguage = editorState.selectedLanguage;
 
     if (selectedType == null || currentElement == null) {
       return Container(
@@ -257,27 +259,31 @@ class TextFormattingPanel extends ConsumerWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Horizontal Alignment Only (Vertical Alignment removed)
+            // Horizontal Alignment (RTL-aware)
             Expanded(
               child: _FormattingSection(
                 title: 'Horizontal Alignment',
-                child: Row(
-                  children: [
-                    ...EditorTextAlign.values.map((align) => Padding(
-                          padding: const EdgeInsets.only(right: 2),
-                          child: _IconButton(
-                            icon: align.icon,
-                            isSelected:
-                                currentElement.textAlign == align.textAlign,
-                            onPressed: () {
-                              editorNotifier.updateTextFormatting(
-                                type: selectedType,
-                                textAlign: align.textAlign,
-                              );
-                            },
-                          ),
-                        )),
-                  ],
+                child: Directionality(
+                  textDirection: RTLService.getTextDirection(currentEditingLanguage),
+                  child: Row(
+                    children: [
+                      ...EditorTextAlign.values.map((align) => Padding(
+                            padding: const EdgeInsets.only(right: 2),
+                            child: _RTLAwareIconButton(
+                              align: align,
+                              currentLanguage: currentEditingLanguage,
+                              isSelected:
+                                  currentElement.textAlign == align.textAlign,
+                              onPressed: () {
+                                editorNotifier.updateTextFormatting(
+                                  type: selectedType,
+                                  textAlign: align.textAlign,
+                                );
+                              },
+                            ),
+                          )),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -730,6 +736,65 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFE91E63) : Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFFE1E5E9)),
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(
+          icon,
+          size: 14,
+          color: isSelected ? Colors.white : const Color(0xFF6C757D),
+        ),
+        onPressed: onPressed,
+      ),
+    );
+  }
+}
+
+class _RTLAwareIconButton extends StatelessWidget {
+  const _RTLAwareIconButton({
+    required this.align,
+    required this.currentLanguage,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final EditorTextAlign align;
+  final String currentLanguage;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    // Get the appropriate icon for RTL languages
+    IconData icon = align.icon;
+    
+    // For RTL languages, swap left/right alignment icons
+    if (RTLService.isRTL(currentLanguage)) {
+      switch (align.textAlign) {
+        case TextAlign.left:
+          icon = Icons.format_align_right;
+          break;
+        case TextAlign.right:
+          icon = Icons.format_align_left;
+          break;
+        case TextAlign.start:
+          icon = Icons.format_align_right; // Start becomes right in RTL
+          break;
+        case TextAlign.end:
+          icon = Icons.format_align_left; // End becomes left in RTL
+          break;
+        default:
+          icon = align.icon; // Keep center, justify as is
+      }
+    }
+
     return Container(
       width: 28,
       height: 28,
