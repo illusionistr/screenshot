@@ -20,10 +20,8 @@ class TranslationControlsPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final editorProv = editorByProjectIdProvider(project.id);
     final editorState = ref.watch(editorProv);
-    final editorNotifier = ref.read(editorProv.notifier);
 
     final translationState = ref.watch(translationStateProvider(project.id));
-    final translationNotifier = ref.read(translationNotifierProvider(project.id).notifier);
 
     // Check if we have a reference language and any text elements
     final hasReferenceLanguage = project.referenceLanguage != null;
@@ -53,6 +51,13 @@ class TranslationControlsPanel extends ConsumerWidget {
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF495057),
               ),
+            ),
+            const SizedBox(width: 8),
+            _buildTooltipInfo(
+              hasReferenceLanguage: hasReferenceLanguage,
+              hasTargetLanguages: hasTargetLanguages,
+              totalTextElements: totalTextElements,
+              targetLanguages: targetLanguages,
             ),
           ],
         ),
@@ -98,7 +103,7 @@ class TranslationControlsPanel extends ConsumerWidget {
           ),
         ),
 
-        const SizedBox(height: 12),
+    
 
         // Status and info section
         _buildStatusSection(
@@ -121,67 +126,24 @@ class TranslationControlsPanel extends ConsumerWidget {
     required bool isTranslating,
     required TranslationState translationState,
   }) {
-    // If everything is ready and not translating, show ready state
-    if (hasReferenceLanguage && hasTargetLanguages && totalTextElements > 0 && !isTranslating) {
-      return _buildReadyState(totalTextElements, targetLanguages);
-    }
-
     // If translating, show progress
     if (isTranslating) {
       return _buildProgressState(translationState);
     }
 
-    // Show requirements that need to be met
-    return _buildRequirementsState(
-      hasReferenceLanguage: hasReferenceLanguage,
-      hasTargetLanguages: hasTargetLanguages,
-      totalTextElements: totalTextElements,
-    );
+    // If not ready, show requirements that need to be met
+    if (!hasReferenceLanguage || !hasTargetLanguages || totalTextElements == 0) {
+      return _buildRequirementsState(
+        hasReferenceLanguage: hasReferenceLanguage,
+        hasTargetLanguages: hasTargetLanguages,
+        totalTextElements: totalTextElements,
+      );
+    }
+
+    // If ready and not translating, don't show anything (info is in tooltip now)
+    return const SizedBox.shrink();
   }
 
-  Widget _buildReadyState(int totalTextElements, List<String> targetLanguages) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD4EDDA),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFC3E6CB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 16,
-                color: const Color(0xFF155724),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Ready to translate',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF155724),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '• $totalTextElements text element${totalTextElements != 1 ? 's' : ''} across all screens\n'
-            '• ${targetLanguages.length} target language${targetLanguages.length != 1 ? 's' : ''}: ${targetLanguages.map((code) => TranslationService.getLanguageDisplayName(code)).join(', ')}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF155724),
-              height: 1.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildProgressState(TranslationState translationState) {
     final progress = translationState.progress;
@@ -298,6 +260,39 @@ class TranslationControlsPanel extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildTooltipInfo({
+    required bool hasReferenceLanguage,
+    required bool hasTargetLanguages,
+    required int totalTextElements,
+    required List<String> targetLanguages,
+  }) {
+    // Only show tooltip when everything is ready
+    if (hasReferenceLanguage && hasTargetLanguages && totalTextElements > 0) {
+      final tooltipMessage = 'Ready to translate:\n'
+          '• $totalTextElements text element${totalTextElements != 1 ? 's' : ''} across all screens\n'
+          '• ${targetLanguages.length} target language${targetLanguages.length != 1 ? 's' : ''}: ${targetLanguages.map((code) => TranslationService.getLanguageDisplayName(code)).join(', ')}';
+
+      return Tooltip(
+        message: tooltipMessage,
+        preferBelow: false,
+        child: Icon(
+          Icons.check_circle_outline,
+          size: 14,
+          color: const Color(0xFF28A745),
+        ),
+      );
+    } else {
+      return Tooltip(
+        message: 'Complete the requirements below to enable translation',
+        child: Icon(
+          Icons.info_outline,
+          size: 14,
+          color: const Color(0xFF6C757D),
+        ),
+      );
+    }
   }
 
   int _countTotalTextElements(EditorState editorState) {

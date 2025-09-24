@@ -150,34 +150,34 @@ class ReferenceLanguageSelector extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         // Info text
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFFE1E5E9)),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                size: 16,
-                color: const Color(0xFF6C757D),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Text in this language will be used as the source for all translations. Make sure your content is finalized before translating.',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6C757D),
-                    height: 1.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Container(
+        //   padding: const EdgeInsets.all(12),
+        //   decoration: BoxDecoration(
+        //     color: const Color(0xFFF8F9FA),
+        //     borderRadius: BorderRadius.circular(6),
+        //     border: Border.all(color: const Color(0xFFE1E5E9)),
+        //   ),
+        //   child: Row(
+        //     children: [
+        //       Icon(
+        //         Icons.lightbulb_outline,
+        //         size: 16,
+        //         color: const Color(0xFF6C757D),
+        //       ),
+        //       const SizedBox(width: 8),
+        //       Expanded(
+        //         child: Text(
+        //           'Text in this language will be used as the source for all translations. Make sure your content is finalized before translating.',
+        //           style: const TextStyle(
+        //             fontSize: 12,
+        //             color: Color(0xFF6C757D),
+        //             height: 1.3,
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }

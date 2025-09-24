@@ -35,7 +35,7 @@ class TextTabContent extends ConsumerWidget {
         // Translation Controls Section
         ReferenceLanguageSelector(project: project),
         
-        const SizedBox(height: 24),
+        const SizedBox(height: 10),
         
         TranslationControlsPanel(project: project),
         
@@ -59,17 +59,17 @@ class TextTabContent extends ConsumerWidget {
         TextElementSelector(project: project),
 
         if (hasSelection) ...[
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Content Editor
           TextContentEditor(project: project),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Formatting Panel
           TextFormattingPanel(project: project),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Apply to All Button
           _ApplyToAllButton(
@@ -78,7 +78,7 @@ class TextTabContent extends ConsumerWidget {
             editorNotifier: editorNotifier,
           ),
         ] else ...[
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Help text when no selection
           Container(

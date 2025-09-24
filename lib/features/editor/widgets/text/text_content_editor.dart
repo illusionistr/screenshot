@@ -131,14 +131,7 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Editing: ${TranslationService.getLanguageDisplayName(currentEditingLanguage)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6C757D),
-                    ),
-                  ),
+                 
                 ],
               ),
             ),
@@ -149,7 +142,7 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
