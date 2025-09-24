@@ -10,6 +10,13 @@ import '../../utils/text_renderer.dart';
 import '../background/color_picker_dialog.dart';
 import '../../models/positioning_models.dart';
 
+extension TextEditingControllerExtension on TextEditingController {
+  void selectAll() {
+    if (text.isEmpty) return;
+    selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+  }
+}
+
 class TextFormattingPanel extends ConsumerWidget {
   const TextFormattingPanel({
     super.key,
@@ -21,12 +28,12 @@ class TextFormattingPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final editorProv = editorByProjectIdProvider(project.id);
-    final editorState = ref.watch(editorProv);
     final editorNotifier = ref.read(editorProv.notifier);
 
-    final selectedType = editorState.textElementState.selectedType;
+    // Only watch specific properties instead of entire state
+    final selectedType = ref.watch(editorProv.select((s) => s.textElementState.selectedType));
+    final currentEditingLanguage = ref.watch(editorProv.select((s) => s.selectedLanguage));
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
-    final currentEditingLanguage = editorState.selectedLanguage;
 
     if (selectedType == null || currentElement == null) {
       return Container(
@@ -229,38 +236,41 @@ class TextFormattingPanel extends ConsumerWidget {
 
         const SizedBox(height: 16),
 
-        // Font Weight Section
-        _FormattingSection(
-          title: 'Font Weight',
-          child: Row(
-            children: EditorFontWeight.values.map((weight) {
-              final isSelected = currentElement.fontWeight == weight.fontWeight;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: _WeightButton(
-                  weight: weight,
-                  isSelected: isSelected,
-                  onPressed: () {
-                    editorNotifier.updateTextFormatting(
-                      type: selectedType,
-                      fontWeight: weight.fontWeight,
-                    );
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Vertical Position Section
-        // Vertical and Horizontal Alignment Sections - Side by Side
+        // Font Weight and Horizontal Alignment - Side by Side
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Horizontal Alignment (RTL-aware)
+            // Font Weight Section - Takes up left side
             Expanded(
+              flex: 3,
+              child: _FormattingSection(
+                title: 'Font Weight',
+                child: Row(
+                  children: EditorFontWeight.values.map((weight) {
+                    final isSelected = currentElement.fontWeight == weight.fontWeight;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _WeightButton(
+                        weight: weight,
+                        isSelected: isSelected,
+                        onPressed: () {
+                          editorNotifier.updateTextFormatting(
+                            type: selectedType,
+                            fontWeight: weight.fontWeight,
+                          );
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 5),
+
+            // Horizontal Alignment Section - Takes up right side (RTL-aware)
+            Expanded(
+              flex:2,
               child: _FormattingSection(
                 title: 'Horizontal Alignment',
                 child: Directionality(
@@ -358,6 +368,8 @@ class _TextPositioningControls extends ConsumerWidget {
               max: 3.0,
               value: t.scale.clamp(0.1, 3.0),
               format: (v) => '${v.toStringAsFixed(2)}x',
+              decimalPlaces: 2,
+              suffix: 'x',
               onChanged: (v) {
                 editorNotifier.updateTextTransformOverrideForCurrentScreen(
                   selectedType,
@@ -374,6 +386,8 @@ class _TextPositioningControls extends ConsumerWidget {
               max: 360,
               value: t.rotationDeg % 360,
               format: (v) => '${v.round()}°',
+              decimalPlaces: 0,
+              suffix: '°',
               onChanged: (v) {
                 editorNotifier.updateTextTransformOverrideForCurrentScreen(
                   selectedType,
@@ -426,14 +440,16 @@ class _TextPositioningControls extends ConsumerWidget {
           _LabeledRow(
             label: 'H Offset',
             child: _SliderWithValue(
-              min: -1.0,
-              max: 1.0,
-              value: t.hPercent.clamp(-1.0, 1.0),
-              format: (v) => '${(v * 100).round()}%',
+              min: -100.0,
+              max: 100.0,
+              value: (t.hPercent * 100).clamp(-100.0, 100.0),
+              format: (v) => '${v.round()}%',
+              decimalPlaces: 0,
+              suffix: '%',
               onChanged: (v) {
                 editorNotifier.updateTextTransformOverrideForCurrentScreen(
                   selectedType,
-                  t.copyWith(hPercent: v),
+                  t.copyWith(hPercent: v / 100), // Convert percentage back to decimal
                 );
               },
             ),
@@ -442,14 +458,16 @@ class _TextPositioningControls extends ConsumerWidget {
           _LabeledRow(
             label: 'V Offset',
             child: _SliderWithValue(
-              min: -1.0,
-              max: 1.0,
-              value: t.vPercent.clamp(-1.0, 1.0),
-              format: (v) => '${(v * 100).round()}%',
+              min: -100.0,
+              max: 100.0,
+              value: (t.vPercent * 100).clamp(-100.0, 100.0),
+              format: (v) => '${v.round()}%',
+              decimalPlaces: 0,
+              suffix: '%',
               onChanged: (v) {
                 editorNotifier.updateTextTransformOverrideForCurrentScreen(
                   selectedType,
-                  t.copyWith(vPercent: v),
+                  t.copyWith(vPercent: v / 100), // Convert percentage back to decimal
                 );
               },
             ),
@@ -478,38 +496,122 @@ class _LabeledRow extends StatelessWidget {
   }
 }
 
-class _SliderWithValue extends StatelessWidget {
+class _SliderWithValue extends StatefulWidget {
   final double min;
   final double max;
   final double value;
   final String Function(double) format;
   final ValueChanged<double> onChanged;
+  final String? suffix;
+  final int decimalPlaces;
+
   const _SliderWithValue({
     required this.min,
     required this.max,
     required this.value,
     required this.format,
     required this.onChanged,
+    this.suffix,
+    this.decimalPlaces = 2,
   });
+
+  @override
+  State<_SliderWithValue> createState() => _SliderWithValueState();
+}
+
+class _SliderWithValueState extends State<_SliderWithValue> {
+  late TextEditingController _controller;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+    _updateControllerText();
+  }
+
+  @override
+  void didUpdateWidget(_SliderWithValue oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && !_isEditing) {
+      _updateControllerText();
+    }
+  }
+
+  void _updateControllerText() {
+    // Remove suffix and formatting for clean editing
+    String valueText;
+    if (widget.suffix != null) {
+      valueText = widget.value.toStringAsFixed(widget.decimalPlaces);
+    } else {
+      valueText = widget.value.toStringAsFixed(widget.decimalPlaces);
+    }
+    _controller.text = valueText;
+  }
+
+  void _handleTextSubmitted(String text) {
+    setState(() => _isEditing = false);
+
+    try {
+      double newValue = double.parse(text.replaceAll(widget.suffix ?? '', '').trim());
+      newValue = newValue.clamp(widget.min, widget.max);
+      widget.onChanged(newValue);
+    } catch (e) {
+      // If parsing fails, revert to current value
+      _updateControllerText();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: Slider(
-            min: min,
-            max: max,
-            value: value.clamp(min, max),
-            onChanged: onChanged,
+            min: widget.min,
+            max: widget.max,
+            value: widget.value.clamp(widget.min, widget.max),
+            onChanged: widget.onChanged,
           ),
         ),
         const SizedBox(width: 8),
         SizedBox(
-          width: 56,
-          child: Text(
-            format(value),
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF495057)),
+          width: 70,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0xFFE1E5E9)),
+            ),
+            child: TextField(
+              controller: _controller,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF495057)),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onTap: () {
+                setState(() => _isEditing = true);
+                _controller.selectAll();
+              },
+              onSubmitted: _handleTextSubmitted,
+              onEditingComplete: () {
+                _handleTextSubmitted(_controller.text);
+              },
+              onTapOutside: (_) {
+                _handleTextSubmitted(_controller.text);
+              },
+            ),
           ),
         ),
       ],

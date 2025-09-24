@@ -8,6 +8,13 @@ import '../../models/layout_models.dart';
 import '../../models/positioning_models.dart';
 import '../../providers/editor_provider.dart';
 
+extension TextEditingControllerExtension on TextEditingController {
+  void selectAll() {
+    if (text.isEmpty) return;
+    selection = TextSelection(baseOffset: 0, extentOffset: text.length);
+  }
+}
+
 class LayoutControls extends ConsumerStatefulWidget {
   const LayoutControls({
     super.key,
@@ -74,15 +81,18 @@ class _LayoutControlsState extends ConsumerState<LayoutControls> {
   @override
   Widget build(BuildContext context) {
     final editorProv = editorByProjectIdProvider(widget.projectId);
-    final editorState = ref.watch(editorProv);
     final editorNotifier = ref.read(editorProv.notifier);
+
+    // Only watch the specific properties we need for device transform
+    final selectedScreenIndex = ref.watch(editorProv.select((s) => s.selectedScreenIndex));
+    final screens = ref.watch(editorProv.select((s) => s.screens));
 
     // Resolve current transform (per-screen override or from layout)
     final currentLayoutId = editorNotifier.getCurrentScreenLayoutId();
     final baseLayout = LayoutsData.getLayoutConfigOrDefault(currentLayoutId);
-    final overrides = editorState.selectedScreenIndex != null &&
-            editorState.selectedScreenIndex! < editorState.screens.length
-        ? editorState.screens[editorState.selectedScreenIndex!].customSettings
+    final overrides = selectedScreenIndex != null &&
+            selectedScreenIndex < screens.length
+        ? screens[selectedScreenIndex].customSettings
         : const <String, dynamic>{};
     final deviceTransform = _resolveDeviceTransform(baseLayout, overrides);
 
@@ -299,6 +309,8 @@ class _LayoutControlsState extends ConsumerState<LayoutControls> {
               max: 3.0,
               value: value.scale.clamp(0.1, 3.0),
               format: (v) => '${v.toStringAsFixed(2)}x',
+              decimalPlaces: 2,
+              suffix: 'x',
               onChanged: (v) => onChanged(value.copyWith(scale: v)),
             ),
           ),
@@ -310,6 +322,8 @@ class _LayoutControlsState extends ConsumerState<LayoutControls> {
               max: 360,
               value: value.rotationDeg % 360,
               format: (v) => '${v.round()}°',
+              decimalPlaces: 0,
+              suffix: '°',
               onChanged: (v) => onChanged(value.copyWith(rotationDeg: v)),
             ),
           ),
@@ -347,22 +361,26 @@ class _LayoutControlsState extends ConsumerState<LayoutControls> {
           _LabeledRow(
             label: 'H Offset',
             child: _SliderWithValue(
-              min: -1.0,
-              max: 1.0,
-              value: value.hPercent.clamp(-1.0, 1.0),
-              format: (v) => '${(v * 100).round()}%',
-              onChanged: (v) => onChanged(value.copyWith(hPercent: v)),
+              min: -100.0,
+              max: 100.0,
+              value: (value.hPercent * 100).clamp(-100.0, 100.0),
+              format: (v) => '${v.round()}%',
+              decimalPlaces: 0,
+              suffix: '%',
+              onChanged: (v) => onChanged(value.copyWith(hPercent: v / 100)),
             ),
           ),
           const SizedBox(height: 8),
           _LabeledRow(
             label: 'V Offset',
             child: _SliderWithValue(
-              min: -1.0,
-              max: 1.0,
-              value: value.vPercent.clamp(-1.0, 1.0),
-              format: (v) => '${(v * 100).round()}%',
-              onChanged: (v) => onChanged(value.copyWith(vPercent: v)),
+              min: -100.0,
+              max: 100.0,
+              value: (value.vPercent * 100).clamp(-100.0, 100.0),
+              format: (v) => '${v.round()}%',
+              decimalPlaces: 0,
+              suffix: '%',
+              onChanged: (v) => onChanged(value.copyWith(vPercent: v / 100)),
             ),
           ),
         ],
@@ -390,39 +408,122 @@ class _LabeledRow extends StatelessWidget {
   }
 }
 
-class _SliderWithValue extends StatelessWidget {
+class _SliderWithValue extends StatefulWidget {
   final double min;
   final double max;
   final double value;
   final String Function(double) format;
   final ValueChanged<double> onChanged;
+  final String? suffix;
+  final int decimalPlaces;
+
   const _SliderWithValue({
     required this.min,
     required this.max,
     required this.value,
     required this.format,
     required this.onChanged,
+    this.suffix,
+    this.decimalPlaces = 2,
   });
+
+  @override
+  State<_SliderWithValue> createState() => _SliderWithValueState();
+}
+
+class _SliderWithValueState extends State<_SliderWithValue> {
+  late TextEditingController _controller;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+    _updateControllerText();
+  }
+
+  @override
+  void didUpdateWidget(_SliderWithValue oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && !_isEditing) {
+      _updateControllerText();
+    }
+  }
+
+  void _updateControllerText() {
+    // Remove suffix and formatting for clean editing
+    String valueText;
+    if (widget.suffix != null) {
+      valueText = widget.value.toStringAsFixed(widget.decimalPlaces);
+    } else {
+      valueText = widget.value.toStringAsFixed(widget.decimalPlaces);
+    }
+    _controller.text = valueText;
+  }
+
+  void _handleTextSubmitted(String text) {
+    setState(() => _isEditing = false);
+
+    try {
+      double newValue = double.parse(text.replaceAll(widget.suffix ?? '', '').trim());
+      newValue = newValue.clamp(widget.min, widget.max);
+      widget.onChanged(newValue);
+    } catch (e) {
+      // If parsing fails, revert to current value
+      _updateControllerText();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: Slider(
-            min: min,
-            max: max,
-            value: value.clamp(min, max),
-            onChanged: onChanged,
+            min: widget.min,
+            max: widget.max,
+            value: widget.value.clamp(widget.min, widget.max),
+            onChanged: widget.onChanged,
           ),
         ),
         const SizedBox(width: 8),
         SizedBox(
-          width: 56,
-          child: Text(
-            format(value),
-            textAlign: TextAlign.right,
-            style:
-                const TextStyle(fontSize: 12, color: Color(0xFF495057)),
+          width: 70,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0xFFE1E5E9)),
+            ),
+            child: TextField(
+              controller: _controller,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF495057)),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                isDense: true,
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              onTap: () {
+                setState(() => _isEditing = true);
+                _controller.selectAll();
+              },
+              onSubmitted: _handleTextSubmitted,
+              onEditingComplete: () {
+                _handleTextSubmitted(_controller.text);
+              },
+              onTapOutside: (_) {
+                _handleTextSubmitted(_controller.text);
+              },
+            ),
           ),
         ),
       ],

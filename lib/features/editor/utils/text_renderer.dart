@@ -69,13 +69,16 @@ class TextRenderer {
     // Handle separated rendering (default behavior)
     return Stack(
       children: visibleElements.map((element) {
-        return renderInteractiveTextElement(
-          element: element,
-          containerSize: containerSize,
-          project: project,
-          currentLanguage: currentLanguage,
-          scaleFactor: scaleFactor,
-          layout: layout,
+        return KeyedSubtree(
+          key: ValueKey('text_overlay_${element.id}'),
+          child: renderInteractiveTextElement(
+            element: element,
+            containerSize: containerSize,
+            project: project,
+            currentLanguage: currentLanguage,
+            scaleFactor: scaleFactor,
+            layout: layout,
+          ),
         );
       }).toList(),
     );
@@ -98,7 +101,6 @@ class TextRenderer {
 
     // Get the translated content for the current language
     final displayContent = element.getTranslation(currentLanguage);
-    print('[TextRenderer] Rendering element ${element.id} in language $currentLanguage: "$displayContent"');
 
     return Positioned(
       left: position.left,
@@ -159,6 +161,7 @@ class TextRenderer {
         child: _withAnchorTranslation(
           t,
           child: _InteractiveTextWidget(
+            key: ValueKey('interactive_text_${element.id}'),
             element: element,
             containerSize: containerSize,
             project: project,
@@ -894,6 +897,7 @@ class _InteractiveTextWidget extends ConsumerStatefulWidget {
   final String currentLanguage;
 
   const _InteractiveTextWidget({
+    super.key,
     required this.element,
     required this.containerSize,
     required this.project,
@@ -913,12 +917,15 @@ class _InteractiveTextWidgetState
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
+    // Only watch if this specific element is selected - not the entire state
+    _isSelected = ref.watch(
+      editorByProjectIdProvider(widget.project.id).select((state) =>
+        state.textElementState.isSelected(widget.element.type)
+      )
+    );
+
     final editorNotifier =
         ref.read(editorByProjectIdProvider(widget.project.id).notifier);
-
-    // Check if this element is currently selected
-    _isSelected = editorState.textElementState.isSelected(widget.element.type);
 
     return GestureDetector(
       onTap: () => _handleTap(editorNotifier),
@@ -971,7 +978,6 @@ class _InteractiveTextWidgetState
 
     // Get the translated content for the current language
     final displayContent = widget.element.getTranslation(widget.currentLanguage);
-    print('[_InteractiveTextWidget] Rendering element ${widget.element.id} in language ${widget.currentLanguage}: "$displayContent"');
 
     return Text(
       displayContent,
