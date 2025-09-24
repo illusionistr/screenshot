@@ -30,7 +30,8 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
   bool _isLoading = true;
   bool _hasError = false;
 
-  BorderRadius get _borderRadius => widget.borderRadius ?? BorderRadius.circular(8);
+  BorderRadius get _borderRadius =>
+      widget.borderRadius ?? BorderRadius.circular(8);
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +44,7 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
           padding: widget.padding,
           decoration: BoxDecoration(
             borderRadius: _borderRadius,
+            color: Colors.grey[50],
             border: Border.all(
               color: Colors.grey[300]!,
               width: 1,
@@ -67,7 +69,7 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
                     widget.screenshot.storageUrl,
                     width: double.infinity,
                     height: double.infinity,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -210,7 +212,8 @@ class _ScreenshotThumbnailState extends State<ScreenshotThumbnail> {
                                   ),
                                 ),
                                 Text(
-                                  FileValidationService.formatFileSize(widget.screenshot.fileSize),
+                                  FileValidationService.formatFileSize(
+                                      widget.screenshot.fileSize),
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 9,

@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
-import '../../shared/models/device_model.dart';
-import '../../shared/models/screenshot_model.dart';
 import '../../shared/models/upload_state_model.dart';
 import '../../shared/providers/upload_provider.dart';
 import '../../shared/widgets/drag_drop_upload_zone.dart';
+import '../../shared/widgets/screenshot_thumbnail.dart';
 import '../../shared/widgets/upload_progress_indicator.dart';
-import '../../shared/widgets/upload_grid_view.dart';
 import '../models/editor_state.dart';
 import '../providers/editor_provider.dart';
 
@@ -25,10 +23,12 @@ class ScreenshotManagerModal extends ConsumerStatefulWidget {
   final VoidCallback? onClose;
 
   @override
-  ConsumerState<ScreenshotManagerModal> createState() => _ScreenshotManagerModalState();
+  ConsumerState<ScreenshotManagerModal> createState() =>
+      _ScreenshotManagerModalState();
 }
 
-class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal> {
+class _ScreenshotManagerModalState
+    extends ConsumerState<ScreenshotManagerModal> {
   String? selectedDeviceId;
   String? selectedLanguageCode;
   bool _isUploading = false;
@@ -38,11 +38,11 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     super.initState();
     // Initialize with first available device and language
     final editorState = ref.read(editorByProjectIdProvider(widget.project.id));
-    selectedDeviceId = editorState.availableDevices.isNotEmpty 
-        ? editorState.availableDevices.first.id 
+    selectedDeviceId = editorState.availableDevices.isNotEmpty
+        ? editorState.availableDevices.first.id
         : null;
-    selectedLanguageCode = editorState.availableLanguages.isNotEmpty 
-        ? editorState.availableLanguages.first 
+    selectedLanguageCode = editorState.availableLanguages.isNotEmpty
+        ? editorState.availableLanguages.first
         : 'en';
   }
 
@@ -50,15 +50,13 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
   Widget build(BuildContext context) {
     final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
     final uploadProgress = ref.watch(uploadProgressNotifierProvider);
-    final uploadQueue = ref.watch(uploadQueueNotifierProvider);
-    final uploadCoordinator = ref.watch(uploadCoordinatorProvider);
 
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.9,
+        height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -74,51 +72,58 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
           children: [
             // Modal Header
             _buildModalHeader(context),
-            
+
             // Content Area
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    // Device and Language Selectors
-                    _buildSelectors(editorState),
-                    
-                    const SizedBox(height: 10),
-                    
-                    // Upload Progress (if any uploads in progress)
-                    if (uploadProgress.isNotEmpty) ...[
-                      _buildUploadProgress(uploadProgress),
-                      const SizedBox(height: 24),
-                    ],
-                    
-                    // Drag & Drop Upload Zone
+                    // Left side - Compact settings and upload
                     Expanded(
                       flex: 1,
-                      child: DragDropUploadZone(
-                        onFilesDropped: _handleFilesDropped,
-                        onTap: _handleTapToSelect,
-                        enabled: !_isUploading && 
-                                selectedDeviceId != null && 
-                                selectedLanguageCode != null,
-                        title: _getUploadZoneTitle(),
-                        subtitle: _getUploadZoneSubtitle(),
-                        height: double.infinity,
+                      child: Column(
+                        children: [
+                          // Compact Device and Language Selectors
+                          _buildCompactSelectors(editorState),
+
+                          const SizedBox(height: 12),
+
+                          // Upload Progress (if any uploads in progress)
+                          if (uploadProgress.isNotEmpty) ...[
+                            _buildUploadProgress(uploadProgress),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // Compact Drag & Drop Upload Zone
+                          Expanded(
+                            child: DragDropUploadZone(
+                              onFilesDropped: _handleFilesDropped,
+                              onTap: _handleTapToSelect,
+                              enabled: !_isUploading &&
+                                  selectedDeviceId != null &&
+                                  selectedLanguageCode != null,
+                              title: _getUploadZoneTitle(),
+                              subtitle: _getUploadZoneSubtitle(),
+                              height: double.infinity,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Existing Screenshots Grid
+
+                    const SizedBox(width: 16),
+
+                    // Right side - Screenshots with integrated upload area
                     Expanded(
                       flex: 3,
-                      child: _buildExistingScreenshots(),
+                      child: _buildScreenshotsWithUpload(),
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             // Modal Footer
             _buildModalFooter(uploadProgress),
           ],
@@ -129,7 +134,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
 
   Widget _buildModalHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         color: Color(0xFFF8F9FA),
         borderRadius: BorderRadius.only(
@@ -166,12 +171,12 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     );
   }
 
-  Widget _buildSelectors(EditorState editorState) {
+  Widget _buildCompactSelectors(EditorState editorState) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE1E5E9)),
       ),
       child: Column(
@@ -180,12 +185,12 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
           const Text(
             'Upload Settings',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: Color(0xFF333333),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Row(
             children: [
               // Device Selector
@@ -194,34 +199,38 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Target Device',
+                      'Device',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF495057),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFFE1E5E9)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: selectedDeviceId,
                           isExpanded: true,
-                          hint: const Text('Select device'),
+                          isDense: true,
+                          hint: const Text('Select device',
+                              style: TextStyle(fontSize: 12)),
                           items: editorState.availableDevices
                               .map((device) => DropdownMenuItem(
                                     value: device.id,
-                                    child: Text(device.name),
+                                    child: Text(device.name,
+                                        style: const TextStyle(fontSize: 12)),
                                   ))
                               .toList(),
-                          onChanged: _isUploading 
-                              ? null 
+                          onChanged: _isUploading
+                              ? null
                               : (value) {
                                   setState(() {
                                     selectedDeviceId = value;
@@ -233,8 +242,8 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
-              
+              const SizedBox(width: 8),
+
               // Language Selector
               Expanded(
                 child: Column(
@@ -243,32 +252,37 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
                     const Text(
                       'Language',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF495057),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFFE1E5E9)),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: selectedLanguageCode,
                           isExpanded: true,
-                          hint: const Text('Select language'),
+                          isDense: true,
+                          hint: const Text('Select language',
+                              style: TextStyle(fontSize: 12)),
                           items: editorState.availableLanguages
                               .map((languageCode) => DropdownMenuItem(
                                     value: languageCode,
-                                    child: Text(_formatLanguageDisplay(languageCode)),
+                                    child: Text(
+                                        _formatLanguageDisplay(languageCode),
+                                        style: const TextStyle(fontSize: 12)),
                                   ))
                               .toList(),
-                          onChanged: _isUploading 
-                              ? null 
+                          onChanged: _isUploading
+                              ? null
                               : (value) {
                                   setState(() {
                                     selectedLanguageCode = value;
@@ -288,10 +302,9 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
   }
 
   Widget _buildUploadProgress(Map<String, UploadProgress> uploadProgress) {
-    final activeUploads = uploadProgress.values
-        .where((p) => p.isInProgress)
-        .toList();
-    
+    final activeUploads =
+        uploadProgress.values.where((p) => p.isInProgress).toList();
+
     if (activeUploads.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -332,8 +345,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     );
   }
 
-
-  Widget _buildExistingScreenshots() {
+  Widget _buildScreenshotsWithUpload() {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFFE1E5E9)),
@@ -342,7 +354,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(
               color: Color(0xFFF8F9FA),
               borderRadius: BorderRadius.only(
@@ -355,22 +367,24 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
                 const Icon(
                   Icons.photo_library_outlined,
                   color: Color(0xFF6C757D),
-                  size: 20,
+                  size: 18,
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'Existing Screenshots',
+                  'Screenshots',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF333333),
                   ),
                 ),
                 const Spacer(),
                 Text(
-                  '${widget.project.getTotalScreenshotCount()} screenshots',
+                  selectedDeviceId != null && selectedLanguageCode != null
+                      ? '${_getFilteredScreenshots().length} for ${_getSelectedDeviceName()}'
+                      : '${widget.project.getTotalScreenshotCount()} total',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     color: Color(0xFF6C757D),
                   ),
                 ),
@@ -378,40 +392,143 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
             ),
           ),
           Expanded(
-            child: widget.project.hasScreenshots()
-                ? UploadGridView(
-                    screenshots: widget.project.getAllScreenshots(),
-                    onScreenshotTap: _handleScreenshotTap,
-                    onScreenshotDelete: _handleScreenshotDelete,
-                  )
-                : const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.photo_library_outlined,
-                          size: 48,
-                          color: Color(0xFFE1E5E9),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No screenshots uploaded yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF6C757D),
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Upload your first screenshot above',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                        ),
-                      ],
-                    ),
+            child: _hasFilteredScreenshots()
+                ? _buildFilteredScreenshotRow()
+                : _buildEmptyStateWithUpload(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyStateWithUpload() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.photo_library_outlined,
+            size: 48,
+            color: Color(0xFFE1E5E9),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            selectedDeviceId != null && selectedLanguageCode != null
+                ? 'No screenshots for ${_getSelectedDeviceName()} (${_formatLanguageDisplay(selectedLanguageCode!)})'
+                : 'No screenshots yet',
+            style: const TextStyle(
+              fontSize: 16,
+              color: Color(0xFF6C757D),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            selectedDeviceId != null && selectedLanguageCode != null
+                ? 'Upload screenshots for ${_getSelectedDeviceName()} in ${_formatLanguageDisplay(selectedLanguageCode!)}'
+                : 'Select device and language, then drag & drop screenshots',
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF9CA3AF),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          // Integrated drag and drop area
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: const Color(0xFFE1E5E9),
+                style: BorderStyle.solid,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFFAFAFA),
+            ),
+            child: DragDropUploadZone(
+              onFilesDropped: _handleFilesDropped,
+              onTap: _handleTapToSelect,
+              enabled: !_isUploading &&
+                  selectedDeviceId != null &&
+                  selectedLanguageCode != null,
+              title: 'Drop screenshots here',
+              subtitle: 'PNG, JPG, JPEG • Max 10MB',
+              height: double.infinity,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasFilteredScreenshots() {
+    if (selectedDeviceId == null || selectedLanguageCode == null) {
+      return false;
+    }
+    return _getFilteredScreenshots().isNotEmpty;
+  }
+
+  List<dynamic> _getFilteredScreenshots() {
+    if (selectedDeviceId == null || selectedLanguageCode == null) {
+      return [];
+    }
+
+    return widget.project.getAllScreenshots().where((screenshot) {
+      return screenshot.deviceId == selectedDeviceId &&
+          screenshot.languageCode == selectedLanguageCode;
+    }).toList();
+  }
+
+  Widget _buildFilteredScreenshotRow() {
+    final filteredScreenshots = _getFilteredScreenshots();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Row header with count
+          Row(
+            children: [
+              Text(
+                '${_getSelectedDeviceName()} • ${_formatLanguageDisplay(selectedLanguageCode!)}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${filteredScreenshots.length} screenshot${filteredScreenshots.length != 1 ? 's' : ''}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6C757D),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Horizontal scrollable row of screenshots
+          Expanded(
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: filteredScreenshots.length,
+              itemBuilder: (context, index) {
+                final screenshot = filteredScreenshots[index];
+                return Container(
+                  width: 200, // Fixed width for each screenshot
+                  margin: const EdgeInsets.only(right: 12),
+                  child: ScreenshotThumbnail(
+                    screenshot: screenshot,
+                    onTap: () => _handleScreenshotTap(screenshot),
+                    onDelete: () => _handleScreenshotDelete(screenshot),
                   ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -423,7 +540,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     final hasFailedUploads = uploadProgress.values.any((p) => p.hasError);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         color: Color(0xFFF8F9FA),
         borderRadius: BorderRadius.only(
@@ -492,7 +609,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
             ),
             const SizedBox(width: 12),
           ],
-          
+
           TextButton(
             onPressed: widget.onClose,
             child: const Text('Done'),
@@ -511,9 +628,9 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     final html.FileUploadInputElement input = html.FileUploadInputElement()
       ..accept = 'image/*'
       ..multiple = true;
-    
+
     input.click();
-    
+
     input.onChange.listen((event) {
       final files = input.files;
       if (files != null && files.isNotEmpty) {
@@ -531,7 +648,8 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     if (files.isEmpty) return;
 
     // Add files to upload queue
-    ref.read(uploadQueueNotifierProvider.notifier)
+    ref
+        .read(uploadQueueNotifierProvider.notifier)
         .addFiles(files, selectedDeviceId!, selectedLanguageCode!);
 
     // Start upload process
@@ -544,25 +662,29 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     });
 
     try {
-      final uploadFiles = files.map((file) => UploadFile(
-        id: DateTime.now().millisecondsSinceEpoch.toString() + file.name,
-        file: file,
-        deviceId: selectedDeviceId!,
-        languageCode: selectedLanguageCode!,
-        addedAt: DateTime.now(),
-      )).toList();
+      final uploadFiles = files
+          .map((file) => UploadFile(
+                id: DateTime.now().millisecondsSinceEpoch.toString() +
+                    file.name,
+                file: file,
+                deviceId: selectedDeviceId!,
+                languageCode: selectedLanguageCode!,
+                addedAt: DateTime.now(),
+              ))
+          .toList();
 
       await ref.read(uploadCoordinatorProvider.notifier).uploadFiles(
-        projectId: widget.project.id,
-        files: uploadFiles,
-        onComplete: (result) {
-          if (result.screenshot != null) {
-            _showSnackBar('Screenshot uploaded successfully');
-          } else {
-            _showSnackBar('Upload failed: ${result.errorMessage}', isError: true);
-          }
-        },
-      );
+            projectId: widget.project.id,
+            files: uploadFiles,
+            onComplete: (result) {
+              if (result.screenshot != null) {
+                _showSnackBar('Screenshot uploaded successfully');
+              } else {
+                _showSnackBar('Upload failed: ${result.errorMessage}',
+                    isError: true);
+              }
+            },
+          );
     } catch (e) {
       _showSnackBar('Upload failed: $e', isError: true);
     } finally {
@@ -604,7 +726,8 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
   }
 
   void _retryFailedUploads() {
-    final failedUploads = ref.read(uploadProgressNotifierProvider)
+    final failedUploads = ref
+        .read(uploadProgressNotifierProvider)
         .values
         .where((p) => p.hasError)
         .toList();
@@ -613,7 +736,8 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
 
     // Clear failed progress and retry
     for (final failed in failedUploads) {
-      ref.read(uploadProgressNotifierProvider.notifier)
+      ref
+          .read(uploadProgressNotifierProvider.notifier)
           .removeProgress(failed.fileId);
     }
 
@@ -645,25 +769,25 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
       'ja': 'Japanese',
       'ko': 'Korean',
     };
-    
+
     return languageNames[languageCode] ?? languageCode.toUpperCase();
   }
 
   String _getUploadZoneTitle() {
-    final bool canUpload = !_isUploading && 
-                          selectedDeviceId != null && 
-                          selectedLanguageCode != null;
-    
+    final bool canUpload = !_isUploading &&
+        selectedDeviceId != null &&
+        selectedLanguageCode != null;
+
     return canUpload
         ? 'Drag & drop screenshots here'
         : 'Select device and language first';
   }
 
   String _getUploadZoneSubtitle() {
-    final bool canUpload = !_isUploading && 
-                          selectedDeviceId != null && 
-                          selectedLanguageCode != null;
-    
+    final bool canUpload = !_isUploading &&
+        selectedDeviceId != null &&
+        selectedLanguageCode != null;
+
     if (canUpload) {
       return 'Device: ${_getSelectedDeviceName()}\nLanguage: ${_formatLanguageDisplay(selectedLanguageCode!)}';
     } else {
@@ -673,7 +797,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
 
   void _showSnackBar(String message, {bool isError = false}) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -687,4 +811,3 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
     );
   }
 }
-
