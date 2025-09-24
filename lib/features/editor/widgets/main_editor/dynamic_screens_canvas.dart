@@ -18,13 +18,19 @@ class DynamicScreensCanvas extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final editorProv = project != null ? editorByProjectIdProvider(project!.id) : editorProvider;
+    final editorProv = project != null
+        ? editorByProjectIdProvider(project!.id)
+        : editorProvider;
     final editorNotifier = ref.read(editorProv.notifier);
 
     // Watch only stable, low-churn slices to avoid full rebuilds while typing
-    final screenIds = ref.watch(
-      editorProv.select((s) => s.screens.map((e) => e.id).toList()),
+    final screenCount = ref.watch(
+      editorProv.select((s) => s.screens.length),
     );
+    final screenIds = [
+      for (int i = 0; i < screenCount; i++)
+        ref.watch(editorProv.select((s) => s.screens[i].id)),
+    ];
     final selectedScreenIndex = ref.watch(
       editorProv.select((s) => s.selectedScreenIndex),
     );
@@ -33,6 +39,9 @@ class DynamicScreensCanvas extends ConsumerWidget {
     );
     final frameVariant = ref.watch(
       editorProv.select((s) => s.selectedFrameVariant),
+    );
+    final currentLanguage = ref.watch(
+      editorProv.select((s) => s.selectedLanguage),
     );
 
     // Watch the project screenshots to get ScreenshotModel objects
@@ -82,12 +91,14 @@ class DynamicScreensCanvas extends ConsumerWidget {
                     isSelected: selectedScreenIndex == i,
                     selectedDevice: selectedDevice,
                     frameVariant: frameVariant,
+                    currentLanguage: currentLanguage,
                     project: project,
                     editorProv: editorProv,
                     editorNotifier: editorNotifier,
                     screenCount: screenIds.length,
                     getScreenshotById: getScreenshotById,
-                    onExpand: (screen) => _expandScreen(context, screen, selectedDevice),
+                    onExpand: (screen) =>
+                        _expandScreen(context, screen, selectedDevice),
                   ),
               ],
             ),
@@ -151,6 +162,7 @@ class _OptimizedScreenContainer extends ConsumerWidget {
   final bool isSelected;
   final String selectedDevice;
   final String frameVariant;
+  final String currentLanguage;
   final ProjectModel? project;
   final ProviderBase editorProv;
   final EditorNotifier editorNotifier;
@@ -164,6 +176,7 @@ class _OptimizedScreenContainer extends ConsumerWidget {
     required this.isSelected,
     required this.selectedDevice,
     required this.frameVariant,
+    required this.currentLanguage,
     required this.project,
     required this.editorProv,
     required this.editorNotifier,
@@ -195,6 +208,7 @@ class _OptimizedScreenContainer extends ConsumerWidget {
       layoutId: screen.layoutId,
       customSettings: screen.customSettings,
       frameVariant: frameVariant,
+      currentLanguage: currentLanguage,
       project: project,
       onTap: () => editorNotifier.selectScreen(screenIndex),
       onReorder: null,

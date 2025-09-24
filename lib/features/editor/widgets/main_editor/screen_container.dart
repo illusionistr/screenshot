@@ -7,7 +7,6 @@ import '../../constants/layouts_data.dart';
 import '../../models/background_models.dart';
 import '../../models/layout_models.dart';
 import '../../models/text_models.dart' as text_models;
-import '../../providers/editor_provider.dart';
 import '../../utils/background_renderer.dart';
 import '../../utils/frame_renderer.dart';
 import '../../utils/layout_renderer.dart';
@@ -27,6 +26,7 @@ class ScreenContainer extends ConsumerStatefulWidget {
   final ScreenshotModel? assignedScreenshot;
   final String layoutId;
   final String frameVariant;
+  final String currentLanguage;
   final ProjectModel? project;
   final Map<String, dynamic>? customSettings;
   final VoidCallback? onTap;
@@ -48,6 +48,7 @@ class ScreenContainer extends ConsumerStatefulWidget {
     this.assignedScreenshot,
     required this.layoutId,
     this.frameVariant = 'real',
+    required this.currentLanguage,
     this.project,
     this.customSettings,
     this.onTap,
@@ -66,6 +67,8 @@ class ScreenContainer extends ConsumerStatefulWidget {
 class _ScreenContainerState extends ConsumerState<ScreenContainer> {
   final GlobalKey _repaintKey = GlobalKey();
   bool _exporting = false;
+  Future<Widget>? _frameFuture;
+  String? _frameFutureKey;
 
   Future<void> _handleExport() async {
     try {
@@ -78,7 +81,8 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
         repaintBoundaryKey: _repaintKey,
         deviceId: widget.deviceId,
         isLandscape: widget.isLandscape,
-        filename: '${widget.project?.appName ?? 'screen'}_${widget.screenId}.png',
+        filename:
+            '${widget.project?.appName ?? 'screen'}_${widget.screenId}.png',
       );
 
       if (mounted) {
@@ -198,6 +202,42 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
     );
   }
 
+  void _ensureFrameFuture({
+    required Size deviceSize,
+    required Widget placeholderContent,
+  }) {
+    final newKey = _composeFrameFutureKey(deviceSize);
+    if (_frameFuture == null || _frameFutureKey != newKey) {
+      _frameFutureKey = newKey;
+      _frameFuture = FrameRenderer.buildSmartFrameContainer(
+        deviceId: widget.deviceId,
+        containerSize: deviceSize,
+        selectedVariantId:
+            widget.frameVariant.isNotEmpty ? widget.frameVariant : null,
+        screenshotPath: widget.assignedScreenshot?.storageUrl,
+        placeholder: placeholderContent,
+      );
+    }
+  }
+
+  String _composeFrameFutureKey(Size deviceSize) {
+    final screenshot = widget.assignedScreenshot;
+    final backgroundSignature = widget.background?.hashCode ?? 0;
+    final customSettingsSignature = widget.customSettings?.hashCode ?? 0;
+
+    return [
+      widget.deviceId,
+      widget.isLandscape,
+      widget.frameVariant,
+      screenshot?.id ?? '',
+      screenshot?.storageUrl ?? '',
+      deviceSize.width.toStringAsFixed(2),
+      deviceSize.height.toStringAsFixed(2),
+      backgroundSignature,
+      customSettingsSignature,
+    ].join('|');
+  }
+
   Widget _buildPlaceholderFrameContent() {
     // Always show background with placeholder - let FrameRenderer handle the screenshot
     return Container(
@@ -221,9 +261,7 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
             : (selected
                 ? Theme.of(context).primaryColor
                 : Colors.grey.shade300),
-        width: exporting
-            ? 0
-            : (selected ? 2 : 1),
+        width: exporting ? 0 : (selected ? 2 : 1),
       ),
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(8),
@@ -308,6 +346,11 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
       isLandscape: widget.isLandscape,
     );
 
+    _ensureFrameFuture(
+      deviceSize: deviceSize,
+      placeholderContent: placeholderContent,
+    );
+
     return Stack(
       children: [
         // Background content
@@ -322,16 +365,18 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
                 3.14159 /
                 180, // Convert degrees to radians
             child: FutureBuilder<Widget>(
-              future: FrameRenderer.buildSmartFrameContainer(
-                deviceId: widget.deviceId,
-                containerSize: deviceSize,
-                selectedVariantId:
-                    widget.frameVariant.isNotEmpty ? widget.frameVariant : null,
-                screenshotPath: widget.assignedScreenshot?.storageUrl,
-                placeholder: placeholderContent,
-              ),
+              key: ValueKey(_frameFutureKey),
+              future: _frameFuture,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.hasError) {
+                  return FrameRenderer.renderGenericFrame(
+                    content: placeholderContent,
+                    containerSize: deviceSize,
+                    deviceId: widget.deviceId,
+                  );
+                }
+
+                if (snapshot.connectionState != ConnectionState.done) {
                   return Container(
                     width: deviceSize.width,
                     height: deviceSize.height,
@@ -342,8 +387,8 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
                   );
                 }
 
-                if (snapshot.hasError) {
-                  // Fallback to generic frame on error
+                final frameWidget = snapshot.data;
+                if (frameWidget == null) {
                   return FrameRenderer.renderGenericFrame(
                     content: placeholderContent,
                     containerSize: deviceSize,
@@ -351,12 +396,7 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
                   );
                 }
 
-                return snapshot.data ??
-                    FrameRenderer.renderGenericFrame(
-                      content: placeholderContent,
-                      containerSize: deviceSize,
-                      deviceId: widget.deviceId,
-                    );
+                return frameWidget;
               },
             ),
           ),
@@ -398,21 +438,16 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
       text_models.ScreenTextConfig textConfig, Size containerSize) {
     final baseConfig = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
     final config = _applyTransformOverrides(baseConfig, widget.customSettings);
-    
-    print('[ScreenContainer] ===== REBUILDING ScreenContainer for ${widget.screenId} =====');
 
-    // Get the current editing language from the editor state - only watch language changes
-    String currentLanguage = 'en'; // fallback
-    if (widget.project != null) {
-      currentLanguage = ref.watch(
-        editorByProjectIdProvider(widget.project!.id).select((state) => state.selectedLanguage)
-      );
-    }
+    print(
+        '[ScreenContainer] ===== REBUILDING ScreenContainer for ${widget.screenId} =====');
 
-    print('[ScreenContainer] Screen: ${widget.screenId}, Language: $currentLanguage');
-    
-    
-    // During export, render non-interactive overlay to avoid selection UI
+    final currentLanguage =
+        widget.currentLanguage.isNotEmpty ? widget.currentLanguage : 'en';
+
+    print(
+        '[ScreenContainer] Screen: ${widget.screenId}, Language: $currentLanguage');
+
     if (_exporting || widget.project == null) {
       return TextRenderer.renderTextOverlay(
         textConfig: textConfig,
@@ -423,7 +458,6 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
       );
     }
 
-    // Interactive overlay for editing
     return TextRenderer.renderInteractiveTextOverlay(
       textConfig: textConfig,
       containerSize: containerSize,
@@ -440,7 +474,8 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
 
     ElementTransform? parse(dynamic v) {
       if (v is Map<String, dynamic>) return ElementTransform.fromJson(v);
-      if (v is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(v));
+      if (v is Map)
+        return ElementTransform.fromJson(Map<String, dynamic>.from(v));
       return null;
     }
 

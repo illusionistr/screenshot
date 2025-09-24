@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../../projects/models/project_model.dart';
 import '../../../shared/widgets/scrollable_tab_container.dart';
-import '../../models/editor_state.dart';
 import '../../providers/editor_provider.dart';
+import '../../models/text_models.dart';
 import '../translation/reference_language_selector.dart';
 import '../translation/translation_controls_panel.dart';
 import '../translation/translation_progress_indicator.dart';
@@ -24,37 +24,41 @@ class TextTabContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final editorProv = editorByProjectIdProvider(project.id);
-    final editorState = ref.watch(editorProv);
+    final selectedType = ref.watch(
+      editorProv.select((s) => s.textElementState.selectedType),
+    );
+    final currentLanguage = ref.watch(
+      editorProv.select((s) => s.selectedLanguage),
+    );
     final editorNotifier = ref.read(editorProv.notifier);
 
-    final selectedType = editorState.textElementState.selectedType;
     final hasSelection = selectedType != null;
 
     return ScrollableTabContainer.unified(
       children: [
         // Translation Controls Section
         ReferenceLanguageSelector(project: project),
-        
+
         const SizedBox(height: 10),
-        
+
         TranslationControlsPanel(project: project),
-        
+
         const SizedBox(height: 16),
-        
+
         // Translation Progress Indicator
         TranslationProgressIndicator(project: project),
-        
+
         const SizedBox(height: 16),
-        
+
         // Divider
         Container(
           height: 1,
           color: const Color(0xFFE1E5E9),
           margin: const EdgeInsets.symmetric(vertical: 8),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Text Element Selector
         TextElementSelector(project: project),
 
@@ -74,7 +78,8 @@ class TextTabContent extends ConsumerWidget {
           // Apply to All Button
           _ApplyToAllButton(
             project: project,
-            editorState: editorState,
+            selectedType: selectedType,
+            currentLanguage: currentLanguage,
             editorNotifier: editorNotifier,
           ),
         ] else ...[
@@ -146,50 +151,47 @@ class TextTabContent extends ConsumerWidget {
 class _ApplyToAllButton extends StatelessWidget {
   const _ApplyToAllButton({
     required this.project,
-    required this.editorState,
+    required this.selectedType,
+    required this.currentLanguage,
     required this.editorNotifier,
   });
 
   final ProjectModel project;
-  final EditorState editorState;
+  final TextFieldType? selectedType;
+  final String currentLanguage;
   final EditorNotifier editorNotifier;
 
   @override
   Widget build(BuildContext context) {
-    final selectedType = editorState.textElementState.selectedType;
-    final currentEditingLanguage = editorState.selectedLanguage;
-    final isEditingReferenceLanguage = currentEditingLanguage == project.effectiveReferenceLanguage;
-    
-    // Create language-aware button text
-    final languageDisplayName = TranslationService.getLanguageDisplayName(currentEditingLanguage);
-    final buttonText = isEditingReferenceLanguage 
+    final currentSelectedType = selectedType;
+    final currentEditingLanguage = currentLanguage;
+    final isEditingReferenceLanguage =
+        currentEditingLanguage == project.effectiveReferenceLanguage;
+
+    final languageDisplayName =
+        TranslationService.getLanguageDisplayName(currentEditingLanguage);
+    final buttonText = isEditingReferenceLanguage
         ? editorNotifier.getApplyToAllButtonText()
         : 'Apply to All ($languageDisplayName)';
-    
-    final affectedCount = selectedType != null
-        ? editorNotifier.getAffectedScreensCount(selectedType)
-        : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Apply button
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () {
-              // Use language-aware method if editing a non-reference language
               if (isEditingReferenceLanguage) {
                 editorNotifier.applySelectedElementFormattingToAllScreens();
               } else {
-                editorNotifier.applySelectedElementFormattingToAllScreensForCurrentLanguage();
+                editorNotifier
+                    .applySelectedElementFormattingToAllScreensForCurrentLanguage();
               }
 
-              // Show language-aware confirmation
               final message = isEditingReferenceLanguage
-                  ? 'Applied ${selectedType?.displayName.toLowerCase()} formatting to all screens'
-                  : 'Applied ${selectedType?.displayName.toLowerCase()} formatting and $languageDisplayName content to all screens';
-                  
+                  ? 'Applied ${currentSelectedType?.displayName.toLowerCase()} formatting to all screens'
+                  : 'Applied ${currentSelectedType?.displayName.toLowerCase()} formatting and $languageDisplayName content to all screens';
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(message),
