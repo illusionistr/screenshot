@@ -399,6 +399,8 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
     final baseConfig = LayoutsData.getLayoutConfigOrDefault(widget.layoutId);
     final config = _applyTransformOverrides(baseConfig, widget.customSettings);
     
+    print('[ScreenContainer] ===== REBUILDING ScreenContainer for ${widget.screenId} =====');
+
     // Get the current editing language from the editor state - only watch language changes
     String currentLanguage = 'en'; // fallback
     if (widget.project != null) {
@@ -406,6 +408,8 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
         editorByProjectIdProvider(widget.project!.id).select((state) => state.selectedLanguage)
       );
     }
+
+    print('[ScreenContainer] Screen: ${widget.screenId}, Language: $currentLanguage');
     
     
     // During export, render non-interactive overlay to avoid selection UI

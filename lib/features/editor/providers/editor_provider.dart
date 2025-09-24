@@ -653,8 +653,12 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
   // Transform overrides management (per-screen, persisted via customSettings)
   void updateDeviceTransformOverrideForCurrentScreen(ElementTransform transform) {
+    print('[EditorNotifier] updateDeviceTransformOverrideForCurrentScreen called');
+    print('[EditorNotifier] Device Transform: scale=${transform.scale}, rotation=${transform.rotationDeg}');
+
     if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
+      print('[EditorNotifier] No valid screen selected for device transform, returning');
       return;
     }
     final idx = state.selectedScreenIndex!;
@@ -682,8 +686,12 @@ class EditorNotifier extends StateNotifier<EditorState> {
   // Text transform overrides (title/subtitle)
   void updateTextTransformOverrideForCurrentScreen(
       TextFieldType type, ElementTransform transform) {
+    print('[EditorNotifier] updateTextTransformOverrideForCurrentScreen called - type: $type');
+    print('[EditorNotifier] Transform: scale=${transform.scale}, rotation=${transform.rotationDeg}');
+
     if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
+      print('[EditorNotifier] No valid screen selected, returning');
       return;
     }
 

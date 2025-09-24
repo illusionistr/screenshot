@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,8 @@ class TextFormattingPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print('[TextFormattingPanel] ===== REBUILDING TextFormattingPanel =====');
+
     final editorProv = editorByProjectIdProvider(project.id);
     final editorNotifier = ref.read(editorProv.notifier);
 
@@ -34,6 +37,9 @@ class TextFormattingPanel extends ConsumerWidget {
     final selectedType = ref.watch(editorProv.select((s) => s.textElementState.selectedType));
     final currentEditingLanguage = ref.watch(editorProv.select((s) => s.selectedLanguage));
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
+
+    print('[TextFormattingPanel] selectedType: $selectedType, currentEditingLanguage: $currentEditingLanguage');
+    print('[TextFormattingPanel] currentElement: ${currentElement?.id}');
 
     if (selectedType == null || currentElement == null) {
       return Container(
@@ -371,6 +377,7 @@ class _TextPositioningControls extends ConsumerWidget {
               decimalPlaces: 2,
               suffix: 'x',
               onChanged: (v) {
+                print('[TextFormattingPanel] Scale slider changed to: $v');
                 editorNotifier.updateTextTransformOverrideForCurrentScreen(
                   selectedType,
                   t.copyWith(scale: v),
@@ -521,7 +528,9 @@ class _SliderWithValue extends StatefulWidget {
 
 class _SliderWithValueState extends State<_SliderWithValue> {
   late TextEditingController _controller;
+  Timer? _debounceTimer;
   bool _isEditing = false;
+  double? _pendingValue;
 
   @override
   void initState() {
@@ -562,8 +571,28 @@ class _SliderWithValueState extends State<_SliderWithValue> {
     }
   }
 
+  void _onSliderChanged(double value) {
+    // Cancel any previous timer
+    _debounceTimer?.cancel();
+
+    // Store the pending value and update UI immediately
+    setState(() {
+      _pendingValue = value;
+      _controller.text = widget.format(value) + (widget.suffix ?? '');
+    });
+
+    // Debounce the actual callback to reduce state updates
+    _debounceTimer = Timer(const Duration(milliseconds: 100), () {
+      if (_pendingValue != null) {
+        widget.onChanged(_pendingValue!);
+        _pendingValue = null;
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -577,7 +606,7 @@ class _SliderWithValueState extends State<_SliderWithValue> {
             min: widget.min,
             max: widget.max,
             value: widget.value.clamp(widget.min, widget.max),
-            onChanged: widget.onChanged,
+            onChanged: _onSliderChanged,
           ),
         ),
         const SizedBox(width: 8),

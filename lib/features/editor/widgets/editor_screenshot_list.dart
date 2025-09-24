@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../projects/models/project_model.dart';
 import '../../shared/models/screenshot_model.dart';
-import '../models/editor_state.dart';
 import '../providers/editor_provider.dart';
 
 class EditorScreenshotList extends ConsumerStatefulWidget {
@@ -38,8 +37,18 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
 
   @override
   Widget build(BuildContext context) {
-    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
-    final filteredScreenshots = _getFilteredScreenshots(editorState);
+    print('[EditorScreenshotList] ===== REBUILDING EditorScreenshotList =====');
+
+    final editorProv = editorByProjectIdProvider(widget.project.id);
+
+    // Only watch the specific properties needed for filtering - not entire state
+    final selectedDevice = ref.watch(editorProv.select((s) => s.selectedDevice));
+    final selectedLanguage = ref.watch(editorProv.select((s) => s.selectedLanguage));
+
+    print('[EditorScreenshotList] Watching - selectedDevice: $selectedDevice, selectedLanguage: $selectedLanguage');
+
+    final filteredScreenshots = _getFilteredScreenshots(selectedDevice, selectedLanguage);
+    print('[EditorScreenshotList] Filtered screenshots count: ${filteredScreenshots.length}');
 
     return Container(
       height: widget.height,
@@ -58,7 +67,7 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
       child: Column(
         children: [
           // Header with controls
-          _buildHeader(editorState, filteredScreenshots.length),
+          _buildHeader(filteredScreenshots.length),
 
           // Screenshot list
           Expanded(
@@ -71,7 +80,7 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
     );
   }
 
-  Widget _buildHeader(EditorState editorState, int screenshotCount) {
+  Widget _buildHeader(int screenshotCount) {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -160,12 +169,30 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
   }
 
   Widget _buildScreenshotList(List<ScreenshotModel> screenshots) {
-    final editorState = ref.watch(editorByProjectIdProvider(widget.project.id));
-    return _buildScrollableList(screenshots, editorState);
-  }
+    print('[EditorScreenshotList] _buildScreenshotList called with ${screenshots.length} screenshots');
 
-  Widget _buildScrollableList(
-      List<ScreenshotModel> screenshots, EditorState editorState) {
+    // Get the needed properties for thumbnail sizing - only when building list
+    final editorProv = editorByProjectIdProvider(widget.project.id);
+    final selectedDevice = ref.watch(editorProv.select((s) => s.selectedDevice));
+    final availableDevices = ref.watch(editorProv.select((s) => s.availableDevices));
+
+    print('[EditorScreenshotList] _buildScreenshotList watching - selectedDevice: $selectedDevice, availableDevices count: ${availableDevices.length}');
+
+    // Calculate thumbnail dimensions once for all thumbnails
+    double containerWidth = 120.0;
+    double containerHeight = 200.0;
+
+    if (selectedDevice.isNotEmpty) {
+      try {
+        final device = availableDevices.firstWhere((d) => d.id == selectedDevice);
+        final deviceAspectRatio = device.aspectRatio;
+        containerWidth = (containerHeight * deviceAspectRatio).clamp(60.0, 400.0);
+        print('[EditorScreenshotList] Calculated dimensions: ${containerWidth}x${containerHeight}');
+      } catch (e) {
+        print('[EditorScreenshotList] Error finding device, using defaults: $e');
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.all(4),
       child: Scrollbar(
@@ -177,10 +204,13 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
           separatorBuilder: (context, index) => const SizedBox(width: 12),
           itemBuilder: (context, index) {
             final screenshot = screenshots[index];
+            print('[EditorScreenshotList] Building thumbnail for screenshot: ${screenshot.id}');
             return _ScreenshotThumbnail(
+              key: ValueKey('screenshot_${screenshot.id}'),
               screenshot: screenshot,
               isSelected: false, // TODO: Implement selection state
-              editorState: editorState,
+              containerWidth: containerWidth,
+              containerHeight: containerHeight,
               onTap: () => widget.onScreenshotTap?.call(screenshot),
               onLongPress: () => widget.onScreenshotLongPress?.call(screenshot),
             );
@@ -190,7 +220,7 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
     );
   }
 
-  List<ScreenshotModel> _getFilteredScreenshots(EditorState editorState) {
+  List<ScreenshotModel> _getFilteredScreenshots(String selectedDevice, String selectedLanguage) {
     // Start with all project screenshots
     List<ScreenshotModel> allScreenshots = widget.project.getAllScreenshots();
 
@@ -199,13 +229,13 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
       bool matchesDevice = true;
       bool matchesLanguage = true;
 
-      if (editorState.selectedDevice.isNotEmpty) {
-        matchesDevice = screenshot.deviceId == editorState.selectedDevice;
+      if (selectedDevice.isNotEmpty) {
+        matchesDevice = screenshot.deviceId == selectedDevice;
       }
 
-      if (editorState.selectedLanguage.isNotEmpty) {
+      if (selectedLanguage.isNotEmpty) {
         matchesLanguage =
-            screenshot.languageCode == editorState.selectedLanguage;
+            screenshot.languageCode == selectedLanguage;
       }
 
       return matchesDevice && matchesLanguage;
@@ -215,16 +245,19 @@ class _EditorScreenshotListState extends ConsumerState<EditorScreenshotList> {
 
 class _ScreenshotThumbnail extends StatefulWidget {
   const _ScreenshotThumbnail({
+    super.key,
     required this.screenshot,
     required this.isSelected,
-    required this.editorState,
+    required this.containerWidth,
+    required this.containerHeight,
     this.onTap,
     this.onLongPress,
   });
 
   final ScreenshotModel screenshot;
   final bool isSelected;
-  final EditorState editorState;
+  final double containerWidth;
+  final double containerHeight;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -262,31 +295,14 @@ class _ScreenshotThumbnailState extends State<_ScreenshotThumbnail>
 
   @override
   Widget build(BuildContext context) {
-    // Fixed height, dynamic width approach - much simpler!
-    double containerWidth = 120.0; // Default width
-    double containerHeight = 200.0; // Fixed height
+    print('[_ScreenshotThumbnail] ===== REBUILDING thumbnail for ${widget.screenshot.id} =====');
+    print('[_ScreenshotThumbnail] Dimensions: ${widget.containerWidth}x${widget.containerHeight}');
+    print('[_ScreenshotThumbnail] Screenshot storageUrl: ${widget.screenshot.storageUrl}');
+    print('[_ScreenshotThumbnail] Device: ${widget.screenshot.deviceId}, Language: ${widget.screenshot.languageCode}');
 
-    // Get the selected device from editor state
-    if (widget.editorState.selectedDevice.isNotEmpty) {
-      try {
-        final selectedDevice = widget.editorState.availableDevices
-            .firstWhere((d) => d.id == widget.editorState.selectedDevice);
-
-        // Calculate aspect ratio and adjust dimensions
-        final deviceAspectRatio = selectedDevice.aspectRatio;
-
-        // Keep height fixed and adjust width based on aspect ratio
-        containerHeight = 200.0; // Fixed height
-        containerWidth = containerHeight * deviceAspectRatio; // Dynamic width
-
-        // Apply reasonable bounds for width (prevent extremely narrow/wide thumbnails)
-        containerWidth = containerWidth.clamp(60.0, 400.0);
-
-      } catch (e) {
-        // Fallback to default dimensions if device not found
-        containerHeight = 200;
-      }
-    }
+    // Use the dimensions passed from parent - no more editor state dependency!
+    final containerWidth = widget.containerWidth;
+    final containerHeight = widget.containerHeight;
 
     return MouseRegion(
       onEnter: (_) {

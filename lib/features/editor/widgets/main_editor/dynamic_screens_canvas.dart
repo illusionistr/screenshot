@@ -76,37 +76,19 @@ class DynamicScreensCanvas extends ConsumerWidget {
               },
               children: [
                 for (int i = 0; i < screenIds.length; i++)
-                  Consumer(builder: (context, ref, _) {
-                    final screen = ref.watch(
-                      editorProv.select((s) => s.screens[i]),
-                    );
-                    final isSelected = selectedScreenIndex == i;
-                    final assigned = screen.assignedScreenshotId != null
-                        ? getScreenshotById(screen.assignedScreenshotId!)
-                        : null;
-                    return ScreenContainer(
-                      key: ValueKey(screen.id),
-                      screenId: screen.id,
-                      deviceId: selectedDevice,
-                      isSelected: isSelected,
-                      isLandscape: screen.isLandscape,
-                      background: screen.background,
-                      textConfig: screen.textConfig,
-                      assignedScreenshot: assigned,
-                      layoutId: screen.layoutId,
-                      customSettings: screen.customSettings,
-                      frameVariant: frameVariant,
-                      project: project,
-                      onTap: () => editorNotifier.selectScreen(i),
-                      onReorder: null,
-                      onExpand: () => _expandScreen(context, screen, selectedDevice),
-                      onDuplicate: () => editorNotifier.duplicateScreen(i),
-                      onDelete: screenIds.length > 1
-                          ? () => _confirmDelete(context, editorNotifier, i)
-                          : null,
-                      showDeleteButton: screenIds.length > 1,
-                    );
-                  }),
+                  _OptimizedScreenContainer(
+                    key: ValueKey(screenIds[i]),
+                    screenIndex: i,
+                    isSelected: selectedScreenIndex == i,
+                    selectedDevice: selectedDevice,
+                    frameVariant: frameVariant,
+                    project: project,
+                    editorProv: editorProv,
+                    editorNotifier: editorNotifier,
+                    screenCount: screenIds.length,
+                    getScreenshotById: getScreenshotById,
+                    onExpand: (screen) => _expandScreen(context, screen, selectedDevice),
+                  ),
               ],
             ),
             const SizedBox(width: 16),
@@ -131,6 +113,97 @@ class DynamicScreensCanvas extends ConsumerWidget {
       screenId: screen.id,
       deviceId: deviceId,
       isLandscape: screen.isLandscape,
+    );
+  }
+
+  void _confirmDelete(
+      BuildContext context, EditorNotifier editorNotifier, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Screen'),
+        content: const Text(
+            'Are you sure you want to delete this screen layout? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              editorNotifier.deleteScreen(index);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Optimized wrapper for ScreenContainer that watches only necessary screen properties
+class _OptimizedScreenContainer extends ConsumerWidget {
+  final int screenIndex;
+  final bool isSelected;
+  final String selectedDevice;
+  final String frameVariant;
+  final ProjectModel? project;
+  final ProviderBase editorProv;
+  final EditorNotifier editorNotifier;
+  final int screenCount;
+  final ScreenshotModel? Function(String) getScreenshotById;
+  final void Function(ScreenConfig) onExpand;
+
+  const _OptimizedScreenContainer({
+    super.key,
+    required this.screenIndex,
+    required this.isSelected,
+    required this.selectedDevice,
+    required this.frameVariant,
+    required this.project,
+    required this.editorProv,
+    required this.editorNotifier,
+    required this.screenCount,
+    required this.getScreenshotById,
+    required this.onExpand,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch only the specific screen data with deep equality check
+    // This should prevent rebuilds when other screens change but this one doesn't
+    final screen = ref.watch(
+      editorProv.select((s) => s.screens[screenIndex]),
+    );
+
+    final assignedScreenshot = screen.assignedScreenshotId != null
+        ? getScreenshotById(screen.assignedScreenshotId!)
+        : null;
+
+    return ScreenContainer(
+      screenId: screen.id,
+      deviceId: selectedDevice,
+      isSelected: isSelected,
+      isLandscape: screen.isLandscape,
+      background: screen.background,
+      textConfig: screen.textConfig,
+      assignedScreenshot: assignedScreenshot,
+      layoutId: screen.layoutId,
+      customSettings: screen.customSettings,
+      frameVariant: frameVariant,
+      project: project,
+      onTap: () => editorNotifier.selectScreen(screenIndex),
+      onReorder: null,
+      onExpand: () => onExpand(screen),
+      onDuplicate: () => editorNotifier.duplicateScreen(screenIndex),
+      onDelete: screenCount > 1
+          ? () => _confirmDelete(context, editorNotifier, screenIndex)
+          : null,
+      showDeleteButton: screenCount > 1,
     );
   }
 

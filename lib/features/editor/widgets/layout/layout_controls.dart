@@ -80,12 +80,16 @@ class _LayoutControlsState extends ConsumerState<LayoutControls> {
 
   @override
   Widget build(BuildContext context) {
+    print('[LayoutControls] ===== REBUILDING LayoutControls =====');
+
     final editorProv = editorByProjectIdProvider(widget.projectId);
     final editorNotifier = ref.read(editorProv.notifier);
 
     // Only watch the specific properties we need for device transform
     final selectedScreenIndex = ref.watch(editorProv.select((s) => s.selectedScreenIndex));
     final screens = ref.watch(editorProv.select((s) => s.screens));
+
+    print('[LayoutControls] selectedScreenIndex: $selectedScreenIndex, screens count: ${screens.length}');
 
     // Resolve current transform (per-screen override or from layout)
     final currentLayoutId = editorNotifier.getCurrentScreenLayoutId();
@@ -311,7 +315,10 @@ class _LayoutControlsState extends ConsumerState<LayoutControls> {
               format: (v) => '${v.toStringAsFixed(2)}x',
               decimalPlaces: 2,
               suffix: 'x',
-              onChanged: (v) => onChanged(value.copyWith(scale: v)),
+              onChanged: (v) {
+                print('[LayoutControls] Device scale slider changed to: $v');
+                onChanged(value.copyWith(scale: v));
+              },
             ),
           ),
           const SizedBox(height: 8),
