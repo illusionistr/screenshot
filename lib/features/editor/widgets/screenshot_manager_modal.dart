@@ -84,7 +84,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
                     // Device and Language Selectors
                     _buildSelectors(editorState),
                     
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 10),
                     
                     // Upload Progress (if any uploads in progress)
                     if (uploadProgress.isNotEmpty) ...[
@@ -94,7 +94,7 @@ class _ScreenshotManagerModalState extends ConsumerState<ScreenshotManagerModal>
                     
                     // Drag & Drop Upload Zone
                     Expanded(
-                      flex: 2,
+                      flex: 1,
                       child: DragDropUploadZone(
                         onFilesDropped: _handleFilesDropped,
                         onTap: _handleTapToSelect,

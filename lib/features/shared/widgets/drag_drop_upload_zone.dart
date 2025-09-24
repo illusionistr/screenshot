@@ -61,7 +61,7 @@ class _DragDropUploadZoneState extends State<DragDropUploadZone> {
       child: Container(
         height: widget.height,
         width: widget.width,
-        padding: widget.padding ?? const EdgeInsets.all(32),
+        padding: widget.padding ?? const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: _isDragOver ? dragOverColor : backgroundColor,
           border: Border.all(
@@ -84,11 +84,11 @@ class _DragDropUploadZoneState extends State<DragDropUploadZone> {
         widget.icon ??
             Icon(
               _isDragOver ? Icons.file_upload : Icons.cloud_upload_outlined,
-              size: 48,
+              size: 30,
               color: _isDragOver ? theme.primaryColor : Colors.grey[400],
             ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 5),
 
         // Title
         Text(
@@ -102,20 +102,20 @@ class _DragDropUploadZoneState extends State<DragDropUploadZone> {
           textAlign: TextAlign.center,
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 5),
 
-        // Subtitle
-        Text(
-          widget.subtitle ?? 'or click to browse files',
-          style: widget.subtitleStyle ??
-              TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-          textAlign: TextAlign.center,
-        ),
+        // // Subtitle
+        // Text(
+        //   widget.subtitle ?? 'or click to browse files',
+        //   style: widget.subtitleStyle ??
+        //       TextStyle(
+        //         fontSize: 14,
+        //         color: Colors.grey[500],
+        //       ),
+        //   textAlign: TextAlign.center,
+        // ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 5),
 
         // File type info
         Container(
