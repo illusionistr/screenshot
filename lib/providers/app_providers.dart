@@ -22,6 +22,8 @@ AuthService authService(Ref ref) => AuthService(
 @riverpod
 ProjectService projectService(Ref ref) => ProjectService(
   firebaseService: ref.read(firebaseServiceProvider),
+  storageService: ref.read(storageServiceProvider),
+  uploadService: ref.read(uploadServiceProvider),
 );
 
 @riverpod

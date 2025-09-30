@@ -9,6 +9,7 @@ import '../features/auth/screens/signup_screen.dart';
 import '../features/editor/screens/editor_screen.dart';
 import '../features/projects/screens/create_project_screen.dart';
 import '../features/projects/screens/dashboard_screen.dart';
+import '../features/projects/screens/edit_project_screen.dart';
 import '../features/projects/screens/upload_screenshots_screen.dart';
 
 part 'routes.g.dart';
@@ -43,6 +44,13 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) {
           final projectId = state.pathParameters['projectId']!;
           return UploadScreenshotsScreen(projectId: projectId);
+        },
+      ),
+      GoRoute(
+        path: '/projects/:projectId/settings',
+        builder: (context, state) {
+          final projectId = state.pathParameters['projectId']!;
+          return EditProjectScreen(projectId: projectId);
         },
       ),
       GoRoute(

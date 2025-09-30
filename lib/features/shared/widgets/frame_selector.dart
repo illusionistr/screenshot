@@ -388,7 +388,7 @@ class _FrameDropdownState extends State<FrameDropdown> {
       });
 
     return DropdownButtonFormField<String>(
-      initialValue: widget.selectedFrameId,
+      value: widget.selectedFrameId,
       hint: Text(widget.hint ?? 'Select frame'),
       decoration: InputDecoration(
         border: OutlineInputBorder(

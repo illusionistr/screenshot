@@ -175,15 +175,21 @@ class EditorTopBar extends ConsumerWidget implements PreferredSizeWidget {
 
           const SizedBox(width: 16),
 
-          // Settings icon
-          IconButton(
-            icon: const Icon(
-              Icons.settings,
-              color: Color(0xFF6C757D),
-            ),
+          // Back to Dashboard button
+          OutlinedButton.icon(
             onPressed: () {
-              // Handle settings
+              context.go('/dashboard');
             },
+            icon: const Icon(Icons.arrow_back, size: 16),
+            label: const Text('Dashboard'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF6C757D),
+              side: const BorderSide(color: Color(0xFFE1E5E9)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
           ),
         ],
       ),

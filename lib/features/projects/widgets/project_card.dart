@@ -68,6 +68,17 @@ class ProjectCard extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () {
+                context.go('/projects/${project.id}/settings');
+              },
+              icon: const Icon(Icons.settings, size: 16),
+              label: const Text('Settings'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
           ],
         ),
       ),

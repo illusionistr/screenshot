@@ -91,4 +91,30 @@ class ProjectsNotifier extends _$ProjectsNotifier {
       rethrow;
     }
   }
+
+  Future<void> updateProjectSettings({
+    required String projectId,
+    required String appName,
+    required List<String> platforms,
+    required List<String> deviceIds,
+    required List<String> supportedLanguages,
+    required ProjectModel currentProject,
+  }) async {
+    try {
+      final projectService = ref.read(projectServiceProvider);
+
+      await projectService.updateProjectSettings(
+        currentProject: currentProject,
+        appName: appName,
+        platforms: platforms,
+        deviceIds: deviceIds,
+        supportedLanguages: supportedLanguages,
+      );
+
+      // Invalidate the projects stream to refresh the list
+      ref.invalidate(projectsStreamProvider);
+    } catch (error) {
+      rethrow;
+    }
+  }
 }

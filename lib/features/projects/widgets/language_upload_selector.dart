@@ -17,7 +17,7 @@ class LanguageUploadSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      initialValue: selectedLanguage,
+      value: selectedLanguage, 
       decoration: const InputDecoration(
         labelText: 'Language',
         border: OutlineInputBorder(),
