@@ -201,6 +201,7 @@ class _OptimizedScreenContainer extends ConsumerWidget {
 
     return ScreenContainer(
       screenId: screen.id,
+      screenIndex: screenIndex,
       deviceId: selectedDevice,
       isSelected: isSelected,
       isLandscape: screen.isLandscape,

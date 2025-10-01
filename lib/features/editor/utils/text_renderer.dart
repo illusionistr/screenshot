@@ -44,6 +44,7 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     required String currentLanguage,
+    required int screenIndex,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -61,6 +62,7 @@ class TextRenderer {
         containerSize: containerSize,
         project: project,
         currentLanguage: currentLanguage,
+        screenIndex: screenIndex,
         scaleFactor: scaleFactor,
         layout: layout,
       );
@@ -76,6 +78,7 @@ class TextRenderer {
             containerSize: containerSize,
             project: project,
             currentLanguage: currentLanguage,
+            screenIndex: screenIndex,
             scaleFactor: scaleFactor,
             layout: layout,
           ),
@@ -141,6 +144,7 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     required String currentLanguage,
+    required int screenIndex,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -166,6 +170,7 @@ class TextRenderer {
             containerSize: containerSize,
             project: project,
             currentLanguage: currentLanguage,
+            screenIndex: screenIndex,
             scaleFactor: effectiveScale,
           ),
         ),
@@ -179,6 +184,7 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     required String currentLanguage,
+    required int screenIndex,
     double scaleFactor = 1.0,
     LayoutConfig? layout,
   }) {
@@ -224,6 +230,7 @@ class TextRenderer {
                 containerSize: containerSize,
                 project: project,
                 currentLanguage: currentLanguage,
+                screenIndex: screenIndex,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -238,6 +245,7 @@ class TextRenderer {
                 containerSize: containerSize,
                 project: project,
                 currentLanguage: currentLanguage,
+                screenIndex: screenIndex,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -289,6 +297,7 @@ class TextRenderer {
               containerSize: containerSize,
               project: project,
               currentLanguage: currentLanguage,
+              screenIndex: screenIndex,
               scaleFactor: effectiveScale,
               horizontalAlignment: horizontalAlignment,
               ),
@@ -312,6 +321,7 @@ class TextRenderer {
             containerSize: containerSize,
             project: project,
             currentLanguage: currentLanguage,
+            screenIndex: screenIndex,
             scaleFactor: scaleFactor,
             horizontalAlignment: horizontalAlignment,
           ),
@@ -327,6 +337,7 @@ class TextRenderer {
             containerSize: containerSize,
             project: project,
             currentLanguage: currentLanguage,
+            screenIndex: screenIndex,
             scaleFactor: scaleFactor,
             horizontalAlignment: horizontalAlignment,
           ),
@@ -343,6 +354,7 @@ class TextRenderer {
               containerSize: containerSize,
               project: project,
               currentLanguage: currentLanguage,
+              screenIndex: screenIndex,
               scaleFactor: scaleFactor,
               horizontalAlignment: horizontalAlignment,
             ),
@@ -386,6 +398,7 @@ class TextRenderer {
     required Size containerSize,
     required ProjectModel project,
     required String currentLanguage,
+    required int screenIndex,
     required double scaleFactor,
     required TextAlign horizontalAlignment,
   }) {
@@ -412,6 +425,7 @@ class TextRenderer {
                 containerSize: containerSize,
                 project: project,
                 currentLanguage: currentLanguage,
+                screenIndex: screenIndex,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -426,6 +440,7 @@ class TextRenderer {
                 containerSize: containerSize,
                 project: project,
                 currentLanguage: currentLanguage,
+                screenIndex: screenIndex,
                 scaleFactor: scaleFactor,
               ),
             ),
@@ -895,6 +910,7 @@ class _InteractiveTextWidget extends ConsumerStatefulWidget {
   final double scaleFactor;
   final ProjectModel project;
   final String currentLanguage;
+  final int screenIndex;
 
   const _InteractiveTextWidget({
     super.key,
@@ -902,6 +918,7 @@ class _InteractiveTextWidget extends ConsumerStatefulWidget {
     required this.containerSize,
     required this.project,
     required this.currentLanguage,
+    required this.screenIndex,
     this.scaleFactor = 1.0,
   });
 
@@ -917,10 +934,11 @@ class _InteractiveTextWidgetState
 
   @override
   Widget build(BuildContext context) {
-    // Only watch if this specific element is selected - not the entire state
+    // Check if this element is selected AND belongs to the currently selected screen
     _isSelected = ref.watch(
       editorByProjectIdProvider(widget.project.id).select((state) =>
-        state.textElementState.isSelected(widget.element.type)
+        state.textElementState.isSelected(widget.element.type) &&
+        state.selectedScreenIndex == widget.screenIndex
       )
     );
 

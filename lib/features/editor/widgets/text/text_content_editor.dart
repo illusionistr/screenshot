@@ -25,6 +25,7 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
   final TextEditingController _controller = TextEditingController();
   TextFieldType? _lastSelectedType;
   String? _lastEditingLanguage;
+  int? _lastSelectedScreenIndex;
 
   @override
   void dispose() {
@@ -35,9 +36,12 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
   void _updateControllerFromState(EditorState editorState, EditorNotifier editorNotifier) {
     final selectedType = editorState.textElementState.selectedType;
     final currentEditingLanguage = editorState.selectedLanguage;
+    final selectedScreenIndex = editorState.selectedScreenIndex;
 
-    // Update controller if selection changed OR editing language changed
-    if (selectedType != _lastSelectedType || currentEditingLanguage != _lastEditingLanguage) {
+    // Update controller if selection changed OR editing language changed OR screen changed
+    if (selectedType != _lastSelectedType ||
+        currentEditingLanguage != _lastEditingLanguage ||
+        selectedScreenIndex != _lastSelectedScreenIndex) {
       final currentElement = editorNotifier.getCurrentSelectedTextElement();
       if (currentElement != null) {
         // Get content in the current editing language
@@ -47,6 +51,7 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
       }
       _lastSelectedType = selectedType;
       _lastEditingLanguage = currentEditingLanguage;
+      _lastSelectedScreenIndex = selectedScreenIndex;
     }
   }
 
@@ -54,12 +59,13 @@ class _TextContentEditorState extends ConsumerState<TextContentEditor> {
   Widget build(BuildContext context) {
     final editorProv = editorByProjectIdProvider(widget.project.id);
     final editorNotifier = ref.read(editorProv.notifier);
-    // Watch both selected type and current editing language
+    // Watch selected type, current editing language, and selected screen
     final selectedType = ref.watch(editorProv.select((s) => s.textElementState.selectedType));
     final currentEditingLanguage = ref.watch(editorProv.select((s) => s.selectedLanguage));
+    final selectedScreenIndex = ref.watch(editorProv.select((s) => s.selectedScreenIndex));
     final currentElement = editorNotifier.getCurrentSelectedTextElement();
 
-    // Update controller text when selection or language changes
+    // Update controller text when selection, language, or screen changes
     _updateControllerFromState(ref.read(editorProv), editorNotifier);
 
     if (selectedType == null || currentElement == null) {

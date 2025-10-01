@@ -18,6 +18,7 @@ import '../../models/positioning_models.dart';
 
 class ScreenContainer extends ConsumerStatefulWidget {
   final String screenId;
+  final int screenIndex;
   final String deviceId;
   final bool isSelected;
   final bool isLandscape;
@@ -40,6 +41,7 @@ class ScreenContainer extends ConsumerStatefulWidget {
   ScreenContainer({
     Key? key,
     required this.screenId,
+    required this.screenIndex,
     required this.deviceId,
     this.isSelected = false,
     this.isLandscape = false,
@@ -463,6 +465,7 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
       containerSize: containerSize,
       project: widget.project!,
       currentLanguage: currentLanguage,
+      screenIndex: widget.screenIndex,
       scaleFactor: 0.7,
       layout: config,
     );
