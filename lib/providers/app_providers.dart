@@ -37,9 +37,9 @@ UploadService uploadService(Ref ref) => UploadService(
   ref.read(firebaseServiceProvider).storage,
 );
 
-@riverpod
+@Riverpod(keepAlive: true)
 TranslationService translationService(Ref ref) {
-  print('[AppProviders] Creating TranslationService instance');
+  print('[AppProviders] Creating TranslationService instance (singleton)');
   final service = TranslationService();
   print('[AppProviders] TranslationService created, initializing...');
   // Initialize the service asynchronously

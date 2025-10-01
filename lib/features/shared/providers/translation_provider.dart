@@ -291,6 +291,10 @@ class TranslationNotifier extends _$TranslationNotifier {
       throw Exception('No reference language set');
     }
 
+    print('[TranslationNotifier] translateBatch called for language: $targetLanguage');
+    print('[TranslationNotifier] Reference language: $referenceLanguage');
+    print('[TranslationNotifier] Total elements to translate: ${elements.length}');
+
     // Start batch translation
     state = state.copyWith(
       isBatchTranslating: true,
@@ -300,32 +304,81 @@ class TranslationNotifier extends _$TranslationNotifier {
     );
 
     try {
-      // Create translation requests
-      final requests = elements.map((element) {
-        final referenceText = element.getTranslation(referenceLanguage);
-        return TranslationRequest(
+      // Create translation requests with validation
+      final requests = <TranslationRequest>[];
+      final skippedElements = <String>[];
+
+      for (final element in elements) {
+        // Try multiple fallback strategies to get the source text
+        String referenceText = element.getTranslation(referenceLanguage);
+
+        // Fallback 1: Try using content getter (which has its own fallback logic)
+        if (referenceText.trim().isEmpty) {
+          referenceText = element.content;
+          print('[TranslationNotifier] Element ${element.id}: Using content fallback');
+        }
+
+        // Fallback 2: Try any available translation
+        if (referenceText.trim().isEmpty && element.translations.isNotEmpty) {
+          referenceText = element.translations.values.first;
+          print('[TranslationNotifier] Element ${element.id}: Using first available translation');
+        }
+
+        // Validate we have actual text to translate
+        if (referenceText.trim().isEmpty) {
+          print('[TranslationNotifier] WARNING: Skipping element ${element.id} - no translatable text found');
+          print('[TranslationNotifier] Element translations map: ${element.translations}');
+          skippedElements.add(element.id);
+          continue;
+        }
+
+        print('[TranslationNotifier] Element ${element.id}: Text to translate: "$referenceText"');
+        requests.add(TranslationRequest(
           text: referenceText,
           fromLanguage: referenceLanguage,
           toLanguage: targetLanguage,
           context: context,
           elementId: element.id,
-        );
-      }).toList();
+        ));
+      }
+
+      print('[TranslationNotifier] Created ${requests.length} translation requests');
+      print('[TranslationNotifier] Skipped ${skippedElements.length} elements: $skippedElements');
 
       // Execute batch translation
+      print('[TranslationNotifier] Calling translation service with ${requests.length} requests...');
       final batchResponse = await _translationService.translateBatch(requests);
+
+      print('[TranslationNotifier] Batch response received');
+      print('[TranslationNotifier] Success count: ${batchResponse.successCount}');
+      print('[TranslationNotifier] Error count: ${batchResponse.errorCount}');
+      print('[TranslationNotifier] All successful: ${batchResponse.allSuccessful}');
 
       // Process results
       final updatedElements = Map<String, ElementTranslationState>.from(state.elementStates);
-      
+
+      int processedCount = 0;
+      int successCount = 0;
+      int failureCount = 0;
+
       for (final translation in batchResponse.translations) {
         final elementId = translation.elementId;
-        if (elementId == null) continue;
+        processedCount++;
 
-        final currentElement = updatedElements[elementId] ?? 
+        if (elementId == null) {
+          print('[TranslationNotifier] WARNING: Translation #$processedCount has no element ID');
+          continue;
+        }
+
+        print('[TranslationNotifier] Processing translation for element: $elementId');
+
+        final currentElement = updatedElements[elementId] ??
             ElementTranslationState(elementId: elementId);
 
         if (translation.success) {
+          print('[TranslationNotifier] Translation SUCCESS for $elementId: "${translation.translatedText}"');
+          successCount++;
+
           final updatedTranslations = Map<String, String>.from(currentElement.translations);
           updatedTranslations[targetLanguage] = translation.translatedText;
 
@@ -334,7 +387,7 @@ class TranslationNotifier extends _$TranslationNotifier {
             translations: updatedTranslations,
             lastUpdated: DateTime.now(),
           );
-          
+
           // Apply translation to editor state
           print('[TranslationNotifier] Applying batch translation to editor for element: $elementId');
           try {
@@ -349,6 +402,9 @@ class TranslationNotifier extends _$TranslationNotifier {
             print('[TranslationNotifier] ERROR applying batch translation to editor for element $elementId: $e');
           }
         } else {
+          print('[TranslationNotifier] Translation FAILED for $elementId: ${translation.error}');
+          failureCount++;
+
           updatedElements[elementId] = currentElement.copyWith(
             status: TranslationStatus.failed,
             error: translation.error,
@@ -356,6 +412,8 @@ class TranslationNotifier extends _$TranslationNotifier {
           );
         }
       }
+
+      print('[TranslationNotifier] Batch processing complete - Processed: $processedCount, Success: $successCount, Failed: $failureCount');
 
       // Update state with batch results
       state = state.copyWith(
@@ -366,7 +424,9 @@ class TranslationNotifier extends _$TranslationNotifier {
         completedElements: _countCompletedElements(updatedElements, state.pendingLanguages),
       );
 
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[TranslationNotifier] ERROR during batch translation: $e');
+      print('[TranslationNotifier] Stack trace: $stackTrace');
       state = state.copyWith(
         isBatchTranslating: false,
         batchStatus: TranslationStatus.failed,

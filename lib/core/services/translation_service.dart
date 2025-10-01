@@ -141,7 +141,7 @@ class TranslationError {
 
 /// Service for handling translations using Google's Gemini 1.5 Flash API
 class TranslationService {
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
   static const int _maxRetries = 5; // Increased retries
   static const int _retryDelayMs = 1000;
   static const int _maxCharactersPerRequest = 5000; // Text chunking limit
@@ -314,7 +314,10 @@ class TranslationService {
 
   /// Translates multiple texts in a single batch operation
   Future<BatchTranslationResponse> translateBatch(List<TranslationRequest> requests) async {
+    print('[TranslationService] translateBatch called with ${requests.length} requests');
+
     if (requests.isEmpty) {
+      print('[TranslationService] No requests to process, returning empty response');
       return const BatchTranslationResponse(
         translations: [],
         successCount: 0,
@@ -323,19 +326,35 @@ class TranslationService {
       );
     }
 
+    // Log request details
+    for (int i = 0; i < requests.length; i++) {
+      final req = requests[i];
+      print('[TranslationService] Request #${i + 1}: "${req.text}" (${req.fromLanguage} -> ${req.toLanguage})');
+    }
+
     // Group requests by language pair for efficiency
     final groupedRequests = _groupRequestsByLanguagePair(requests);
+    print('[TranslationService] Grouped into ${groupedRequests.length} language pair groups');
     final allTranslations = <TranslationResponse>[];
 
+    int groupIndex = 0;
     for (final group in groupedRequests) {
+      groupIndex++;
+      print('[TranslationService] Processing group $groupIndex/${groupedRequests.length} with ${group.length} requests');
+
       try {
         final prompt = _buildBatchTranslationPrompt(group);
+        print('[TranslationService] Making API call for group $groupIndex...');
         final response = await _makeApiCall(prompt);
 
         if (response.success) {
+          print('[TranslationService] API call successful for group $groupIndex');
+          print('[TranslationService] Response text: "${response.translatedText.substring(0, response.translatedText.length > 100 ? 100 : response.translatedText.length)}..."');
           final batchResults = _parseBatchResponse(response.translatedText, group);
+          print('[TranslationService] Parsed ${batchResults.length} translations from group $groupIndex');
           allTranslations.addAll(batchResults);
         } else {
+          print('[TranslationService] API call failed for group $groupIndex: ${response.error}');
           // Add error responses for all requests in this group
           for (final request in group) {
             allTranslations.add(TranslationResponse.error(
@@ -346,7 +365,9 @@ class TranslationService {
             ));
           }
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        print('[TranslationService] Exception in group $groupIndex: $e');
+        print('[TranslationService] Stack trace: $stackTrace');
         // Add error responses for all requests in this group
         for (final request in group) {
           allTranslations.add(TranslationResponse.error(
@@ -359,7 +380,10 @@ class TranslationService {
       }
     }
 
-    return BatchTranslationResponse.fromTranslations(allTranslations);
+    print('[TranslationService] Batch translation complete - Total translations: ${allTranslations.length}');
+    final batchResponse = BatchTranslationResponse.fromTranslations(allTranslations);
+    print('[TranslationService] Batch response - Success: ${batchResponse.successCount}, Errors: ${batchResponse.errorCount}');
+    return batchResponse;
   }
 
   /// Groups translation requests by language pair for batch efficiency
@@ -635,13 +659,22 @@ Provide only the numbered translations without additional explanation.
           }
         };
 
+        final url = '$_baseUrl?key=$_apiKey';
+        print('[TranslationService] Making POST request to: ${url.replaceAll(RegExp(r'key=.*'), 'key=***')}');
+        print('[TranslationService] Request body size: ${json.encode(requestBody).length} bytes');
+
         final response = await _httpClient.post(
-          Uri.parse('$_baseUrl?key=$_apiKey'),
+          Uri.parse(url),
           headers: {
             'Content-Type': 'application/json',
           },
           body: json.encode(requestBody),
         ).timeout(_requestTimeout);
+
+        print('[TranslationService] Response status code: ${response.statusCode}');
+        if (response.statusCode != 200) {
+          print('[TranslationService] Error response body: ${response.body}');
+        }
 
         if (response.statusCode == 200) {
           final responseData = json.decode(response.body);

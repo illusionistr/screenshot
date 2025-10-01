@@ -190,7 +190,7 @@ final uploadProgressNotifierProvider = AutoDisposeNotifierProvider<
 typedef _$UploadProgressNotifier
     = AutoDisposeNotifier<Map<String, UploadProgress>>;
 String _$projectScreenshotsHash() =>
-    r'd9d78914254cbd553d35daada3d11c7ea930b07a';
+    r'26d68c4f4359ceb37421dbf18784701bf4df2b30';
 
 abstract class _$ProjectScreenshots extends BuildlessAutoDisposeAsyncNotifier<
     Map<String, Map<String, List<ScreenshotModel>>>> {

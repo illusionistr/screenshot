@@ -569,7 +569,7 @@ class _AvailableTargetLanguagesProviderElement
 }
 
 String _$translationNotifierHash() =>
-    r'7f2fa46fba56a8af6bba89495140fcec64e7de75';
+    r'72f87f366c1799b5d401942de39c15c8ab908a0c';
 
 abstract class _$TranslationNotifier
     extends BuildlessAutoDisposeNotifier<TranslationState> {

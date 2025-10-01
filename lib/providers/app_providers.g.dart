@@ -108,12 +108,11 @@ final uploadServiceProvider = AutoDisposeProvider<UploadService>.internal(
 // ignore: unused_element
 typedef UploadServiceRef = AutoDisposeProviderRef<UploadService>;
 String _$translationServiceHash() =>
-    r'aa07f7698534e578e7694cb75daf966b31a232aa';
+    r'fb91945981f21315ad47056aa93989bee7e44dbb';
 
 /// See also [translationService].
 @ProviderFor(translationService)
-final translationServiceProvider =
-    AutoDisposeProvider<TranslationService>.internal(
+final translationServiceProvider = Provider<TranslationService>.internal(
   translationService,
   name: r'translationServiceProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -125,6 +124,6 @@ final translationServiceProvider =
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef TranslationServiceRef = AutoDisposeProviderRef<TranslationService>;
+typedef TranslationServiceRef = ProviderRef<TranslationService>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
