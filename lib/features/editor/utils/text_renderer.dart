@@ -962,7 +962,9 @@ class _InteractiveTextWidgetState
   }
 
   void _handleTap(EditorNotifier editorNotifier) {
-    // Select the text element
+    // First select the screen this text element belongs to
+    editorNotifier.selectScreen(widget.screenIndex);
+    // Then select the text element type
     editorNotifier.selectTextElement(widget.element.type);
   }
 
