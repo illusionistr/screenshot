@@ -193,8 +193,10 @@ class _OptimizedScreenContainer extends ConsumerWidget {
       editorProv.select((s) => s.screens[screenIndex]),
     );
 
-    final assignedScreenshot = screen.assignedScreenshotId != null
-        ? getScreenshotById(screen.assignedScreenshotId!)
+    // Get screenshot for current language and device (language+device-aware lookup)
+    final screenshotId = screen.getScreenshotForLanguageAndDevice(currentLanguage, selectedDevice);
+    final assignedScreenshot = screenshotId != null
+        ? getScreenshotById(screenshotId)
         : null;
 
     return ScreenContainer(

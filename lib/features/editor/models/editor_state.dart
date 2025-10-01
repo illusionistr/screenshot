@@ -171,8 +171,18 @@ class ScreenConfig {
   final Map<String, dynamic> customSettings;
   final ScreenBackground background;
   final ScreenTextConfig textConfig;
-  final String? assignedScreenshotId; // NEW: ID of assigned screenshot
-  final String layoutId; // NEW: ID of selected layout (never null, has default)
+
+  // Language+Device aware screenshot assignment (matching screenshot storage pattern)
+  final String? fallbackScreenshotId; // Global default for ALL languages & devices (first assignment)
+  final Map<String, Map<String, String>> assignedScreenshotsByLanguage; // language → device → screenshotId
+
+  // Legacy fields for backward compatibility
+  @Deprecated('Use fallbackScreenshotId or assignedScreenshotsByLanguage instead')
+  final String? assignedScreenshotId;
+  @Deprecated('Migrated to assignedScreenshotsByLanguage')
+  final Map<String, String>? assignedScreenshotsByDevice;
+
+  final String layoutId; // ID of selected layout (never null, has default)
 
   const ScreenConfig({
     required this.id,
@@ -182,10 +192,49 @@ class ScreenConfig {
     this.customSettings = const {},
     this.background = ScreenBackground.defaultBackground,
     this.textConfig = const ScreenTextConfig(),
+    this.fallbackScreenshotId,
+    this.assignedScreenshotsByLanguage = const {},
+    @Deprecated('Use fallbackScreenshotId or assignedScreenshotsByLanguage instead')
     this.assignedScreenshotId,
+    @Deprecated('Migrated to assignedScreenshotsByLanguage')
+    this.assignedScreenshotsByDevice,
     String? layoutId, // Keep nullable in constructor for backward compatibility
   }) : layoutId =
             layoutId ?? 'centered_above'; // Use default layout if not provided
+
+  /// Get the screenshot ID for a specific language and device
+  /// Three-tier fallback: language+device → language fallback → global fallback
+  String? getScreenshotForLanguageAndDevice(String languageCode, String deviceId) {
+    // 1. Check language+device specific (most specific)
+    final deviceMap = assignedScreenshotsByLanguage[languageCode];
+    if (deviceMap != null && deviceMap.containsKey(deviceId)) {
+      return deviceMap[deviceId];
+    }
+
+    // 2. Check if there's any screenshot for this language (language fallback)
+    if (deviceMap != null && deviceMap.isNotEmpty) {
+      return deviceMap.values.first;
+    }
+
+    // 3. Fall back to global default (applies to all languages & devices)
+    return fallbackScreenshotId;
+  }
+
+  /// Check if this screen has any screenshot assigned
+  bool get hasAnyScreenshot {
+    return fallbackScreenshotId != null || assignedScreenshotsByLanguage.isNotEmpty;
+  }
+
+  /// Check if a specific language+device has a custom screenshot (not using fallback)
+  bool hasLanguageDeviceSpecificScreenshot(String languageCode, String deviceId) {
+    return assignedScreenshotsByLanguage[languageCode]?.containsKey(deviceId) ?? false;
+  }
+
+  /// Check if a language has any screenshots assigned
+  bool hasLanguageScreenshots(String languageCode) {
+    final deviceMap = assignedScreenshotsByLanguage[languageCode];
+    return deviceMap != null && deviceMap.isNotEmpty;
+  }
 
   ScreenConfig copyWith({
     String? id,
@@ -195,7 +244,14 @@ class ScreenConfig {
     Map<String, dynamic>? customSettings,
     ScreenBackground? background,
     ScreenTextConfig? textConfig,
+    String? fallbackScreenshotId,
+    bool clearFallbackScreenshotId = false,
+    Map<String, Map<String, String>>? assignedScreenshotsByLanguage,
+    // Legacy support
+    @Deprecated('Use fallbackScreenshotId instead')
     String? assignedScreenshotId,
+    @Deprecated('Migrated to assignedScreenshotsByLanguage')
+    Map<String, String>? assignedScreenshotsByDevice,
     String? layoutId, // Keep nullable in copyWith for flexibility
   }) {
     return ScreenConfig(
@@ -206,8 +262,55 @@ class ScreenConfig {
       customSettings: customSettings ?? this.customSettings,
       background: background ?? this.background,
       textConfig: textConfig ?? this.textConfig,
+      fallbackScreenshotId:
+          clearFallbackScreenshotId
+            ? null
+            : (fallbackScreenshotId ?? this.fallbackScreenshotId),
+      assignedScreenshotsByLanguage: assignedScreenshotsByLanguage ?? this.assignedScreenshotsByLanguage,
+      // ignore: deprecated_member_use_from_same_package
       assignedScreenshotId: assignedScreenshotId ?? this.assignedScreenshotId,
+      // ignore: deprecated_member_use_from_same_package
+      assignedScreenshotsByDevice: assignedScreenshotsByDevice ?? this.assignedScreenshotsByDevice,
       layoutId: layoutId ?? this.layoutId, // Will use default if null
+    );
+  }
+
+  /// Assign a screenshot for a specific language and device (creates override)
+  ScreenConfig assignScreenshotForLanguageAndDevice(
+    String languageCode,
+    String deviceId,
+    String screenshotId,
+  ) {
+    final updated = Map<String, Map<String, String>>.from(assignedScreenshotsByLanguage);
+    if (!updated.containsKey(languageCode)) {
+      updated[languageCode] = {};
+    }
+    final deviceMap = Map<String, String>.from(updated[languageCode]!);
+    deviceMap[deviceId] = screenshotId;
+    updated[languageCode] = deviceMap;
+    return copyWith(assignedScreenshotsByLanguage: updated);
+  }
+
+  /// Remove screenshot for specific language and device
+  ScreenConfig removeScreenshotForLanguageAndDevice(String languageCode, String deviceId) {
+    final updated = Map<String, Map<String, String>>.from(assignedScreenshotsByLanguage);
+    if (updated.containsKey(languageCode)) {
+      final deviceMap = Map<String, String>.from(updated[languageCode]!);
+      deviceMap.remove(deviceId);
+      if (deviceMap.isEmpty) {
+        updated.remove(languageCode);
+      } else {
+        updated[languageCode] = deviceMap;
+      }
+    }
+    return copyWith(assignedScreenshotsByLanguage: updated);
+  }
+
+  /// Set fallback screenshot (applies to all languages and devices)
+  ScreenConfig setFallbackScreenshot(String? screenshotId) {
+    return copyWith(
+      fallbackScreenshotId: screenshotId,
+      clearFallbackScreenshotId: screenshotId == null,
     );
   }
 }

@@ -1266,29 +1266,106 @@ class EditorNotifier extends StateNotifier<EditorState> {
   }
 
   // Screenshot Assignment Methods
+
+  /// Assign a screenshot to the selected screen
+  /// SMART DEFAULT BEHAVIOR:
+  /// - If no screenshot assigned yet → set as fallback (applies to ALL languages & devices)
+  /// - If fallback exists → create language+device-specific override
   void assignScreenshotToSelectedScreen(String screenshotId) {
-    // Apply to currently selected screen (following the same pattern as background management)
+    // Apply to currently selected screen
     if (state.selectedScreenIndex != null &&
         state.selectedScreenIndex! < state.screens.length) {
       final currentScreen = state.screens[state.selectedScreenIndex!];
-      final updatedScreen =
-          currentScreen.copyWith(assignedScreenshotId: screenshotId);
+      final currentDevice = state.selectedDevice;
+      final currentLanguage = state.selectedLanguage;
+
+      ScreenConfig updatedScreen;
+
+      // SMART DEFAULT LOGIC:
+      if (!currentScreen.hasAnyScreenshot) {
+        // First assignment: set as fallback (applies to all languages & devices)
+        updatedScreen = currentScreen.setFallbackScreenshot(screenshotId);
+      } else {
+        // Has existing screenshot: create language+device-specific override
+        updatedScreen = currentScreen.assignScreenshotForLanguageAndDevice(
+          currentLanguage,
+          currentDevice,
+          screenshotId,
+        );
+      }
+
       updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
     }
+  }
+
+  /// Assign a screenshot for a specific language and device (creates override)
+  void assignScreenshotForLanguageAndDevice(
+    String screenshotId,
+    String languageCode,
+    String deviceId, {
+    int? screenIndex,
+  }) {
+    final targetIndex = screenIndex ?? state.selectedScreenIndex;
+    if (targetIndex == null || targetIndex >= state.screens.length) return;
+
+    final currentScreen = state.screens[targetIndex];
+    final updatedScreen = currentScreen.assignScreenshotForLanguageAndDevice(
+      languageCode,
+      deviceId,
+      screenshotId,
+    );
+    updateScreenConfig(targetIndex, updatedScreen);
+  }
+
+  /// Set a screenshot as fallback (applies to all languages and devices)
+  void setFallbackScreenshot(String? screenshotId, {int? screenIndex}) {
+    final targetIndex = screenIndex ?? state.selectedScreenIndex;
+    if (targetIndex == null || targetIndex >= state.screens.length) return;
+
+    final currentScreen = state.screens[targetIndex];
+    final updatedScreen = currentScreen.setFallbackScreenshot(screenshotId);
+    updateScreenConfig(targetIndex, updatedScreen);
+  }
+
+  /// Remove screenshot for specific language+device (falls back appropriately)
+  void removeScreenshotForLanguageAndDevice(
+    String languageCode,
+    String deviceId, {
+    int? screenIndex,
+  }) {
+    final targetIndex = screenIndex ?? state.selectedScreenIndex;
+    if (targetIndex == null || targetIndex >= state.screens.length) return;
+
+    final currentScreen = state.screens[targetIndex];
+    final updatedScreen = currentScreen.removeScreenshotForLanguageAndDevice(
+      languageCode,
+      deviceId,
+    );
+    updateScreenConfig(targetIndex, updatedScreen);
   }
 
   void removeScreenshotFromScreen(int screenIndex) {
     if (screenIndex < 0 || screenIndex >= state.screens.length) return;
 
     final currentScreen = state.screens[screenIndex];
-    final updatedScreen = currentScreen.copyWith(assignedScreenshotId: null);
+    // Clear both fallback and all language+device-specific overrides
+    final updatedScreen = currentScreen.copyWith(
+      fallbackScreenshotId: null,
+      clearFallbackScreenshotId: true,
+      assignedScreenshotsByLanguage: {},
+    );
     updateScreenConfig(screenIndex, updatedScreen);
   }
 
-  String? getScreenshotForScreen(int screenIndex) {
+  /// Get screenshot ID for a screen based on current language and device
+  String? getScreenshotForScreen(int screenIndex, {String? languageCode, String? deviceId}) {
     if (screenIndex < 0 || screenIndex >= state.screens.length) return null;
 
-    return state.screens[screenIndex].assignedScreenshotId;
+    final screen = state.screens[screenIndex];
+    final targetLanguage = languageCode ?? state.selectedLanguage;
+    final targetDevice = deviceId ?? state.selectedDevice;
+
+    return screen.getScreenshotForLanguageAndDevice(targetLanguage, targetDevice);
   }
 
   ScreenshotItem? getScreenshotItemForScreen(int screenIndex) {
