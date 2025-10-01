@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../providers/app_providers.dart';
 import '../../projects/models/project_model.dart';
+import '../../projects/providers/upload_provider.dart';
 import '../../shared/models/screenshot_model.dart';
 import '../../shared/widgets/scrollable_tab_container.dart';
 import '../models/background_models.dart';
@@ -87,6 +89,66 @@ class EditorControlPanel extends ConsumerWidget {
       }
     }
 
+    Future<void> handleDeleteScreenshot(dynamic screenshot, WidgetRef ref) async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Screenshot'),
+          content: const Text('Are you sure you want to delete this screenshot? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !context.mounted) return;
+
+      try {
+        final uploadService = ref.read(uploadServiceProvider);
+        final screenshotsNotifier = ref.read(projectScreenshotsProvider(project.id).notifier);
+
+        // Delete from Firebase Storage using the download URL
+        await uploadService.deleteFileByUrl(screenshot.storageUrl);
+
+        // Remove from state
+        await screenshotsNotifier.removeScreenshot(
+          screenshot.id,
+          screenshot.languageCode,
+          screenshot.deviceId,
+        );
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Screenshot deleted successfully'),
+              backgroundColor: Color(0xFFE91E63),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(16),
+            ),
+          );
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete screenshot: $error'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      }
+    }
+
     void showScreenshotOptions(dynamic screenshot) {
       showModalBottomSheet(
         context: context,
@@ -125,7 +187,7 @@ class EditorControlPanel extends ConsumerWidget {
                     const Text('Delete', style: TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Delete screenshot with confirmation
+                  handleDeleteScreenshot(screenshot, ref);
                 },
               ),
             ],

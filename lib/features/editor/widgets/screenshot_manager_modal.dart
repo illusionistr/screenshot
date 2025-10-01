@@ -3,7 +3,9 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../providers/app_providers.dart';
 import '../../projects/models/project_model.dart';
+import '../../projects/providers/upload_provider.dart' as project_providers;
 import '../../shared/models/upload_state_model.dart';
 import '../../shared/providers/upload_provider.dart';
 import '../../shared/widgets/drag_drop_upload_zone.dart';
@@ -699,30 +701,51 @@ class _ScreenshotManagerModalState
     // This could open a full-screen preview or add to editor
   }
 
-  void _handleScreenshotDelete(dynamic screenshot) {
+  void _handleScreenshotDelete(dynamic screenshot) async {
     // Handle screenshot deletion with confirmation
-    showDialog(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Screenshot'),
-        content: const Text('Are you sure you want to delete this screenshot?'),
+        content: const Text('Are you sure you want to delete this screenshot? This action cannot be undone.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // TODO: Implement screenshot deletion
-              _showSnackBar('Screenshot deleted');
-            },
+            onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final uploadService = ref.read(uploadServiceProvider);
+      final screenshotsNotifier = ref.read(project_providers.projectScreenshotsProvider(widget.project.id).notifier);
+
+      // Delete from Firebase Storage using the download URL
+      await uploadService.deleteFileByUrl(screenshot.storageUrl);
+
+      // Remove from state
+      await screenshotsNotifier.removeScreenshot(
+        screenshot.id,
+        screenshot.languageCode,
+        screenshot.deviceId,
+      );
+
+      if (mounted) {
+        _showSnackBar('Screenshot deleted successfully');
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar('Failed to delete screenshot: $error', isError: true);
+      }
+    }
   }
 
   void _retryFailedUploads() {

@@ -91,7 +91,18 @@ class UploadService {
     }
   }
 
-  /// Delete a file from Firebase Storage
+  /// Delete a file from Firebase Storage using the download URL
+  Future<void> deleteFileByUrl(String downloadUrl) async {
+    try {
+      // Use refFromURL which handles the download URL format automatically
+      final ref = _storage.refFromURL(downloadUrl);
+      await ref.delete();
+    } catch (e) {
+      throw Exception('Failed to delete file: $e');
+    }
+  }
+
+  /// Delete a file from Firebase Storage using storage path
   Future<void> deleteFile(String storagePath) async {
     try {
       await _storage.ref(storagePath).delete();
@@ -100,18 +111,18 @@ class UploadService {
     }
   }
 
-  /// Get storage path from URL
+  /// Get storage path from URL (deprecated - use deleteFileByUrl instead)
   String getStoragePathFromUrl(String url) {
     // Extract path from Firebase Storage URL
     final uri = Uri.parse(url);
     final pathSegments = uri.pathSegments;
-    
+
     // Firebase Storage URLs have format: /v0/b/{bucket}/o/{path}
     // We need to decode the path part
     if (pathSegments.length >= 4 && pathSegments[2] == 'o') {
       return Uri.decodeComponent(pathSegments[3]);
     }
-    
+
     throw Exception('Invalid Firebase Storage URL');
   }
 

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../providers/app_providers.dart';
 import '../../shared/models/screenshot_model.dart';
 import 'project_provider.dart';
 
@@ -110,25 +111,48 @@ class ProjectScreenshots extends _$ProjectScreenshots {
   }
 
   Future<void> removeScreenshot(String screenshotId, String languageCode, String deviceId) async {
-    final currentState = await future;
-    final updatedState = Map<String, Map<String, List<ScreenshotModel>>>.from(currentState);
-    
-    if (updatedState.containsKey(languageCode) && 
-        updatedState[languageCode]!.containsKey(deviceId)) {
-      updatedState[languageCode]![deviceId]!.removeWhere((s) => s.id == screenshotId);
-      
+    // Get the current project by reading the stream value
+    final projectsAsync = ref.read(projectsStreamProvider);
+    final projects = projectsAsync.maybeWhen(
+      data: (projects) => projects,
+      orElse: () => <dynamic>[],
+    );
+
+    final project = projects.where((p) => p.id == projectId).firstOrNull;
+
+    if (project == null) {
+      throw Exception('Project not found');
+    }
+
+    // Remove the screenshot from the project
+    final updatedScreenshots = Map<String, Map<String, List<ScreenshotModel>>>.from(project.screenshots);
+
+    if (updatedScreenshots.containsKey(languageCode) &&
+        updatedScreenshots[languageCode]!.containsKey(deviceId)) {
+      updatedScreenshots[languageCode]![deviceId]!.removeWhere((s) => s.id == screenshotId);
+
       // Clean up empty containers
-      if (updatedState[languageCode]![deviceId]!.isEmpty) {
-        updatedState[languageCode]!.remove(deviceId);
+      if (updatedScreenshots[languageCode]![deviceId]!.isEmpty) {
+        updatedScreenshots[languageCode]!.remove(deviceId);
       }
-      
-      if (updatedState[languageCode]!.isEmpty) {
-        updatedState.remove(languageCode);
+
+      if (updatedScreenshots[languageCode]!.isEmpty) {
+        updatedScreenshots.remove(languageCode);
       }
     }
-    
-    state = AsyncValue.data(updatedState);
-    
+
+    // Update the project in Firestore
+    final updatedProject = project.copyWith(
+      screenshots: updatedScreenshots,
+      updatedAt: DateTime.now(),
+    );
+
+    final projectService = ref.read(projectServiceProvider);
+    await projectService.updateProject(updatedProject);
+
+    // Update local state
+    state = AsyncValue.data(updatedScreenshots);
+
     // Invalidate the projects stream to refresh the project data
     ref.invalidate(projectsStreamProvider);
   }

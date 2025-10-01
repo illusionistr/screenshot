@@ -178,9 +178,8 @@ class _ScreenshotUploadSectionState
       final uploadService = ref.read(uploadServiceProvider);
       final screenshotsNotifier = ref.read(project_providers.projectScreenshotsProvider(widget.projectId).notifier);
 
-      // Delete from Firebase Storage
-      final storagePath = uploadService.getStoragePathFromUrl(screenshot.storageUrl);
-      await uploadService.deleteFile(storagePath);
+      // Delete from Firebase Storage using the download URL
+      await uploadService.deleteFileByUrl(screenshot.storageUrl);
 
       // Remove from state
       await screenshotsNotifier.removeScreenshot(
