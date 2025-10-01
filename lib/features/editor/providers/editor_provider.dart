@@ -628,7 +628,58 @@ class EditorNotifier extends StateNotifier<EditorState> {
   void selectScreen(int index) {
     if (index < 0 || index >= state.screens.length) return;
 
-    state = state.copyWith(selectedScreenIndex: index);
+    // Get the selected screen's background
+    final selectedScreen = state.screens[index];
+    final background = selectedScreen.background;
+
+    // Sync background panel state with the selected screen's background
+    BackgroundTab tabToSelect = state.selectedBackgroundTab;
+    Color? solidColor;
+    Color? gradientStart;
+    Color? gradientEnd;
+    String? gradientDir;
+
+    switch (background.type) {
+      case BackgroundType.solid:
+        tabToSelect = BackgroundTab.color;
+        solidColor = background.solidColor ?? state.solidBackgroundColor;
+        break;
+      case BackgroundType.gradient:
+        tabToSelect = BackgroundTab.gradient;
+        // Extract colors from LinearGradient
+        if (background.gradient != null) {
+          final colors = background.gradient!.colors;
+          if (colors.isNotEmpty) {
+            gradientStart = colors.first;
+            gradientEnd = colors.length > 1 ? colors.last : colors.first;
+          }
+          // Determine direction from alignment
+          final begin = background.gradient!.begin as Alignment;
+          final end = background.gradient!.end as Alignment;
+          if (begin == Alignment.topCenter && end == Alignment.bottomCenter) {
+            gradientDir = 'vertical';
+          } else if (begin == Alignment.centerLeft && end == Alignment.centerRight) {
+            gradientDir = 'horizontal';
+          } else if (begin == Alignment.topLeft && end == Alignment.bottomRight) {
+            gradientDir = 'diagonal';
+          } else {
+            gradientDir = 'vertical'; // default
+          }
+        }
+        break;
+      case BackgroundType.image:
+        tabToSelect = BackgroundTab.image;
+        break;
+    }
+
+    state = state.copyWith(
+      selectedScreenIndex: index,
+      selectedBackgroundTab: tabToSelect,
+      solidBackgroundColor: solidColor ?? state.solidBackgroundColor,
+      gradientStartColor: gradientStart ?? state.gradientStartColor,
+      gradientEndColor: gradientEnd ?? state.gradientEndColor,
+      gradientDirection: gradientDir ?? state.gradientDirection,
+    );
   }
 
   void updateScreenConfig(int index, ScreenConfig newConfig) {
