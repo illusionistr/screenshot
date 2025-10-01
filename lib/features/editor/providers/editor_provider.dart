@@ -1541,18 +1541,35 @@ class EditorNotifier extends StateNotifier<EditorState> {
           ];
 
           if (screensFromProject.isNotEmpty) {
-            int? nextSelected = state.selectedScreenIndex;
-            if (nextSelected == null || nextSelected >= screensFromProject.length) {
-              nextSelected = 0;
-            }
+            // Only sync screens if they've actually changed
+            // Compare screen IDs to detect real changes vs. local pending updates
+            final currentScreenIds = state.screens.map((s) => s.id).toList();
+            final projectScreenIds = screensFromProject.map((s) => s.id).toList();
 
-            state = state.copyWith(
-              screens: screensFromProject,
-              selectedScreenIndex: nextSelected,
-            );
-            
-            // Fix any existing element ID collisions after loading screens
-            fixElementIdCollisions();
+            // Convert to sets for comparison
+            final currentSet = currentScreenIds.toSet();
+            final projectSet = projectScreenIds.toSet();
+
+            // Check if the screens are actually different (not just reordered)
+            // Only sync if project has screens we don't have OR if we have screens project doesn't have
+            final screensChanged = !currentSet.containsAll(projectSet) ||
+                                   !projectSet.containsAll(currentSet) ||
+                                   currentScreenIds.length != projectScreenIds.length;
+
+            if (screensChanged) {
+              int? nextSelected = state.selectedScreenIndex;
+              if (nextSelected == null || nextSelected >= screensFromProject.length) {
+                nextSelected = 0;
+              }
+
+              state = state.copyWith(
+                screens: screensFromProject,
+                selectedScreenIndex: nextSelected,
+              );
+
+              // Fix any existing element ID collisions after loading screens
+              fixElementIdCollisions();
+            }
           }
         } catch (_) {
           // If hydration fails for any reason, keep existing UI state

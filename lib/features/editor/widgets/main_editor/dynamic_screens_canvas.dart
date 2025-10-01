@@ -24,13 +24,10 @@ class DynamicScreensCanvas extends ConsumerWidget {
     final editorNotifier = ref.read(editorProv.notifier);
 
     // Watch only stable, low-churn slices to avoid full rebuilds while typing
-    final screenCount = ref.watch(
-      editorProv.select((s) => s.screens.length),
+    final screens = ref.watch(
+      editorProv.select((s) => s.screens),
     );
-    final screenIds = [
-      for (int i = 0; i < screenCount; i++)
-        ref.watch(editorProv.select((s) => s.screens[i].id)),
-    ];
+    final screenIds = screens.map((s) => s.id).toList();
     final selectedScreenIndex = ref.watch(
       editorProv.select((s) => s.selectedScreenIndex),
     );
@@ -190,8 +187,13 @@ class _OptimizedScreenContainer extends ConsumerWidget {
     // Watch only the specific screen data with deep equality check
     // This should prevent rebuilds when other screens change but this one doesn't
     final screen = ref.watch(
-      editorProv.select((s) => s.screens[screenIndex]),
+      editorProv.select((s) => screenIndex < s.screens.length ? s.screens[screenIndex] : null),
     );
+
+    // If screen is null (index out of bounds), return empty container
+    if (screen == null) {
+      return const SizedBox.shrink();
+    }
 
     // Get screenshot for current language and device (language+device-aware lookup)
     final screenshotId = screen.getScreenshotForLanguageAndDevice(currentLanguage, selectedDevice);
