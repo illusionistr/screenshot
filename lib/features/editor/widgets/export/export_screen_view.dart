@@ -83,11 +83,8 @@ class ExportScreenView extends StatelessWidget {
   }
 
   BoxDecoration _getMainContainerDecoration() {
+    // No border in export view - we want the background to fill the entire image
     final baseDecoration = BoxDecoration(
-      border: Border.all(
-        color: Colors.grey.shade300,
-        width: 1,
-      ),
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(8),
         topRight: Radius.circular(8),

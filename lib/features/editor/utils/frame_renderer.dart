@@ -32,6 +32,7 @@ class FrameRenderer {
     // Prepare content widget
     Widget content;
     if (screenshotPath != null) {
+      print('[FRAME] Building Image.network for: $screenshotPath');
       content = Container(
         width: containerSize.width,
         height: containerSize.height,
@@ -42,13 +43,16 @@ class FrameRenderer {
           height: containerSize.height,
           fit: BoxFit.fill,
           errorBuilder: (context, error, stackTrace) {
+            print('[FRAME] Image load ERROR for $screenshotPath: $error');
             return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
           },
           frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
             if (frame == null) {
+              print('[FRAME] Frame is NULL (image not loaded yet) for $screenshotPath');
               return placeholder ?? _buildDefaultScreenshotPlaceholder(device);
             }
 
+            print('[FRAME] Image loaded successfully, frame=$frame, wasSynchronouslyLoaded=$wasSynchronouslyLoaded');
             // Return the image to fill the entire container
             return SizedBox(
               width: containerSize.width,
@@ -59,6 +63,7 @@ class FrameRenderer {
         ),
       );
     } else {
+      print('[FRAME] No screenshot path provided, using placeholder');
       content = placeholder ?? _buildDefaultScreenshotPlaceholder(device);
     }
 

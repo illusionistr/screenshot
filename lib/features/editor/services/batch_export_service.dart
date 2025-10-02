@@ -94,6 +94,9 @@ class BatchExportService {
       '${job.deviceId} • ${job.languageCode} • #${job.screenIndex + 1}';
 
   static Future<Uint8List> _captureJob(BuildContext context, ExportJob job) async {
+    print('[EXPORT] === Starting capture job for ${job.deviceId} - ${job.languageCode} - screen ${job.screenIndex + 1} ===');
+    final jobStartTime = DateTime.now();
+
     // Prepare required output size (platform compliant)
     final dims = PlatformDetectionService.getPlatformContainerDimensions(
       job.deviceId,
@@ -131,6 +134,7 @@ class BatchExportService {
                 layoutId: job.layoutId,
                 frameVariant: job.frameVariant,
                 customSettings: job.customSettings,
+                currentLanguage: job.languageCode,
               ),
             ),
           ),
@@ -140,8 +144,11 @@ class BatchExportService {
 
     overlay.insert(entry);
     // Wait for layout/paint
+    print('[EXPORT] Widget inserted, waiting for frame...');
     await WidgetsBinding.instance.endOfFrame;
+    print('[EXPORT] Frame ended, waiting 16ms...');
     await Future.delayed(const Duration(milliseconds: 16));
+    print('[EXPORT] Starting capture...');
 
     // Scale to target pixel size (based on height)
     final boundary = repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
@@ -151,6 +158,10 @@ class BatchExportService {
     image.dispose();
 
     entry.remove();
+
+    final totalDuration = DateTime.now().difference(jobStartTime);
+    print('[EXPORT] === Job completed in ${totalDuration.inMilliseconds}ms ===\n');
+
     return byteData!.buffer.asUint8List();
   }
 
@@ -166,7 +177,9 @@ class BatchExportService {
 
     final screenshotUrl = job.screenshot?.storageUrl;
     if (screenshotUrl != null && screenshotUrl.isNotEmpty) {
-      futures.add(precacheImage(NetworkImage(screenshotUrl), context));
+      print('[EXPORT] Starting prefetch for screenshot: $screenshotUrl');
+      final prefetchFuture = precacheImage(NetworkImage(screenshotUrl), context);
+      futures.add(prefetchFuture);
     }
 
     // Background image support if present
@@ -174,13 +187,25 @@ class BatchExportService {
     try {
       final imageUrl = bg?.imageUrl as String?; // Background may be ScreenBackground
       if (imageUrl != null && imageUrl.isNotEmpty) {
+        print('[EXPORT] Starting prefetch for background: $imageUrl');
         futures.add(precacheImage(NetworkImage(imageUrl), context));
       }
     } catch (_) {}
 
     if (futures.isNotEmpty) {
-      await Future.wait(futures.map((f) => f.timeout(const Duration(seconds: 10))),
-          eagerError: false, cleanUp: (_) {});
+      print('[EXPORT] Waiting for ${futures.length} image(s) to prefetch...');
+      final startTime = DateTime.now();
+      try {
+        await Future.wait(futures.map((f) => f.timeout(const Duration(seconds: 10))),
+            eagerError: false, cleanUp: (_) {});
+        final duration = DateTime.now().difference(startTime);
+        print('[EXPORT] Prefetch completed in ${duration.inMilliseconds}ms');
+      } catch (e) {
+        final duration = DateTime.now().difference(startTime);
+        print('[EXPORT] Prefetch failed/timeout after ${duration.inMilliseconds}ms: $e');
+      }
+    } else {
+      print('[EXPORT] No images to prefetch');
     }
   }
 }

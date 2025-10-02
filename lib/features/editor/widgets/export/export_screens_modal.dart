@@ -104,10 +104,15 @@ class _ExportScreensModalState extends ConsumerState<ExportScreensModal> {
                     for (final deviceId in selectedDevices) {
                       for (final lang in selectedLanguages) {
                         ScreenshotModel? ss;
-                        final assignedId = screen.assignedScreenshotId;
+                        final assignedId = screen.getScreenshotForLanguageAndDevice(lang, deviceId);
+                        print('[EXPORT_MODAL] Screen $i, device=$deviceId, lang=$lang, assignedId=$assignedId');
                         if (assignedId != null) {
                           final list = (shots[lang]?[deviceId]) ?? const <ScreenshotModel>[];
+                          print('[EXPORT_MODAL] Found ${list.length} screenshots for $lang/$deviceId');
                           ss = list.where((s) => s.id == assignedId).firstOrNull;
+                          print('[EXPORT_MODAL] Matched screenshot: ${ss?.id} with URL: ${ss?.storageUrl}');
+                        } else {
+                          print('[EXPORT_MODAL] No assigned screenshot ID for screen $i');
                         }
 
                         jobs.add(ExportJob(
