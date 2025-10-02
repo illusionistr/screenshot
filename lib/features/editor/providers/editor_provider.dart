@@ -702,7 +702,7 @@ class EditorNotifier extends StateNotifier<EditorState> {
     updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
   }
 
-  // Transform overrides management (per-screen, persisted via customSettings)
+  // Transform overrides management (per-screen AND per-device, persisted via customSettings)
   void updateDeviceTransformOverrideForCurrentScreen(ElementTransform transform) {
     print('[EditorNotifier] updateDeviceTransformOverrideForCurrentScreen called');
     print('[EditorNotifier] Device Transform: scale=${transform.scale}, rotation=${transform.rotationDeg}');
@@ -712,10 +712,38 @@ class EditorNotifier extends StateNotifier<EditorState> {
       print('[EditorNotifier] No valid screen selected for device transform, returning');
       return;
     }
+
+    final currentDeviceId = state.selectedDevice;
+    if (currentDeviceId.isEmpty) {
+      print('[EditorNotifier] No device selected, returning');
+      return;
+    }
+
     final idx = state.selectedScreenIndex!;
     final screen = state.screens[idx];
     final updatedSettings = Map<String, dynamic>.from(screen.customSettings);
-    updatedSettings['deviceTransform'] = transform.toJson();
+
+    // Get or create deviceTransformsByDevice map
+    Map<String, dynamic> deviceTransforms = {};
+    if (updatedSettings.containsKey('deviceTransformsByDevice')) {
+      final existing = updatedSettings['deviceTransformsByDevice'];
+      if (existing is Map) {
+        deviceTransforms = Map<String, dynamic>.from(existing);
+      }
+    }
+
+    // Store the transform for this specific device
+    deviceTransforms[currentDeviceId] = transform.toJson();
+    updatedSettings['deviceTransformsByDevice'] = deviceTransforms;
+
+    // If this is the first device transform being set, also set it as the default
+    // This ensures backward compatibility and provides a fallback for new devices
+    if (!updatedSettings.containsKey('deviceTransform')) {
+      updatedSettings['deviceTransform'] = transform.toJson();
+      print('[EditorNotifier] Set as default deviceTransform (first device)');
+    }
+
+    print('[EditorNotifier] Stored device-specific transform for device: $currentDeviceId');
     final updatedScreen = screen.copyWith(customSettings: updatedSettings);
     updateScreenConfig(idx, updatedScreen);
   }
@@ -723,14 +751,49 @@ class EditorNotifier extends StateNotifier<EditorState> {
   ElementTransform resolveCurrentDeviceTransform() {
     final layoutId = getCurrentScreenLayoutId();
     final base = LayoutsData.getLayoutConfigOrDefault(layoutId).deviceTransform;
+
     if (state.selectedScreenIndex == null ||
         state.selectedScreenIndex! >= state.screens.length) {
       return base;
     }
+
+    final currentDeviceId = state.selectedDevice;
     final settings = state.screens[state.selectedScreenIndex!].customSettings;
+
+    // Resolution order:
+    // 1. Device-specific transform (highest priority)
+    // 2. Default deviceTransform (for backward compatibility)
+    // 3. Layout's deviceTransform (base default)
+
+    // Check for device-specific transform first
+    if (currentDeviceId.isNotEmpty && settings.containsKey('deviceTransformsByDevice')) {
+      final deviceTransforms = settings['deviceTransformsByDevice'];
+      if (deviceTransforms is Map && deviceTransforms.containsKey(currentDeviceId)) {
+        final deviceSpecific = deviceTransforms[currentDeviceId];
+        if (deviceSpecific is Map<String, dynamic>) {
+          print('[EditorNotifier] Resolved device-specific transform for: $currentDeviceId');
+          return ElementTransform.fromJson(deviceSpecific);
+        }
+        if (deviceSpecific is Map) {
+          print('[EditorNotifier] Resolved device-specific transform for: $currentDeviceId');
+          return ElementTransform.fromJson(Map<String, dynamic>.from(deviceSpecific));
+        }
+      }
+    }
+
+    // Fall back to default deviceTransform
     final raw = settings['deviceTransform'];
-    if (raw is Map<String, dynamic>) return ElementTransform.fromJson(raw);
-    if (raw is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(raw));
+    if (raw is Map<String, dynamic>) {
+      print('[EditorNotifier] Using default deviceTransform (no device-specific found)');
+      return ElementTransform.fromJson(raw);
+    }
+    if (raw is Map) {
+      print('[EditorNotifier] Using default deviceTransform (no device-specific found)');
+      return ElementTransform.fromJson(Map<String, dynamic>.from(raw));
+    }
+
+    // Finally, fall back to layout's base transform
+    print('[EditorNotifier] Using layout base transform');
     return base;
   }
 

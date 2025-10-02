@@ -482,12 +482,37 @@ class _ScreenContainerState extends ConsumerState<ScreenContainer> {
       return null;
     }
 
-    final dev = parse(settings['deviceTransform']);
+    // Resolution order for device transform:
+    // 1. Device-specific transform (deviceTransformsByDevice[deviceId])
+    // 2. Default deviceTransform
+    // 3. Layout's deviceTransform (config.deviceTransform)
+
+    ElementTransform? deviceTransform;
+
+    // Check for device-specific transform first
+    if (settings.containsKey('deviceTransformsByDevice')) {
+      final deviceTransforms = settings['deviceTransformsByDevice'];
+      if (deviceTransforms is Map && deviceTransforms.containsKey(widget.deviceId)) {
+        deviceTransform = parse(deviceTransforms[widget.deviceId]);
+        if (deviceTransform != null) {
+          print('[ScreenContainer] Using device-specific transform for ${widget.deviceId}');
+        }
+      }
+    }
+
+    // Fall back to default deviceTransform if no device-specific found
+    if (deviceTransform == null) {
+      deviceTransform = parse(settings['deviceTransform']);
+      if (deviceTransform != null) {
+        print('[ScreenContainer] Using default deviceTransform for ${widget.deviceId}');
+      }
+    }
+
     final title = parse(settings['titleTransform']);
     final sub = parse(settings['subtitleTransform']);
-    if (dev == null && title == null && sub == null) return config;
+    if (deviceTransform == null && title == null && sub == null) return config;
     return config.copyWith(
-      deviceTransform: dev ?? config.deviceTransform,
+      deviceTransform: deviceTransform ?? config.deviceTransform,
       titleTransform: title ?? config.titleTransform,
       subtitleTransform: sub ?? config.subtitleTransform,
     );

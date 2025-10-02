@@ -242,6 +242,21 @@ class FrameVariantsData {
       deviceId: 'pixel-8-pro',
     ),
 
+
+    // Pixel Tablet variants (REAL ASSETS)
+    FrameVariantModel(
+      id: 'porcelain',
+      name: 'Porcelain',
+      assetPath: 'frames/pixel-tablet/porcelain.png',
+      deviceId: 'pixel-tablet',
+    ),
+    FrameVariantModel(
+      id: 'hazel',
+      name: 'Hazel',
+      assetPath: 'frames/pixel-tablet/hazel.png',
+      deviceId: 'pixel-tablet',
+    ),
+
     // Pixel 8 variants (REAL ASSETS)
     FrameVariantModel(
       id: 'obsidian',
@@ -545,6 +560,7 @@ class FrameVariantsData {
       deviceId: 'galaxy-s8',
       isGeneric: true,
     ),
+    
   ];
 
   static List<FrameVariantModel> getFrameVariantsByDeviceId(String deviceId) {

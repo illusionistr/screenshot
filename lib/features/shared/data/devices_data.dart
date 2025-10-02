@@ -305,6 +305,30 @@ class DevicesData {
       availableFrames: ['volcanic-black', 'emerald-forest'],
       appStoreDisplaySize: '6.7-inch',
     ),
+     DeviceModel(
+      id: '-galaxy-tab-a-10.1',
+      name: 'Galaxy Tab A 10.1',
+      platform: Platform.android,
+      frameWidth: 1494,
+      frameHeight: 2452,
+      screenWidth: 1200,
+      screenHeight: 1920,
+      screenPosition: Offset(0, 0),
+      availableFrames: ['black', 'gold', 'silver'],
+      appStoreDisplaySize: '10.1-inch',
+    ),
+    DeviceModel(
+      id: 'pixel-tablet',
+      name: 'Pixel Tablet',
+      platform: Platform.android,
+      frameWidth: 1690,
+      frameHeight: 2580,
+      screenWidth: 1600,
+      screenHeight: 2560,
+      screenPosition: Offset(45, 10),
+      availableFrames: ['porcelain', 'hazel'],
+      appStoreDisplaySize: '10.95-inch',
+    )
   ];
 
   static List<DeviceModel> getDevicesByPlatform(Platform platform) {
