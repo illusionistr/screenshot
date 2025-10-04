@@ -321,11 +321,11 @@ class DevicesData {
       id: 'pixel-tablet',
       name: 'Pixel Tablet',
       platform: Platform.android,
-      frameWidth: 2000,
+      frameWidth: 1986,
       frameHeight: 3133,
       screenWidth: 1730,
       screenHeight: 2746,
-      screenPosition: Offset(135, 193),
+      screenPosition: Offset(128, 193),
       availableFrames: ['porcelain', 'hazel'],
       appStoreDisplaySize: '10.95-inch',
     )
