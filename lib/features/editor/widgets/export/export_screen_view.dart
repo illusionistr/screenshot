@@ -47,7 +47,7 @@ class ExportScreenView extends StatelessWidget {
       isLandscape: isLandscape,
     );
     final baseConfig = LayoutsData.getLayoutConfigOrDefault(layoutId);
-    final config = _applyTransformOverrides(baseConfig, customSettings);
+    final config = _applyTransformOverrides(baseConfig, customSettings, deviceId);
 
     return Container(
       width: containerSize.width,
@@ -129,7 +129,7 @@ class ExportScreenView extends StatelessWidget {
     required Widget placeholderContent,
   }) {
     final baseConfig = LayoutsData.getLayoutConfigOrDefault(layoutId);
-    final config = _applyTransformOverrides(baseConfig, customSettings);
+    final config = _applyTransformOverrides(baseConfig, customSettings, deviceId);
     final devicePosition = LayoutRenderer.calculateDevicePosition(config, frameSize);
     final deviceSize = LayoutRenderer.calculateDeviceSize(
       config,
@@ -184,7 +184,7 @@ class ExportScreenView extends StatelessWidget {
 }
 
 LayoutConfig _applyTransformOverrides(
-    LayoutConfig config, Map<String, dynamic>? settings) {
+    LayoutConfig config, Map<String, dynamic>? settings, String deviceId) {
   if (settings == null) return config;
 
   ElementTransform? parse(dynamic v) {
@@ -193,12 +193,37 @@ LayoutConfig _applyTransformOverrides(
     return null;
   }
 
-  final dev = parse(settings['deviceTransform']);
+  // Resolution order for device transform:
+  // 1. Device-specific transform (deviceTransformsByDevice[deviceId])
+  // 2. Default deviceTransform
+  // 3. Layout's deviceTransform (config.deviceTransform)
+
+  ElementTransform? deviceTransform;
+
+  // Check for device-specific transform first
+  if (settings.containsKey('deviceTransformsByDevice')) {
+    final deviceTransforms = settings['deviceTransformsByDevice'];
+    if (deviceTransforms is Map && deviceTransforms.containsKey(deviceId)) {
+      deviceTransform = parse(deviceTransforms[deviceId]);
+      if (deviceTransform != null) {
+        print('[ExportScreenView] Using device-specific transform for $deviceId');
+      }
+    }
+  }
+
+  // Fall back to default deviceTransform if no device-specific found
+  if (deviceTransform == null) {
+    deviceTransform = parse(settings['deviceTransform']);
+    if (deviceTransform != null) {
+      print('[ExportScreenView] Using default deviceTransform for $deviceId');
+    }
+  }
+
   final title = parse(settings['titleTransform']);
   final sub = parse(settings['subtitleTransform']);
-  if (dev == null && title == null && sub == null) return config;
+  if (deviceTransform == null && title == null && sub == null) return config;
   return config.copyWith(
-    deviceTransform: dev ?? config.deviceTransform,
+    deviceTransform: deviceTransform ?? config.deviceTransform,
     titleTransform: title ?? config.titleTransform,
     subtitleTransform: sub ?? config.subtitleTransform,
   );
