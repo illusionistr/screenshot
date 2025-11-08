@@ -811,10 +811,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
     final idx = state.selectedScreenIndex!;
     final screen = state.screens[idx];
-    final isGrouped = screen.textConfig.hasBothElementsVisible &&
-        screen.textConfig.textGrouping == TextGrouping.together;
 
-    final targetKey = (isGrouped || type == TextFieldType.title)
+    // Each text element has its own transform (no grouping)
+    final targetKey = type == TextFieldType.title
         ? 'titleTransform'
         : 'subtitleTransform';
 
@@ -839,10 +838,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
     }
 
     final screen = state.screens[state.selectedScreenIndex!];
-    final isGrouped = screen.textConfig.hasBothElementsVisible &&
-        screen.textConfig.textGrouping == TextGrouping.together;
     final settings = screen.customSettings;
-    final key = (isGrouped || isTitle) ? 'titleTransform' : 'subtitleTransform';
+    // Each text element has its own transform (no grouping)
+    final key = isTitle ? 'titleTransform' : 'subtitleTransform';
     final raw = settings[key];
     if (raw is Map<String, dynamic>) return ElementTransform.fromJson(raw);
     if (raw is Map) return ElementTransform.fromJson(Map<String, dynamic>.from(raw));
@@ -944,21 +942,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
 
-    // Check if elements are grouped
-    final isGrouped = currentScreen.textConfig.hasBothElementsVisible &&
-        currentScreen.textConfig.textGrouping == TextGrouping.together;
-    final isPositioningChange = textAlign != null;
-
-    // Determine which element to update
-    TextElement? elementToUpdate;
-
-    if (isGrouped && isPositioningChange) {
-      // For positioning changes in grouped mode, always update the primary element
-      elementToUpdate = currentScreen.textConfig.primaryElement;
-    } else {
-      // For non-positioning changes or non-grouped mode, update the specific element
-      elementToUpdate = currentScreen.textConfig.getElement(type);
-    }
+    // Update the specific element (no grouping)
+    final elementToUpdate = currentScreen.textConfig.getElement(type);
 
     if (elementToUpdate != null) {
       final updatedElement = elementToUpdate.copyWith(
@@ -994,123 +979,37 @@ class EditorNotifier extends StateNotifier<EditorState> {
       return;
     }
 
-    // Check if elements are currently grouped
-    final isGrouped = sourceTextConfig.hasBothElementsVisible &&
-        sourceTextConfig.textGrouping == TextGrouping.together;
-
-    // Apply formatting to all screens
+    // Apply formatting to all screens - each element is handled independently
     final updatedScreens = state.screens.map((screen) {
-      final screenIndex = state.screens.indexOf(screen);
-
       var updatedTextConfig = screen.textConfig;
+      final existingElement = updatedTextConfig.getElement(selectedType);
 
-      if (isGrouped) {
-        // When grouped, copy the entire text configuration including grouping and both elements
-        final sourceTitleElement =
-            sourceTextConfig.getElement(TextFieldType.title);
-        final sourceSubtitleElement =
-            sourceTextConfig.getElement(TextFieldType.subtitle);
-
-        // Update or create title element (only if it's visible in source)
-        if (sourceTitleElement != null && sourceTitleElement.isVisible) {
-          final existingTitle =
-              updatedTextConfig.getElement(TextFieldType.title);
-
-          final updatedTitle = existingTitle != null
-              ? existingTitle.copyWith(
-                  fontFamily: sourceTitleElement.fontFamily,
-                  fontSize: sourceTitleElement.fontSize,
-                  fontWeight: sourceTitleElement.fontWeight,
-                  textAlign: sourceTitleElement.textAlign,
-                  color: sourceTitleElement.color,
-                  verticalPosition: sourceTitleElement.verticalPosition,
-                  isVisible: sourceTitleElement.isVisible,
-                )
-              : TextElement.createDefault(TextFieldType.title).copyWith(
-                  fontFamily: sourceTitleElement.fontFamily,
-                  fontSize: sourceTitleElement.fontSize,
-                  fontWeight: sourceTitleElement.fontWeight,
-                  textAlign: sourceTitleElement.textAlign,
-                  color: sourceTitleElement.color,
-                  verticalPosition: sourceTitleElement.verticalPosition,
-                  isVisible: sourceTitleElement.isVisible,
-                );
-
-          if (existingTitle != null) {
-            updatedTextConfig = updatedTextConfig.updateElement(updatedTitle);
-          } else {
-            updatedTextConfig = updatedTextConfig.addElement(updatedTitle);
-          }
-        }
-
-        // Update or create subtitle element (only if it's visible in source)
-        if (sourceSubtitleElement != null && sourceSubtitleElement.isVisible) {
-          final existingSubtitle =
-              updatedTextConfig.getElement(TextFieldType.subtitle);
-          final updatedSubtitle = existingSubtitle != null
-              ? existingSubtitle.copyWith(
-                  fontFamily: sourceSubtitleElement.fontFamily,
-                  fontSize: sourceSubtitleElement.fontSize,
-                  fontWeight: sourceSubtitleElement.fontWeight,
-                  textAlign: sourceSubtitleElement.textAlign,
-                  color: sourceSubtitleElement.color,
-                  verticalPosition: sourceSubtitleElement.verticalPosition,
-                  isVisible: sourceSubtitleElement.isVisible,
-                )
-              : TextElement.createDefault(TextFieldType.subtitle).copyWith(
-                  fontFamily: sourceSubtitleElement.fontFamily,
-                  fontSize: sourceSubtitleElement.fontSize,
-                  fontWeight: sourceSubtitleElement.fontWeight,
-                  textAlign: sourceSubtitleElement.textAlign,
-                  color: sourceSubtitleElement.color,
-                  verticalPosition: sourceSubtitleElement.verticalPosition,
-                  isVisible: sourceSubtitleElement.isVisible,
-                );
-
-          if (existingSubtitle != null) {
-            updatedTextConfig =
-                updatedTextConfig.updateElement(updatedSubtitle);
-          } else {
-            updatedTextConfig = updatedTextConfig.addElement(updatedSubtitle);
-          }
-        }
-
-        // Apply the grouping setting
-        updatedTextConfig =
-            updatedTextConfig.updateGrouping(sourceTextConfig.textGrouping);
-
+      if (existingElement != null) {
+        // Update existing element with new formatting
+        final updatedElement = existingElement.copyWith(
+          fontFamily: sourceElement.fontFamily,
+          fontSize: sourceElement.fontSize,
+          fontWeight: sourceElement.fontWeight,
+          textAlign: sourceElement.textAlign,
+          color: sourceElement.color,
+          verticalPosition: sourceElement.verticalPosition,
+          isVisible: sourceElement.isVisible,
+        );
+        updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
         return screen.copyWith(textConfig: updatedTextConfig);
       } else {
-        // When not grouped, use original logic for single element
-        final existingElement = updatedTextConfig.getElement(selectedType);
-
-        if (existingElement != null) {
-          // Update existing element with new formatting
-          final updatedElement = existingElement.copyWith(
-            fontFamily: sourceElement.fontFamily,
-            fontSize: sourceElement.fontSize,
-            fontWeight: sourceElement.fontWeight,
-            textAlign: sourceElement.textAlign,
-            color: sourceElement.color,
-            verticalPosition: sourceElement.verticalPosition,
-            isVisible: sourceElement.isVisible,
-          );
-          updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
-          return screen.copyWith(textConfig: updatedTextConfig);
-        } else {
-          // Create new element with source formatting but default content
-          final newElement = TextElement.createDefault(selectedType).copyWith(
-            fontFamily: sourceElement.fontFamily,
-            fontSize: sourceElement.fontSize,
-            fontWeight: sourceElement.fontWeight,
-            textAlign: sourceElement.textAlign,
-            color: sourceElement.color,
-            verticalPosition: sourceElement.verticalPosition,
-            isVisible: sourceElement.isVisible,
-          );
-          updatedTextConfig = updatedTextConfig.addElement(newElement);
-          return screen.copyWith(textConfig: updatedTextConfig);
-        }
+        // Create new element with source formatting but default content
+        final newElement = TextElement.createDefault(selectedType).copyWith(
+          fontFamily: sourceElement.fontFamily,
+          fontSize: sourceElement.fontSize,
+          fontWeight: sourceElement.fontWeight,
+          textAlign: sourceElement.textAlign,
+          color: sourceElement.color,
+          verticalPosition: sourceElement.verticalPosition,
+          isVisible: sourceElement.isVisible,
+        );
+        updatedTextConfig = updatedTextConfig.addElement(newElement);
+        return screen.copyWith(textConfig: updatedTextConfig);
       }
     }).toList();
 
@@ -1144,157 +1043,50 @@ class EditorNotifier extends StateNotifier<EditorState> {
       return;
     }
 
-    // Check if elements are currently grouped
-    final isGrouped = sourceTextConfig.hasBothElementsVisible &&
-        sourceTextConfig.textGrouping == TextGrouping.together;
-
-    // Apply formatting to all screens while preserving per-language content
+    // Apply formatting to all screens while preserving per-language content - each element is handled independently
     final updatedScreens = state.screens.map((screen) {
       var updatedTextConfig = screen.textConfig;
+      final existingElement = updatedTextConfig.getElement(selectedType);
 
-      if (isGrouped) {
-        // When grouped, copy the entire text configuration including grouping and both elements
-        final sourceTitleElement = sourceTextConfig.getElement(TextFieldType.title);
-        final sourceSubtitleElement = sourceTextConfig.getElement(TextFieldType.subtitle);
+      if (existingElement != null) {
+        // Preserve existing translations and only update the current editing language content
+        final existingTranslations = existingElement.translations;
+        final sourceContent = sourceElement.getTranslation(currentEditingLanguage);
+        final updatedTranslations = Map<String, String>.from(existingTranslations);
+        updatedTranslations[currentEditingLanguage] = sourceContent;
 
-        // Update or create title element (only if it's visible in source)
-        if (sourceTitleElement != null && sourceTitleElement.isVisible) {
-          final existingTitle = updatedTextConfig.getElement(TextFieldType.title);
-          
-          // Preserve existing translations and only update the current editing language content
-          final existingTranslations = existingTitle?.translations ?? <String, String>{};
-          final sourceContent = sourceTitleElement.getTranslation(currentEditingLanguage);
-          final updatedTranslations = Map<String, String>.from(existingTranslations);
-          updatedTranslations[currentEditingLanguage] = sourceContent;
-
-          final updatedTitle = existingTitle != null
-              ? existingTitle.copyWith(
-                  translations: updatedTranslations,
-                  fontFamily: sourceTitleElement.fontFamily,
-                  fontSize: sourceTitleElement.fontSize,
-                  fontWeight: sourceTitleElement.fontWeight,
-                  textAlign: sourceTitleElement.textAlign,
-                  color: sourceTitleElement.color,
-                  verticalPosition: sourceTitleElement.verticalPosition,
-                  isVisible: sourceTitleElement.isVisible,
-                )
-              : (() {
-                  final newId = '${screen.id}_${TextFieldType.title.id}_${DateTime.now().millisecondsSinceEpoch}';
-                  print('[EditorProvider] Creating new title element with ID: $newId for screen: ${screen.id}');
-                  return TextElement(
-                    id: newId,
-                    type: TextFieldType.title,
-                    translations: updatedTranslations,
-                    fontFamily: sourceTitleElement.fontFamily,
-                    fontSize: sourceTitleElement.fontSize,
-                    fontWeight: sourceTitleElement.fontWeight,
-                    textAlign: sourceTitleElement.textAlign,
-                    color: sourceTitleElement.color,
-                    verticalPosition: sourceTitleElement.verticalPosition,
-                    isVisible: sourceTitleElement.isVisible,
-                  );
-                })();
-
-          if (existingTitle != null) {
-            updatedTextConfig = updatedTextConfig.updateElement(updatedTitle);
-          } else {
-            updatedTextConfig = updatedTextConfig.addElement(updatedTitle);
-          }
-        }
-
-        // Update or create subtitle element (only if it's visible in source)
-        if (sourceSubtitleElement != null && sourceSubtitleElement.isVisible) {
-          final existingSubtitle = updatedTextConfig.getElement(TextFieldType.subtitle);
-          
-          // Preserve existing translations and only update the current editing language content
-          final existingTranslations = existingSubtitle?.translations ?? <String, String>{};
-          final sourceContent = sourceSubtitleElement.getTranslation(currentEditingLanguage);
-          final updatedTranslations = Map<String, String>.from(existingTranslations);
-          updatedTranslations[currentEditingLanguage] = sourceContent;
-
-          final updatedSubtitle = existingSubtitle != null
-              ? existingSubtitle.copyWith(
-                  translations: updatedTranslations,
-                  fontFamily: sourceSubtitleElement.fontFamily,
-                  fontSize: sourceSubtitleElement.fontSize,
-                  fontWeight: sourceSubtitleElement.fontWeight,
-                  textAlign: sourceSubtitleElement.textAlign,
-                  color: sourceSubtitleElement.color,
-                  verticalPosition: sourceSubtitleElement.verticalPosition,
-                  isVisible: sourceSubtitleElement.isVisible,
-                )
-              : (() {
-                  final newId = '${screen.id}_${TextFieldType.subtitle.id}_${DateTime.now().millisecondsSinceEpoch}';
-                  print('[EditorProvider] Creating new subtitle element with ID: $newId for screen: ${screen.id}');
-                  return TextElement(
-                    id: newId,
-                    type: TextFieldType.subtitle,
-                    translations: updatedTranslations,
-                    fontFamily: sourceSubtitleElement.fontFamily,
-                    fontSize: sourceSubtitleElement.fontSize,
-                    fontWeight: sourceSubtitleElement.fontWeight,
-                    textAlign: sourceSubtitleElement.textAlign,
-                    color: sourceSubtitleElement.color,
-                    verticalPosition: sourceSubtitleElement.verticalPosition,
-                    isVisible: sourceSubtitleElement.isVisible,
-                  );
-                })();
-
-          if (existingSubtitle != null) {
-            updatedTextConfig = updatedTextConfig.updateElement(updatedSubtitle);
-          } else {
-            updatedTextConfig = updatedTextConfig.addElement(updatedSubtitle);
-          }
-        }
-
-        // Apply the grouping setting
-        updatedTextConfig = updatedTextConfig.updateGrouping(sourceTextConfig.textGrouping);
-
+        // Update existing element with new formatting and language-specific content
+        final updatedElement = existingElement.copyWith(
+          translations: updatedTranslations,
+          fontFamily: sourceElement.fontFamily,
+          fontSize: sourceElement.fontSize,
+          fontWeight: sourceElement.fontWeight,
+          textAlign: sourceElement.textAlign,
+          color: sourceElement.color,
+          verticalPosition: sourceElement.verticalPosition,
+          isVisible: sourceElement.isVisible,
+        );
+        updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
         return screen.copyWith(textConfig: updatedTextConfig);
       } else {
-        // When not grouped, use language-aware logic for single element
-        final existingElement = updatedTextConfig.getElement(selectedType);
-
-        if (existingElement != null) {
-          // Preserve existing translations and only update the current editing language content
-          final existingTranslations = existingElement.translations;
-          final sourceContent = sourceElement.getTranslation(currentEditingLanguage);
-          final updatedTranslations = Map<String, String>.from(existingTranslations);
-          updatedTranslations[currentEditingLanguage] = sourceContent;
-
-          // Update existing element with new formatting and language-specific content
-          final updatedElement = existingElement.copyWith(
-            translations: updatedTranslations,
-            fontFamily: sourceElement.fontFamily,
-            fontSize: sourceElement.fontSize,
-            fontWeight: sourceElement.fontWeight,
-            textAlign: sourceElement.textAlign,
-            color: sourceElement.color,
-            verticalPosition: sourceElement.verticalPosition,
-            isVisible: sourceElement.isVisible,
-          );
-          updatedTextConfig = updatedTextConfig.updateElement(updatedElement);
-          return screen.copyWith(textConfig: updatedTextConfig);
-        } else {
-          // Create new element with source formatting and content in current language
-          final sourceContent = sourceElement.getTranslation(currentEditingLanguage);
-          final newElementId = '${screen.id}_${selectedType.id}_${DateTime.now().millisecondsSinceEpoch}';
-          print('[EditorProvider] Creating new ${selectedType.id} element with ID: $newElementId for screen: ${screen.id}');
-          final newElement = TextElement(
-            id: newElementId,
-            type: selectedType,
-            translations: {currentEditingLanguage: sourceContent},
-            fontFamily: sourceElement.fontFamily,
-            fontSize: sourceElement.fontSize,
-            fontWeight: sourceElement.fontWeight,
-            textAlign: sourceElement.textAlign,
-            color: sourceElement.color,
-            verticalPosition: sourceElement.verticalPosition,
-            isVisible: sourceElement.isVisible,
-          );
-          updatedTextConfig = updatedTextConfig.addElement(newElement);
-          return screen.copyWith(textConfig: updatedTextConfig);
-        }
+        // Create new element with source formatting and content in current language
+        final sourceContent = sourceElement.getTranslation(currentEditingLanguage);
+        final newElementId = '${screen.id}_${selectedType.id}_${DateTime.now().millisecondsSinceEpoch}';
+        print('[EditorProvider] Creating new ${selectedType.id} element with ID: $newElementId for screen: ${screen.id}');
+        final newElement = TextElement(
+          id: newElementId,
+          type: selectedType,
+          translations: {currentEditingLanguage: sourceContent},
+          fontFamily: sourceElement.fontFamily,
+          fontSize: sourceElement.fontSize,
+          fontWeight: sourceElement.fontWeight,
+          textAlign: sourceElement.textAlign,
+          color: sourceElement.color,
+          verticalPosition: sourceElement.verticalPosition,
+          isVisible: sourceElement.isVisible,
+        );
+        updatedTextConfig = updatedTextConfig.addElement(newElement);
+        return screen.copyWith(textConfig: updatedTextConfig);
       }
     }).toList();
 
@@ -1314,26 +1106,9 @@ class EditorNotifier extends StateNotifier<EditorState> {
 
     final currentScreen = state.screens[state.selectedScreenIndex!];
 
-    // Check if elements are grouped and this is a positioning change
-    final isGrouped = currentScreen.textConfig.hasBothElementsVisible &&
-        currentScreen.textConfig.textGrouping == TextGrouping.together;
-    final isPositioningChange = updatedElement.verticalPosition != null;
-
-    TextElement elementToUpdate = updatedElement;
-
-    if (isGrouped && isPositioningChange) {
-      // For positioning changes in grouped mode, always update the primary element
-      final primaryElement = currentScreen.textConfig.primaryElement;
-      if (primaryElement != null) {
-        // Update the primary element with the new positioning
-        elementToUpdate = primaryElement.copyWith(
-          verticalPosition: updatedElement.verticalPosition,
-        );
-      }
-    }
-
+    // Each element is updated independently using the positioning system
     final updatedTextConfig =
-        currentScreen.textConfig.updateElement(elementToUpdate);
+        currentScreen.textConfig.updateElement(updatedElement);
     final updatedScreen = currentScreen.copyWith(textConfig: updatedTextConfig);
     updateScreenConfig(state.selectedScreenIndex!, updatedScreen);
   }
@@ -1367,16 +1142,8 @@ class EditorNotifier extends StateNotifier<EditorState> {
     final type = state.textElementState.selectedType!;
     final count = getAffectedScreensCount(type);
 
-    // Check if elements are currently grouped
-    final currentScreenTextConfig = getCurrentScreenTextConfig();
-    final isGrouped = currentScreenTextConfig?.hasBothElementsVisible == true &&
-        currentScreenTextConfig?.textGrouping == TextGrouping.together;
-
-    if (isGrouped) {
-      return 'Apply to All Titles & Subtitles ($count)';
-    } else {
-      return 'Apply to All ${type.displayName}s ($count)';
-    }
+    // Each element is handled independently
+    return 'Apply to All ${type.displayName}s ($count)';
   }
 
   // Screenshot Assignment Methods

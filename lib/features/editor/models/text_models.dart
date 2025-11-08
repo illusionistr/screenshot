@@ -17,24 +17,6 @@ enum TextFieldType {
   }
 }
 
-/// Text grouping options for title and subtitle
-enum TextGrouping {
-  separated('separated', 'Separated'),
-  together('together', 'Together');
-
-  const TextGrouping(this.id, this.displayName);
-
-  final String id;
-  final String displayName;
-
-  factory TextGrouping.fromString(String value) {
-    return TextGrouping.values.firstWhere(
-      (grouping) => grouping.id == value,
-      orElse: () => TextGrouping.separated,
-    );
-  }
-}
-
 /// Vertical positioning options for text elements
 enum VerticalPosition {
   top('top', 'Top'),
@@ -285,11 +267,9 @@ class TextElement {
 
 class ScreenTextConfig {
   final Map<TextFieldType, TextElement> elements;
-  final TextGrouping textGrouping;
 
   const ScreenTextConfig({
     this.elements = const {},
-    this.textGrouping = TextGrouping.separated,
   });
 
   factory ScreenTextConfig.empty() {
@@ -335,8 +315,7 @@ class ScreenTextConfig {
   ScreenTextConfig addElement(TextElement element) {
     final updatedElements = Map<TextFieldType, TextElement>.from(elements);
     updatedElements[element.type] = element;
-    return ScreenTextConfig(
-        elements: updatedElements, textGrouping: textGrouping);
+    return ScreenTextConfig(elements: updatedElements);
   }
 
   ScreenTextConfig updateElement(TextElement element) {
@@ -345,15 +324,13 @@ class ScreenTextConfig {
     }
     final updatedElements = Map<TextFieldType, TextElement>.from(elements);
     updatedElements[element.type] = element;
-    return ScreenTextConfig(
-        elements: updatedElements, textGrouping: textGrouping);
+    return ScreenTextConfig(elements: updatedElements);
   }
 
   ScreenTextConfig removeElement(TextFieldType type) {
     final updatedElements = Map<TextFieldType, TextElement>.from(elements);
     updatedElements.remove(type);
-    return ScreenTextConfig(
-        elements: updatedElements, textGrouping: textGrouping);
+    return ScreenTextConfig(elements: updatedElements);
   }
 
   ScreenTextConfig copyFormattingFrom(
@@ -374,10 +351,6 @@ class ScreenTextConfig {
     return updateElement(updatedElement);
   }
 
-  ScreenTextConfig updateGrouping(TextGrouping newGrouping) {
-    return ScreenTextConfig(elements: elements, textGrouping: newGrouping);
-  }
-
   ScreenTextConfig createElementIfNotExists(TextFieldType type) {
     if (hasElement(type)) {
       return this;
@@ -389,11 +362,9 @@ class ScreenTextConfig {
 
   ScreenTextConfig copyWith({
     Map<TextFieldType, TextElement>? elements,
-    TextGrouping? textGrouping,
   }) {
     return ScreenTextConfig(
       elements: elements ?? this.elements,
-      textGrouping: textGrouping ?? this.textGrouping,
     );
   }
 
@@ -402,7 +373,7 @@ class ScreenTextConfig {
       'elements': elements.map(
         (key, value) => MapEntry(key.id, value.toJson()),
       ),
-      'textGrouping': textGrouping.id,
+      // Note: textGrouping field removed but kept in fromJson for backward compatibility
     };
   }
 
@@ -416,13 +387,11 @@ class ScreenTextConfig {
       elements[type] = element;
     }
 
-    final textGrouping = json['textGrouping'] != null
-        ? TextGrouping.fromString(json['textGrouping'] as String)
-        : TextGrouping.separated;
+    // Note: textGrouping field ignored for backward compatibility with existing data
+    // All text elements are now positioned independently using the positioning system
 
     return ScreenTextConfig(
       elements: elements,
-      textGrouping: textGrouping,
     );
   }
 
@@ -430,18 +399,17 @@ class ScreenTextConfig {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is ScreenTextConfig &&
-        _mapEquals(other.elements, elements) &&
-        other.textGrouping == textGrouping;
+        _mapEquals(other.elements, elements);
   }
 
   @override
   int get hashCode {
-    return Object.hash(elements, textGrouping);
+    return elements.hashCode;
   }
 
   @override
   String toString() {
-    return 'ScreenTextConfig(elements: $elements, textGrouping: $textGrouping)';
+    return 'ScreenTextConfig(elements: $elements)';
   }
 
   static bool _mapEquals<K, V>(Map<K, V>? a, Map<K, V>? b) {

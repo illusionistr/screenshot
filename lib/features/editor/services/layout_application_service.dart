@@ -18,7 +18,7 @@ class LayoutApplicationService {
   ///
   /// This method will:
   /// - Create missing text elements (title/subtitle) if they don't exist
-  /// - Override positioning and grouping properties according to layout
+  /// - Override positioning properties according to layout
   /// - Preserve existing text content and styling
   /// - Apply layout's device positioning
   static ScreenConfig applyLayoutToScreen({
@@ -62,9 +62,6 @@ class LayoutApplicationService {
 
     // Ensure both title and subtitle elements exist
     updatedConfig = _ensureTextElementsExist(updatedConfig);
-
-    // Apply layout's text grouping
-    updatedConfig = updatedConfig.updateGrouping(layout.defaultTextGrouping);
 
     // Apply layout's positioning and alignment to existing elements
     updatedConfig = _applyLayoutPositioning(updatedConfig, layout);
@@ -226,12 +223,6 @@ class LayoutApplicationService {
     }
     if (!existingTextConfig.hasElement(TextFieldType.subtitle)) {
       changes.add('Create subtitle text element');
-    }
-
-    // Check if grouping will change
-    if (existingTextConfig.textGrouping != layout.defaultTextGrouping) {
-      changes.add(
-          'Change text grouping to ${layout.defaultTextGrouping.displayName}');
     }
 
     // Check if positioning will change

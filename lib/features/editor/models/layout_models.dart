@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/text_models.dart';
 import 'positioning_models.dart';
 
 /// Enum for device frame positions within the layout
@@ -46,9 +45,7 @@ class LayoutConfig {
   final TextAlign subtitleAlignment;
   final List<String> supportedFrameVariants; // real, clay, matte, no device
   final bool isLandscape;
-  final TextGrouping
-      defaultTextGrouping; // NEW: Default grouping for this layout
-  // NEW: Unified transforms
+  // Unified transforms for precise positioning
   final ElementTransform deviceTransform;
   final ElementTransform? titleTransform;
   final ElementTransform? subtitleTransform;
@@ -68,7 +65,6 @@ class LayoutConfig {
     this.subtitleAlignment = TextAlign.center,
     this.supportedFrameVariants = const ['real', 'clay', 'matte', 'no device'],
     this.isLandscape = false,
-    this.defaultTextGrouping = TextGrouping.separated, // Default to separated
     this.deviceTransform = const ElementTransform(),
     this.titleTransform,
     this.subtitleTransform,
@@ -89,7 +85,6 @@ class LayoutConfig {
     TextAlign? subtitleAlignment,
     List<String>? supportedFrameVariants,
     bool? isLandscape,
-    TextGrouping? defaultTextGrouping, // NEW: Include in copyWith
     ElementTransform? deviceTransform,
     ElementTransform? titleTransform,
     ElementTransform? subtitleTransform,
@@ -110,8 +105,6 @@ class LayoutConfig {
       supportedFrameVariants:
           supportedFrameVariants ?? this.supportedFrameVariants,
       isLandscape: isLandscape ?? this.isLandscape,
-      defaultTextGrouping: defaultTextGrouping ??
-          this.defaultTextGrouping, // NEW: Include in copyWith
       deviceTransform: deviceTransform ?? this.deviceTransform,
       titleTransform: titleTransform ?? this.titleTransform,
       subtitleTransform: subtitleTransform ?? this.subtitleTransform,

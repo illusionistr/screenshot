@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/layout_models.dart';
-import '../models/text_models.dart';
 import '../models/positioning_models.dart';
 
 /// Predefined layouts for app store screenshots
@@ -30,7 +29,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 60, 40, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping: TextGrouping.together, // Group text above device
       ),
       category: 'Basic',
       sortOrder: 1,
@@ -58,7 +56,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 40, 40, 60),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping: TextGrouping.together, // Group text below device
       ),
       category: 'Basic',
       sortOrder: 2,
@@ -87,8 +84,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(60, 60, 40, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping:
-            TextGrouping.together, // Group text above tilted device
       ),
       category: 'Tilted',
       sortOrder: 3,
@@ -116,8 +111,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 60, 60, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping:
-            TextGrouping.together, // Group text above tilted device
       ),
       category: 'Tilted',
       sortOrder: 4,
@@ -145,8 +138,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(60, 40, 40, 60),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping:
-            TextGrouping.together, // Group text below tilted device
       ),
       category: 'Tilted',
       sortOrder: 5,
@@ -174,8 +165,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 40, 60, 60),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping:
-            TextGrouping.together, // Group text below tilted device
       ),
       category: 'Tilted',
       sortOrder: 6,
@@ -196,8 +185,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(60, 80, 40, 80),
         titleAlignment: TextAlign.left,
         subtitleAlignment: TextAlign.left,
-        defaultTextGrouping:
-            TextGrouping.together, // Group text as cohesive block on left
       ),
       category: 'Text-Focused',
       sortOrder: 7,
@@ -217,8 +204,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 80, 60, 80),
         titleAlignment: TextAlign.right,
         subtitleAlignment: TextAlign.right,
-        defaultTextGrouping:
-            TextGrouping.together, // Group text as cohesive block on right
       ),
       category: 'Text-Focused',
       sortOrder: 8,
@@ -247,8 +232,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 40, 40, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping: TextGrouping
-            .separated, // Allow independent positioning around large device
       ),
       category: 'Device-Focused',
       sortOrder: 9,
@@ -276,8 +259,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 60, 40, 60),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping: TextGrouping
-            .separated, // Allow independent positioning around small device
       ),
       category: 'Device-Focused',
       sortOrder: 10,
@@ -306,8 +287,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 40, 40, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping:
-            TextGrouping.together, // Group overlay text as unified element
       ),
       category: 'Overlay',
       sortOrder: 11,
@@ -335,8 +314,6 @@ class LayoutsData {
         textPadding: EdgeInsets.fromLTRB(40, 40, 40, 40),
         titleAlignment: TextAlign.center,
         subtitleAlignment: TextAlign.center,
-        defaultTextGrouping:
-            TextGrouping.together, // Group overlay text as unified element
       ),
       category: 'Overlay',
       sortOrder: 12,
