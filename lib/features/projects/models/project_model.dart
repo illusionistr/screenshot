@@ -21,6 +21,7 @@ class ProjectModel {
   final Map<String, ScreenTextConfig> screenTextConfigs; // Screen ID → Text Configuration
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isLocked; // Lock status - prevents deletion and modification
 
   // Legacy field for backward compatibility during migration
   final Map<String, List<String>>? legacyDevices;
@@ -39,6 +40,7 @@ class ProjectModel {
     this.screenTextConfigs = const {},
     required this.createdAt,
     required this.updatedAt,
+    this.isLocked = false,
     this.legacyDevices,
   });
 
@@ -53,6 +55,7 @@ class ProjectModel {
     List<String>? screenOrder,
     Map<String, ScreenTextConfig>? screenTextConfigs,
     DateTime? updatedAt,
+    bool? isLocked,
     Map<String, List<String>>? legacyDevices,
   }) {
     return ProjectModel(
@@ -69,6 +72,7 @@ class ProjectModel {
       screenTextConfigs: screenTextConfigs ?? this.screenTextConfigs,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isLocked: isLocked ?? this.isLocked,
       legacyDevices: legacyDevices ?? this.legacyDevices,
     );
   }
@@ -148,6 +152,7 @@ class ProjectModel {
       screenTextConfigs: screenTextConfigs,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      isLocked: data['isLocked'] as bool? ?? false,
       legacyDevices: legacyDevices,
     );
   }
@@ -226,6 +231,7 @@ class ProjectModel {
       'screenTextConfigs': textConfigsData,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'isLocked': isLocked,
       // Don't save legacy devices to Firestore for new projects
     };
   }

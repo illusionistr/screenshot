@@ -86,18 +86,58 @@ class DashboardScreen extends ConsumerWidget {
                       final project = projects[index];
                       return ProjectCard(
                         project: project,
-                        onDelete: () async {
+                        onToggleLock: (isLocked) async {
                           try {
                             await ref
                                 .read(projectsNotifierProvider.notifier)
-                                .deleteProject(project.id);
+                                .toggleProjectLock(project.id, isLocked);
                           } catch (error) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                    content:
-                                        Text('Error deleting project: $error')),
+                                    content: Text(
+                                        'Error toggling lock: $error')),
                               );
+                            }
+                          }
+                        },
+                        onDelete: () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete Project'),
+                              content: Text(
+                                'Are you sure you want to delete "${project.appName}"?\n\nThis action cannot be undone.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: const Text('Cancel'),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirmed == true) {
+                            try {
+                              await ref
+                                  .read(projectsNotifierProvider.notifier)
+                                  .deleteProject(project.id);
+                            } catch (error) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('Error deleting project: $error')),
+                                );
+                              }
                             }
                           }
                         },

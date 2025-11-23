@@ -117,4 +117,15 @@ class ProjectsNotifier extends _$ProjectsNotifier {
       rethrow;
     }
   }
+
+  Future<void> toggleProjectLock(String projectId, bool isLocked) async {
+    try {
+      final projectService = ref.read(projectServiceProvider);
+      await projectService.toggleProjectLock(projectId, isLocked);
+      // Invalidate the projects stream to refresh the list
+      ref.invalidate(projectsStreamProvider);
+    } catch (error) {
+      rethrow;
+    }
+  }
 }

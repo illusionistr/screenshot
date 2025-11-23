@@ -51,6 +51,17 @@ class ProjectService {
     );
   }
 
+  Future<void> toggleProjectLock(String projectId, bool isLocked) async {
+    await firebaseService.updateDocument(
+      collectionPath: ApiConstants.projectsCollection,
+      documentId: projectId,
+      data: {
+        'isLocked': isLocked,
+        'updatedAt': Timestamp.now(),
+      },
+    );
+  }
+
   // New helpers for per-screen persistence
   Future<void> updateScreenConfig({
     required String projectId,
